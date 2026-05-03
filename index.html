@@ -165,6 +165,23 @@ textarea{resize:vertical}
 .quiz-option{display:flex;gap:8px;align-items:flex-start;padding:7px 0;font-size:13px;color:var(--text-sub);cursor:pointer}
 .quiz-result{border-radius:10px;padding:12px;margin-top:12px;background:rgba(29,185,84,.12);border:1px solid rgba(29,185,84,.35);color:var(--text)}
 
+/* USER-SPECIFIC LISTENING / FAVORITES */
+.user-progress-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:10px;padding:14px;min-width:0}
+.user-progress-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.user-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--border);background:var(--bg-elev3);color:var(--text-sub)}
+.user-chip.u1{border-color:rgba(29,185,84,.45);color:var(--green);background:rgba(29,185,84,.10)}
+.user-chip.u2{border-color:rgba(126,176,255,.45);color:#8db8ff;background:rgba(70,131,255,.12)}
+.user-checks{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap}
+.mini-toggle{border:1px solid var(--border);background:var(--bg-elev3);color:var(--text-sub);border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;cursor:pointer;transition:all .15s}
+.mini-toggle:hover{border-color:var(--text-sub);color:var(--text)}
+.mini-toggle.active.u1{background:rgba(29,185,84,.18);border-color:var(--green);color:var(--green)}
+.mini-toggle.active.u2{background:rgba(70,131,255,.18);border-color:#8db8ff;color:#8db8ff}
+.song-fav-btn{border:none;background:transparent;color:var(--text-muted);font-size:14px;line-height:1;cursor:pointer;padding:0 2px;transition:all .15s}
+.song-fav-btn:hover{color:#ffd166;transform:scale(1.08)}
+.song-fav-btn.active.u1{color:#ffd166}
+.song-fav-btn.active.u2{color:#7eb0ff}
+
+
 </style>
 </head>
 <body>
@@ -1658,12 +1675,40 @@ function openSpotifyForSong(artistName,song,event){
   window.location.assign(url);
 }
 
-
+function isHeardBy(item,userKey){
+  if(item&&item.listenedBy&&typeof item.listenedBy==='object'&&Object.prototype.hasOwnProperty.call(item.listenedBy,userKey)) return !!item.listenedBy[userKey];
+  return !!(item&&item.listened);
+}
+function isFavoriteBy(item,userKey){
+  if(item&&item.favoriteBy&&typeof item.favoriteBy==='object'&&Object.prototype.hasOwnProperty.call(item.favoriteBy,userKey)) return !!item.favoriteBy[userKey];
+  return !!(item&&item['fav'+(userKey==='u1'?'U1':'U2')]);
+}
+function getWeekUserProgress(week,userKey){
+  const artists=(week&&week.artists)||[];
+  let totalSongs=0, heardSongs=0, favoriteSongs=0;
+  artists.forEach(a=>((a.listenedSongs)||[]).forEach(song=>{
+    totalSongs++;
+    if(isHeardBy(song,userKey)) heardSongs++;
+    if(isFavoriteBy(song,userKey)) favoriteSongs++;
+  }));
+  const totalArtists=artists.length;
+  const heardArtists=artists.filter(a=>isHeardBy(a,userKey)||((a.listenedSongs)||[]).some(song=>isHeardBy(song,userKey))).length;
+  const completedArtists=artists.filter(a=>{
+    const songs=(a.listenedSongs)||[];
+    return songs.length?songs.every(song=>isHeardBy(song,userKey)):isHeardBy(a,userKey);
+  }).length;
+  const pct=totalSongs?Math.round((heardSongs/totalSongs)*100):0;
+  const artistPct=totalArtists?Math.round((completedArtists/totalArtists)*100):0;
+  return {totalSongs,heardSongs,favoriteSongs,totalArtists,heardArtists,completedArtists,pct,artistPct};
+}
 function getWeekSongProgress(week){
   const artists=(week&&week.artists)||[];
   let totalSongs=0, listenedSongs=0;
-  artists.forEach(a=>((a.listenedSongs)||[]).forEach(song=>{totalSongs++; if(song.listened)listenedSongs++;}));
-  const listenedArtists=artists.filter(a=>a.listened).length;
+  artists.forEach(a=>((a.listenedSongs)||[]).forEach(song=>{
+    totalSongs++;
+    if(song.listened||isHeardBy(song,'u1')||isHeardBy(song,'u2'))listenedSongs++;
+  }));
+  const listenedArtists=artists.filter(a=>a.listened||isHeardBy(a,'u1')||isHeardBy(a,'u2')).length;
   const totalArtists=artists.length;
   return {totalSongs,listenedSongs,totalArtists,listenedArtists,songPct:totalSongs?Math.round((listenedSongs/totalSongs)*100):0,artistPct:totalArtists?Math.round((listenedArtists/totalArtists)*100):0};
 }
@@ -2132,7 +2177,7 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   );
 }
 
-function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleSong,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating,onSaveLearningQuiz}){
+function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleArtistHeard,onToggleSong,onToggleSongFavorite,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating,onSaveLearningQuiz}){
   const [selGenre,setSelGenre]=useState('');
   const [weekSubTab,setWeekSubTab]=useState('escucha');
   const genreObj=activeWeek?genres.find(g=>g.id===activeWeek.genreId):null;
@@ -2181,7 +2226,7 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
         </div>
 
         {(topJoint.length>0||divisive||consensual)&&(
-          <div className="card" style={{marginBottom:12,background:'#f0effc',border:'0.5px solid #d0cef0'}}>
+          <div className="card" style={{marginBottom:12,background:'var(--bg-elev2)',border:'1px solid var(--border)'}}>
             <h2 style={{marginBottom:10}}>📊 Ranking semanal automático</h2>
             <div className="grid2" style={{marginBottom:10}}>
               {u1Top.length>0&&<div>
@@ -2269,8 +2314,10 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
     );
   }
 
-  const listened=activeWeek.artists.filter(a=>a.listened).length;
   const total=activeWeek.artists.length;
+  const progressU1=getWeekUserProgress(activeWeek,'u1');
+  const progressU2=getWeekUserProgress(activeWeek,'u2');
+  const leader=progressU1.pct===progressU2.pct?'Empate':(progressU1.pct>progressU2.pct?u1:u2);
 
   return(
     <div>
@@ -2309,24 +2356,35 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
       )}
 
       {weekSubTab==='escucha'&&(<>
-      <div className="row" style={{marginBottom:12,gap:12}}>
-        <div style={{flex:1}}>
-          <div className="muted" style={{fontSize:11,marginBottom:3}}>Escuchados: {listened}/{total}</div>
-          <div className="progress-bar"><div className="progress-fill" style={{width:`${total?listened/total*100:0}%`}}/></div>
+      <div className="grid2" style={{marginBottom:12}}>
+        <div className="user-progress-card">
+          <div className="user-progress-head"><span className="user-chip u1">{u1}</span><strong>{progressU1.pct}%</strong></div>
+          <div className="progress-bar"><div className="progress-fill" style={{width:`${progressU1.pct}%`}}/></div>
+          <div className="muted" style={{fontSize:11,marginTop:6}}>{progressU1.heardSongs}/{progressU1.totalSongs} canciones · {progressU1.completedArtists}/{progressU1.totalArtists} artistas completos · ⭐ {progressU1.favoriteSongs}</div>
         </div>
-        <span className="muted" style={{fontSize:12,whiteSpace:'nowrap'}}>{total?Math.round(listened/total*100):0}%</span>
+        <div className="user-progress-card">
+          <div className="user-progress-head"><span className="user-chip u2">{u2}</span><strong>{progressU2.pct}%</strong></div>
+          <div className="progress-bar"><div className="progress-fill" style={{width:`${progressU2.pct}%`}}/></div>
+          <div className="muted" style={{fontSize:11,marginTop:6}}>{progressU2.heardSongs}/{progressU2.totalSongs} canciones · {progressU2.completedArtists}/{progressU2.totalArtists} artistas completos · ⭐ {progressU2.favoriteSongs}</div>
+        </div>
+      </div>
+      <div className="card card-sm" style={{marginBottom:12,background:'var(--bg-elev2)'}}>
+        <div className="row" style={{justifyContent:'space-between',gap:8}}>
+          <span className="muted" style={{fontSize:12}}>Comparativa de escucha</span>
+          <strong style={{fontSize:13}}>{leader==='Empate'?'Empate':`${leader} va por delante`}</strong>
+        </div>
       </div>
 
       {activeWeek.artists.map(artist=>{
         const avg=calcArtistAvg(artist);
         const isExp=expandedArtist===artist.id;
         return(
-          <div key={artist.id} className={`artist-card ${artist.listened?'listened':''}`}>
+          <div key={artist.id} className={`artist-card ${(isHeardBy(artist,'u1')||isHeardBy(artist,'u2'))?'listened':''}`}>
             <div className="row" style={{justifyContent:'space-between',marginBottom:8}}>
               <div className="row" style={{gap:8,flex:1,minWidth:0}}>
-                <div className={`check-circle ${artist.listened?'checked':''}`}
-                  onClick={()=>onUpdateArtist(activeWeek.id,artist.id,'listened',!artist.listened)}>
-                  {artist.listened&&'✓'}
+                <div className="user-checks" title="Marcar artista escuchado por usuario">
+                  <button type="button" className={`mini-toggle ${isHeardBy(artist,'u1')?'active u1':''}`} onClick={()=>onToggleArtistHeard(activeWeek.id,artist.id,'u1')}>✓ {u1}</button>
+                  <button type="button" className={`mini-toggle ${isHeardBy(artist,'u2')?'active u2':''}`} onClick={()=>onToggleArtistHeard(activeWeek.id,artist.id,'u2')}>✓ {u2}</button>
                 </div>
                 <div style={{minWidth:0}}>
                   <div className="row" style={{flexWrap:'wrap',gap:4}}>
@@ -2345,15 +2403,24 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
             </div>
 
             <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:4}}>
-              {(artist.listenedSongs||[]).map((s,i)=>(
-                <div key={i} className={`song-chip ${s.listened?'heard':''}`}
-                  onClick={()=>onToggleSong(activeWeek.id,artist.id,i)}
+              {(artist.listenedSongs||[]).map((s,i)=>{
+                const heardU1=isHeardBy(s,'u1');
+                const heardU2=isHeardBy(s,'u2');
+                const favU1=isFavoriteBy(s,'u1');
+                const favU2=isFavoriteBy(s,'u2');
+                return(
+                <div key={i} className={`song-chip ${(heardU1||heardU2)?'heard':''}`}
                   title={s.note}>
-                  <span style={{width:12,height:12,borderRadius:2,background:s.listened?'var(--success)':'transparent',border:`1.5px solid ${s.listened?'var(--success)':'var(--muted)'}`,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{s.listened&&'✓'}</span>
+                  <div className="user-checks" onClick={e=>e.stopPropagation()}>
+                    <button type="button" className={`mini-toggle ${heardU1?'active u1':''}`} onClick={()=>onToggleSong(activeWeek.id,artist.id,i,'u1')}>✓ {u1}</button>
+                    <button type="button" className={`mini-toggle ${heardU2?'active u2':''}`} onClick={()=>onToggleSong(activeWeek.id,artist.id,i,'u2')}>✓ {u2}</button>
+                  </div>
                   <span>{s.title}</span>
+                  <button className={`song-fav-btn ${favU1?'active u1':''}`} type="button" title={`Favorita ${u1}`} onClick={e=>{e.stopPropagation();onToggleSongFavorite(activeWeek.id,artist.id,i,'u1');}}>★</button>
+                  <button className={`song-fav-btn ${favU2?'active u2':''}`} type="button" title={`Favorita ${u2}`} onClick={e=>{e.stopPropagation();onToggleSongFavorite(activeWeek.id,artist.id,i,'u2');}}>★</button>
                   <button className="spotify-btn" type="button" title={`Abrir en Spotify: ${artist.name} - ${s.title}`} aria-label={`Abrir en Spotify ${artist.name} ${s.title}`} onClick={e=>openSpotifyForSong(artist.name,s,e)}>▶</button>
                 </div>
-              ))}
+              );})}
             </div>
 
             {isExp&&(
@@ -2597,8 +2664,8 @@ function BibliotecaTab({genres,filteredGenres,genreSearch,setGenreSearch,genreFi
       </div>
       <div className="row" style={{marginBottom:12,gap:8}}>
         <input style={{flex:2,minWidth:120}} placeholder="🔍 Buscar género..." value={genreSearch} onChange={e=>setGenreSearch(e.target.value)}/>
-        <select style={{flex:1,width:'auto',minWidth:120}} value={genreFilter} onChange={e=>setGenreFilter(e.target.value)}>
-          <option value="">Todas las familias</option>
+        <select style={{flex:1,width:'auto',minWidth:92}} value={genreFilter} onChange={e=>setGenreFilter(e.target.value)}>
+          <option value="">Todos</option>
           {families.map(f=><option key={f} value={f}>{f}</option>)}
         </select>
       </div>
@@ -2922,12 +2989,12 @@ function App(){
       .slice(0,10)
       .map(a=>({
         ...a,
-        listened:false,scoreU1:'',scoreU2:'',
+        listened:false,listenedBy:{u1:false,u2:false},scoreU1:'',scoreU2:'',
         commentU1:'',commentU2:'',
         moodU1:'',moodU2:'',situationsU1:'',situationsU2:'',
         replayU1:'',replayU2:'',
         favU1:false,favU2:false,
-        listenedSongs:(a.suggestedSongs||[]).map(s=>({...s,listened:false}))
+        listenedSongs:(a.suggestedSongs||[]).map(s=>({...s,listened:false,listenedBy:{u1:false,u2:false},favoriteBy:{u1:false,u2:false}}))
       }));
     const week={id:genId(),weekNum,startDate:new Date().toISOString().split('T')[0],genreId,genreName:genre.name,genreFamily:genre.parentFamily,status:'in_progress',artists,rating:{}};
     update(prev=>({...prev,weeks:[...prev.weeks,week],activeWeekId:week.id}));
@@ -2949,8 +3016,41 @@ function App(){
     update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,[field]:value}:a)}:w)}));
   }
 
-  function toggleSong(weekId,artId,songIdx){
-    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,listenedSongs:a.listenedSongs.map((s,i)=>i===songIdx?{...s,listened:!s.listened}:s)}:a)}:w)}));
+  function toggleArtistHeard(weekId,artId,userKey){
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>{
+      if(a.id!==artId)return a;
+      const current=isHeardBy(a,userKey);
+      const listenedBy={...(a.listenedBy||{}),[userKey]:!current};
+      return {...a,listenedBy,listened:!!(listenedBy.u1||listenedBy.u2)};
+    })}:w)}));
+  }
+
+  function toggleSong(weekId,artId,songIdx,userKey){
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>{
+      if(a.id!==artId)return a;
+      const listenedSongs=(a.listenedSongs||[]).map((s,i)=>{
+        if(i!==songIdx)return s;
+        const current=isHeardBy(s,userKey||'u1');
+        const listenedBy={...(s.listenedBy||{}),[userKey||'u1']:!current};
+        return {...s,listenedBy,listened:!!(listenedBy.u1||listenedBy.u2)};
+      });
+      const listenedBy={...(a.listenedBy||{})};
+      ['u1','u2'].forEach(u=>{listenedBy[u]=listenedSongs.some(song=>isHeardBy(song,u));});
+      return {...a,listenedSongs,listenedBy,listened:!!(listenedBy.u1||listenedBy.u2)};
+    })}:w)}));
+  }
+
+  function toggleSongFavorite(weekId,artId,songIdx,userKey){
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>{
+      if(a.id!==artId)return a;
+      const listenedSongs=(a.listenedSongs||[]).map((s,i)=>{
+        if(i!==songIdx)return s;
+        const current=isFavoriteBy(s,userKey);
+        const favoriteBy={...(s.favoriteBy||{}),[userKey]:!current};
+        return {...s,favoriteBy};
+      });
+      return {...a,listenedSongs};
+    })}:w)}));
   }
 
   function updateLearningQuiz(weekId,userKey,result){
@@ -3043,7 +3143,7 @@ function App(){
 
       <div>
         {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
-        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz}/>}
+        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onToggleSongFavorite={toggleSongFavorite} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz}/>}
         {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
         {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
