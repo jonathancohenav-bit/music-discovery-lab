@@ -42,6 +42,18 @@ body{font-family:'Circular','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',
 .metric:hover{background:var(--bg-elev3)}
 .metric-label{font-size:11px;color:var(--text-sub);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;font-weight:700}
 .metric-value{font-size:28px;font-weight:700;color:var(--green);letter-spacing:-.5px}
+
+/* PRODUCT INSIGHTS */
+.insight-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:10px;padding:16px;transition:background .2s}
+.insight-card:hover{background:var(--bg-elev3)}
+.insight-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.2px}
+.insight-value{font-size:30px;font-weight:900;color:var(--green);letter-spacing:-.8px;line-height:1}
+.insight-copy{font-size:12px;color:var(--text-sub);line-height:1.45;margin-top:8px}
+.progress-large{height:10px;background:var(--bg-elev3);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+.progress-large-fill{height:100%;background:var(--green);border-radius:999px;transition:width .35s ease}
+.divergence-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--border)}
+.divergence-row:last-child{border-bottom:none}
+
 /* BADGES */
 .badge{display:inline-block;padding:3px 10px;border-radius:500px;font-size:10px;font-weight:700;line-height:1.6;text-transform:uppercase;letter-spacing:.5px}
 .badge-core{background:rgba(29,185,84,.15);color:var(--green)}
@@ -740,6 +752,43 @@ function openSpotifyForSong(artistName,song,event){
   window.location.assign(url);
 }
 
+
+function getWeekSongProgress(week){
+  const artists=(week&&week.artists)||[];
+  let totalSongs=0, listenedSongs=0;
+  artists.forEach(a=>((a.listenedSongs)||[]).forEach(song=>{totalSongs++; if(song.listened)listenedSongs++;}));
+  const listenedArtists=artists.filter(a=>a.listened).length;
+  const totalArtists=artists.length;
+  return {totalSongs,listenedSongs,totalArtists,listenedArtists,songPct:totalSongs?Math.round((listenedSongs/totalSongs)*100):0,artistPct:totalArtists?Math.round((listenedArtists/totalArtists)*100):0};
+}
+function getCurrentStreak(completedWeeks){
+  const nums=[...new Set((completedWeeks||[]).map(w=>Number(w.weekNum)).filter(n=>!isNaN(n)))].sort((a,b)=>b-a);
+  if(!nums.length)return 0;
+  let streak=1;
+  for(let i=1;i<nums.length;i++){
+    if(nums[i]===nums[i-1]-1)streak++; else break;
+  }
+  return streak;
+}
+function getComparisonInsights(completedWeeks){
+  const artistPairs=[];
+  (completedWeeks||[]).forEach(w=>((w.artists)||[]).forEach(a=>{
+    const s1=parseFloat(a.scoreU1); const s2=parseFloat(a.scoreU2);
+    if(!isNaN(s1)&&!isNaN(s2)) artistPairs.push({type:'artist',name:a.name,context:w.genreName,u1:s1,u2:s2,diff:Math.abs(s1-s2)});
+  }));
+  const genrePairs=[];
+  (completedWeeks||[]).forEach(w=>{
+    const r=w.rating||{}; const s1=parseFloat(r.scoreU1); const s2=parseFloat(r.scoreU2);
+    if(!isNaN(s1)&&!isNaN(s2)) genrePairs.push({type:'genre',name:w.genreName,context:`Semana ${w.weekNum}`,u1:s1,u2:s2,diff:Math.abs(s1-s2)});
+  });
+  const allPairs=[...artistPairs,...genrePairs];
+  const agreement=allPairs.length?Math.round((allPairs.filter(x=>x.diff<=1.5).length/allPairs.length)*100):null;
+  const avgDiff=allPairs.length?allPairs.reduce((sum,x)=>sum+x.diff,0)/allPairs.length:null;
+  const divergences=[...allPairs].sort((a,b)=>b.diff-a.diff).slice(0,5);
+  const closeMatches=[...allPairs].filter(x=>x.diff<=1).sort((a,b)=>a.diff-b.diff).slice(0,5);
+  return {agreement,avgDiff,divergences,closeMatches,totalPairs:allPairs.length};
+}
+
 /* ============================================================
    SMALL COMPONENTS
    ============================================================ */
@@ -942,6 +991,9 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   },[completedWeeks]);
   const famCount={};completedWeeks.forEach(w=>{famCount[w.genreFamily]=(famCount[w.genreFamily]||0)+1;});
   const topFam=Object.entries(famCount).sort((a,b)=>b[1]-a[1])[0];
+  const activeProgress=useMemo(()=>getWeekSongProgress(activeWeek),[activeWeek]);
+  const streak=useMemo(()=>getCurrentStreak(completedWeeks),[completedWeeks]);
+  const comparison=useMemo(()=>getComparisonInsights(completedWeeks),[completedWeeks]);
 
   return(
     <div>
@@ -967,6 +1019,38 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
         <div className="metric"><div className="metric-label">Diferencia media</div><div className="metric-value">{(avgU1!==null&&avgU2!==null)?Math.abs(avgU1-avgU2).toFixed(1):'—'}</div></div>
         <div className="metric"><div className="metric-label">Biblioteca total</div><div className="metric-value">{genres.length}</div></div>
       </div>
+
+      <div className="grid3" style={{marginBottom:16}}>
+        <div className="insight-card">
+          <div className="insight-title">🔥 Racha actual</div>
+          <div className="insight-value">{streak}</div>
+          <div className="insight-copy">{streak===1?'1 semana completada seguida':streak>1?`${streak} semanas consecutivas completadas`:'Completad una semana para iniciar racha'}</div>
+        </div>
+        <div className="insight-card">
+          <div className="insight-title">🤝 Coincidencia {u1} / {u2}</div>
+          <div className="insight-value">{comparison.agreement!==null?`${comparison.agreement}%`:'—'}</div>
+          <div className="insight-copy">{comparison.totalPairs?`Basado en ${comparison.totalPairs} valoraciones comparables · diferencia media ${comparison.avgDiff.toFixed(1)}`:'Valorad ambos artistas o semanas para calcular afinidad'}</div>
+        </div>
+        <div className="insight-card">
+          <div className="insight-title">⚡ Mayor diferencia</div>
+          <div className="insight-value">{comparison.divergences[0]?comparison.divergences[0].diff.toFixed(1):'—'}</div>
+          <div className="insight-copy">{comparison.divergences[0]?`${comparison.divergences[0].name} · ${u1} ${comparison.divergences[0].u1} / ${u2} ${comparison.divergences[0].u2}`:'Aún no hay discrepancias medibles'}</div>
+        </div>
+      </div>
+
+      {activeWeek&&(
+        <div className="card" style={{borderLeft:'3px solid var(--green)',marginBottom:16}}>
+          <div className="row" style={{justifyContent:'space-between',marginBottom:10}}>
+            <div>
+              <div style={{fontWeight:700}}>Progreso semanal</div>
+              <div className="muted" style={{fontSize:12}}>{activeProgress.listenedSongs}/{activeProgress.totalSongs} canciones · {activeProgress.listenedArtists}/{activeProgress.totalArtists} artistas</div>
+            </div>
+            <span className="sync-pill sync-saved">{activeProgress.songPct}%</span>
+          </div>
+          <div className="progress-large"><div className="progress-large-fill" style={{width:`${activeProgress.songPct}%`}}></div></div>
+          <div className="insight-copy">{activeProgress.songPct>=100?'Semana lista para cerrar 🎉':'La racha subirá cuando cerréis la semana.'}</div>
+        </div>
+      )}
 
       {activeWeek&&(
         <div className="card" style={{borderLeft:'3px solid var(--c1)',marginBottom:16}}>
@@ -1323,12 +1407,13 @@ function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
   const divisiveGenres=[...genreRankings].filter(g=>!isNaN(g.scoreU1)&&!isNaN(g.scoreU2)).sort((a,b)=>Math.abs(b.scoreU1-b.scoreU2)-Math.abs(a.scoreU1-a.scoreU2));
   const famMap={};completedWeeks.forEach(w=>{const f=w.genreFamily||'';if(!famMap[f])famMap[f]={sum:0,n:0};const r=w.rating||{};[parseFloat(r.scoreU1),parseFloat(r.scoreU2)].forEach(s=>{if(!isNaN(s)){famMap[f].sum+=s;famMap[f].n++;}});});
   const famRank=Object.entries(famMap).filter(([,v])=>v.n>0).sort((a,b)=>(b[1].sum/b[1].n)-(a[1].sum/a[1].n));
+  const comparison=getComparisonInsights(completedWeeks);
 
   return(
     <div>
       <h1 style={{marginBottom:10}}>Rankings</h1>
       <div className="sub-tabs">
-        {[['genres','🎵 Géneros'],['artists','🎤 Artistas'],['families','🗂 Familias'],['divisive','⚡ Divisivos']].map(([id,l])=>(
+        {[['genres','🎵 Géneros'],['artists','🎤 Artistas'],['families','🗂 Familias'],['divisive','⚡ Divisivos'],['match','🤝 Coincidencias']].map(([id,l])=>(
           <button key={id} className={`sub-tab ${rt===id?'active':''}`} onClick={()=>setRt(id)}>{l}</button>
         ))}
       </div>
@@ -1421,6 +1506,33 @@ function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
             </div>
           ))}
           {!divisiveGenres.length&&<p className="muted">Necesitáis que ambos valoréis géneros para ver esto.</p>}
+        </div>
+      )}
+
+      {rt==='match'&&(
+        <div className="grid2">
+          <div className="card">
+            <h2 style={{marginBottom:6}}>🤝 Coincidencias</h2>
+            <p className="muted" style={{fontSize:12,marginBottom:12}}>Valoraciones con diferencia de 1 punto o menos.</p>
+            {comparison.closeMatches.map((x,i)=>(
+              <div key={i} className="divergence-row">
+                <div style={{minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{x.name}</div><div className="muted" style={{fontSize:11}}>{x.context}</div></div>
+                <div style={{fontSize:12,textAlign:'right',flexShrink:0}}>{u1} {x.u1} · {u2} {x.u2}</div>
+              </div>
+            ))}
+            {!comparison.closeMatches.length&&<p className="muted">Aún no hay coincidencias suficientes.</p>}
+          </div>
+          <div className="card">
+            <h2 style={{marginBottom:6}}>⚡ Diferencias</h2>
+            <p className="muted" style={{fontSize:12,marginBottom:12}}>Lo que más os separa musicalmente.</p>
+            {comparison.divergences.map((x,i)=>(
+              <div key={i} className="divergence-row">
+                <div style={{minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{x.name}</div><div className="muted" style={{fontSize:11}}>{x.context}</div></div>
+                <div style={{fontSize:12,textAlign:'right',flexShrink:0}}><div>{u1} {x.u1} · {u2} {x.u2}</div><div style={{color:'var(--danger)',fontWeight:800}}>Δ {x.diff.toFixed(1)}</div></div>
+              </div>
+            ))}
+            {!comparison.divergences.length&&<p className="muted">Aún no hay diferencias suficientes.</p>}
+          </div>
         </div>
       )}
     </div>
