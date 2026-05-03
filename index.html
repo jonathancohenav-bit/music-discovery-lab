@@ -29,6 +29,19 @@ body{font-family:'Circular','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',
 .nav-btn{padding:10px 20px;border:none;background:transparent;border-radius:500px;cursor:pointer;font-size:14px;color:var(--text-sub);white-space:nowrap;transition:all .2s;font-family:inherit;font-weight:600}
 .nav-btn:hover{color:var(--text);transform:scale(1.04)}
 .nav-btn.active{background:var(--text);color:#000}
+@media (max-width:640px){
+  .nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border-radius:32px;padding:10px;overflow:visible}
+  .nav-btn{width:100%;padding:12px 10px;text-align:center;font-size:14px;white-space:normal;line-height:1.15;min-height:44px;display:flex;align-items:center;justify-content:center;gap:4px}
+}
+@media (min-width:641px){
+  .nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-radius:32px;padding:10px;overflow:visible}
+  .nav-btn{width:100%;text-align:center}
+}
+.challenge-alert{background:rgba(255,164,43,.13);border:1px solid rgba(255,164,43,.32);color:#ffd08a;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.45}
+.nav-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:999px;background:var(--warning);color:#000;font-size:10px;font-weight:900;margin-left:4px;padding:0 5px}
+.challenge-genre-panel{background:var(--bg-elev3);border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0}
+.challenge-track-box{background:rgba(29,185,84,.10);border:1px solid rgba(29,185,84,.25);border-radius:10px;padding:10px;margin:8px 0}
+
 /* CARDS */
 .card{background:var(--card-bg);border-radius:8px;padding:20px;margin-bottom:16px;transition:background .2s}
 .card:hover{background:var(--bg-elev2)}
@@ -176,10 +189,6 @@ textarea{resize:vertical}
 .mini-toggle:hover{border-color:var(--text-sub);color:var(--text)}
 .mini-toggle.active.u1{background:rgba(29,185,84,.18);border-color:var(--green);color:var(--green)}
 .mini-toggle.active.u2{background:rgba(70,131,255,.18);border-color:#8db8ff;color:#8db8ff}
-.song-fav-btn{border:none;background:transparent;color:var(--text-muted);font-size:14px;line-height:1;cursor:pointer;padding:0 2px;transition:all .15s}
-.song-fav-btn:hover{color:#ffd166;transform:scale(1.08)}
-.song-fav-btn.active.u1{color:#ffd166}
-.song-fav-btn.active.u2{color:#7eb0ff}
 .challenge-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .challenge-card.pending{border-left:3px solid var(--warning)}
 .challenge-card.completed{border-left:3px solid var(--green)}
@@ -1739,6 +1748,9 @@ function calcQuizStats(weeks){
 }
 function challengeTypeLabel(type){return {song:'Canción',artist:'Artista',genre:'Género',mood:'Mood'}[type]||'Reto';}
 function qualitativeLabel(v){return {love:'Me encantó',like:'Me gustó',neutral:'Me dejó indiferente',hard:'Me costó',nope:'No me gustó'}[v]||v||'';}
+function challengeRequiresSenderTrack(type){return type==='song';}
+function challengeAllowsGuess(type){return type==='song'||type==='artist'||type==='genre';}
+function challengePendingForUser(challenges,userKey){return (challenges||[]).filter(c=>c.status!=='completed'&&c.to===userKey).length;}
 
 function getWeekSongProgress(week){
   const artists=(week&&week.artists)||[];
@@ -2216,7 +2228,7 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   );
 }
 
-function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleArtistHeard,onToggleSong,onToggleSongFavorite,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating,onSaveLearningQuiz}){
+function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleArtistHeard,onToggleSong,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating,onSaveLearningQuiz}){
   const [selGenre,setSelGenre]=useState('');
   const [weekSubTab,setWeekSubTab]=useState('escucha');
   const genreObj=activeWeek?genres.find(g=>g.id===activeWeek.genreId):null;
@@ -2810,69 +2822,109 @@ function BibliotecaTab({genres,filteredGenres,genreSearch,setGenreSearch,genreFi
 }
 
 
-function RetosTab({challenges,genres,u1,u2,onCreateChallenge,onUpdateChallenge,onDeleteChallenge,onGenerateGenreChallenge}){
-  const [form,setForm]=useState({from:'u1',to:'u2',type:'song',artistName:'',songTitle:'',genreId:'',description:'',guessMode:'score',senderScore:'',senderQualitative:'like'});
+function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUpdateChallenge,onDeleteChallenge,onGenerateGenreChallenge}){
+  const [form,setForm]=useState({from:currentUserKey||'u1',to:(currentUserKey||'u1')==='u1'?'u2':'u1',type:'song',artistName:'',songTitle:'',genreId:'',description:'',guessMode:'score',senderScore:'',senderQualitative:'like',deadline:''});
   const names={u1,u2};
   const pending=(challenges||[]).filter(c=>c.status!=='completed');
   const completed=(challenges||[]).filter(c=>c.status==='completed');
+  const pendingForMe=pending.filter(c=>c.to===currentUserKey);
+  const sentByMe=pending.filter(c=>c.from===currentUserKey);
+  const otherPending=pending.filter(c=>c.to!==currentUserKey&&c.from!==currentUserKey);
+  function resetForm(type=form.type,from=form.from){
+    const to=from==='u1'?'u2':'u1';
+    setForm({from,to,type,artistName:'',songTitle:'',genreId:'',description:'',guessMode:type==='mood'?'none':'score',senderScore:'',senderQualitative:'like',deadline:''});
+  }
   function submit(){
     if(form.from===form.to){alert('El reto debe enviarse al otro usuario.');return;}
     if(form.type==='genre'&&!form.genreId){alert('Selecciona un género para el reto.');return;}
-    if((form.type==='song'||form.type==='mood')&&(!form.artistName||!form.songTitle)){alert('Indica artista y canción.');return;}
+    if(form.type==='song'&&(!form.artistName||!form.songTitle)){alert('Indica artista y canción.');return;}
     if(form.type==='artist'&&!form.artistName){alert('Indica artista.');return;}
+    // Mood challenge: the receiver must provide the song and artist, so creator does not fill them.
     const genre=genres.find(g=>g.id===form.genreId);
-    onCreateChallenge({...form,genreName:genre?genre.name:'',status:'pending'});
-    setForm({from:form.from,to:form.to,type:'song',artistName:'',songTitle:'',genreId:'',description:'',guessMode:'score',senderScore:'',senderQualitative:'like'});
+    const cleanGuessMode=challengeAllowsGuess(form.type)?form.guessMode:'none';
+    onCreateChallenge({...form,guessMode:cleanGuessMode,genreName:genre?genre.name:'',status:'pending'});
+    resetForm('song',form.from);
+  }
+  function toggleGenreProgress(c,artistId,songIdx){
+    const current=c.response||{};
+    const gp={...(current.genreProgress||{})};
+    const key=`${artistId}__${songIdx}`;
+    gp[key]=!gp[key];
+    onUpdateChallenge(c.id,{response:{...current,genreProgress:gp}});
+  }
+  function genreProgressStats(c,genre){
+    const gp=(c.response&&c.response.genreProgress)||{};
+    let total=0,done=0;
+    (genre?.artists||[]).slice(0,8).forEach(a=>(a.suggestedSongs||[]).slice(0,3).forEach((song,i)=>{total++;if(gp[`${a.id}__${i}`])done++;}));
+    return {total,done,pct:total?Math.round(done/total*100):0};
   }
   function ChallengeCard({c}){
     const [local,setLocal]=useState(c.response||{});
     const genre=genres.find(g=>g.id===c.genreId);
-    const isSongLike=c.type==='song'||c.type==='mood';
-    const title=c.type==='genre'?(c.genreName||genre?.name||'Género'):(c.type==='artist'?c.artistName:`${c.artistName} — ${c.songTitle}`);
+    const isSongLike=c.type==='song'||(c.type==='mood'&&(c.response?.artistName&&c.response?.songTitle||local.artistName&&local.songTitle));
+    const displayArtist=c.type==='mood'?(c.response?.artistName||local.artistName||'Canción propuesta por el retado'):c.artistName;
+    const displaySong=c.type==='mood'?(c.response?.songTitle||local.songTitle||'Pendiente de elegir'):c.songTitle;
+    const title=c.type==='genre'?(c.genreName||genre?.name||'Género'):(c.type==='artist'?c.artistName:`${displayArtist} — ${displaySong}`);
+    const canAnswer=!currentUserKey||c.to===currentUserKey||c.from===currentUserKey;
     return <div className={`challenge-card ${c.status==='completed'?'completed':'pending'}`}>
       <div className="row" style={{justifyContent:'space-between',gap:8,marginBottom:8}}>
         <div style={{minWidth:0}}>
           <span className="challenge-type">{challengeTypeLabel(c.type)}</span>
           <h3 style={{marginTop:6,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis'}}>{title}</h3>
           <div className="challenge-meta">{names[c.from]} reta a {names[c.to]} · {c.status==='completed'?'Completado':'Pendiente'}</div>
+          {c.deadline&&<div className="challenge-meta">Plazo: {c.deadline}</div>}
         </div>
         <div className="row" style={{gap:6,flexShrink:0}}>
-          {isSongLike&&<button className="spotify-btn" type="button" title="Abrir en Spotify" onClick={e=>openSpotifyForSong(c.artistName,{title:c.songTitle,spotifyUrl:c.spotifyUrl||''},e)}>▶</button>}
+          {isSongLike&&displayArtist&&displaySong&&displaySong!=='Pendiente de elegir'&&<button className="spotify-btn" type="button" title="Abrir en Spotify" onClick={e=>openSpotifyForSong(displayArtist,{title:displaySong,spotifyUrl:c.spotifyUrl||''},e)}>▶</button>}
           <button className="btn btn-xs btn-danger" onClick={()=>onDeleteChallenge(c.id)}>✕</button>
         </div>
       </div>
       {c.description&&<p className="muted" style={{fontSize:12,marginBottom:8}}>{c.description}</p>}
-      {c.type==='mood'&&<div className="learning-box" style={{marginBottom:8}}><div className="learning-box-title">Reto mood</div><div style={{fontSize:13}}>Describe el mood de la canción y compara después con la intención del reto.</div></div>}
-      {c.guessMode==='score'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo: adivinar la valoración de {names[c.from]} en puntos.</div>}
-      {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo: adivinar el calificativo de {names[c.from]}: de “me encantó” a “no me gustó”.</div>}
-      {c.type==='genre'&&genre&&<div className="card card-sm" style={{background:'var(--bg-elev3)',marginBottom:8}}>
-        <div className="row" style={{justifyContent:'space-between',marginBottom:6}}><strong>{genre.name}</strong><span className="muted" style={{fontSize:11}}>{genre.artists?.length||0} artistas</span></div>
+      {c.type==='mood'&&<div className="learning-box" style={{marginBottom:8}}><div className="learning-box-title">Reto mood</div><div style={{fontSize:13}}>El retado debe elegir una canción y artista que describan su mood. Después podrá abrirla en Spotify y valorarla si quiere.</div></div>}
+      {c.guessMode==='score'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo opcional: adivinar la valoración de {names[c.from]} en puntos.</div>}
+      {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo opcional: adivinar el calificativo de {names[c.from]}: de “me encantó” a “no me gustó”.</div>}
+      {c.type==='genre'&&genre&&<div className="challenge-genre-panel">
+        {(()=>{const st=genreProgressStats(c,genre);return <>
+          <div className="row" style={{justifyContent:'space-between',marginBottom:6}}><strong>🎧 Género de reto: {genre.name}</strong><span className="muted" style={{fontSize:11}}>{st.done}/{st.total} canciones · {st.pct}%</span></div>
+          <div className="progress-bar" style={{marginBottom:8}}><div className="progress-fill" style={{width:`${st.pct}%`}}/></div>
+        </>;})()}
         <p className="muted" style={{fontSize:12,marginBottom:8}}>{genre.description}</p>
-        {(genre.artists||[]).slice(0,8).map(a=><div key={a.id} style={{fontSize:12,padding:'5px 0',borderTop:'0.5px solid var(--border)'}}>
+        {(genre.artists||[]).slice(0,8).map(a=><div key={a.id} style={{fontSize:12,padding:'7px 0',borderTop:'0.5px solid var(--border)'}}>
           <strong>{a.name}</strong> <span className="muted">· {a.role}</span>
-          <div>{(a.suggestedSongs||[]).slice(0,2).map((song,i)=><span key={i} style={{marginRight:8,display:'inline-flex',alignItems:'center',gap:4}}>🎵 {song.title}<button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(a.name,song,e)}>▶</button></span>)}</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:4}}>{(a.suggestedSongs||[]).slice(0,3).map((song,i)=>{
+            const checked=!!(c.response?.genreProgress||{})[`${a.id}__${i}`];
+            return <span key={i} className={`song-chip ${checked?'heard':''}`} style={{fontSize:11}}>
+              <button className={`mini-toggle ${checked?'active u1':''}`} type="button" onClick={()=>toggleGenreProgress(c,a.id,i)}>✓</button>
+              {song.title}<button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(a.name,song,e)}>▶</button>
+            </span>;
+          })}</div>
         </div>)}
-        <button className="btn btn-sm" style={{marginTop:8}} onClick={()=>onGenerateGenreChallenge(c.genreId)}>Crear como semana activa</button>
       </div>}
       {c.status!=='completed'?<div className="grid2">
+        {c.type==='mood'&&<>
+          <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Artista elegido por {names[c.to]}</label><input value={local.artistName||''} onChange={e=>setLocal(p=>({...p,artistName:e.target.value}))} placeholder="Artista"/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción elegida por {names[c.to]}</label><input value={local.songTitle||''} onChange={e=>setLocal(p=>({...p,songTitle:e.target.value}))} placeholder="Canción"/></div>
+          {(local.artistName&&local.songTitle)&&<div style={{gridColumn:'1/-1'}} className="challenge-track-box"><strong>{local.artistName} — {local.songTitle}</strong> <button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(local.artistName,{title:local.songTitle},e)}>▶</button></div>}
+        </>}
         <div>
           <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Valoración del retado</label>
-          <input type="number" min="0" max="10" value={local.rating||''} onChange={e=>setLocal(p=>({...p,rating:e.target.value}))} placeholder="0-10"/>
+          <input type="number" min="0" max="10" value={local.rating||''} onChange={e=>setLocal(p=>({...p,rating:e.target.value}))} placeholder="0-10 opcional"/>
         </div>
         {c.guessMode==='score'?<div>
           <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Adivina nota de {names[c.from]}</label>
           <input type="number" min="0" max="10" value={local.guessScore||''} onChange={e=>setLocal(p=>({...p,guessScore:e.target.value}))} placeholder="0-10"/>
-        </div>:<div>
+        </div>:c.guessMode==='qualitative'?<div>
           <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Adivina calificativo de {names[c.from]}</label>
           <select value={local.guessQualitative||''} onChange={e=>setLocal(p=>({...p,guessQualitative:e.target.value}))}>
             <option value="">—</option><option value="love">Me encantó</option><option value="like">Me gustó</option><option value="neutral">Indiferente</option><option value="hard">Me costó</option><option value="nope">No me gustó</option>
           </select>
-        </div>}
+        </div>:null}
         {c.type==='mood'&&<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Mood descrito por {names[c.to]}</label><textarea rows={2} value={local.mood||''} onChange={e=>setLocal(p=>({...p,mood:e.target.value}))} placeholder="oscuro, nostálgico, eufórico..."/></div>}
         <div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario</label><textarea rows={2} value={local.comment||''} onChange={e=>setLocal(p=>({...p,comment:e.target.value}))} placeholder="Qué te ha parecido..."/></div>
-        <button className="btn btn-primary" onClick={()=>onUpdateChallenge(c.id,{status:'completed',completedAt:new Date().toISOString(),response:local})}>Completar reto</button>
+        <button className="btn btn-primary" onClick={()=>onUpdateChallenge(c.id,{status:'completed',completedAt:new Date().toISOString(),response:{...(c.response||{}),...local}})}>Completar reto</button>
       </div>:<div className="challenge-result">
         <div style={{fontWeight:800,marginBottom:5}}>Resultado</div>
+        {c.type==='mood'&&c.response?.artistName&&c.response?.songTitle&&<div style={{fontSize:12,marginBottom:4}}>Canción mood: <strong>{c.response.artistName} — {c.response.songTitle}</strong> <button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(c.response.artistName,{title:c.response.songTitle},e)}>▶</button></div>}
         <div className="muted" style={{fontSize:12}}>Valoración de {names[c.to]}: {c.response?.rating||'—'}</div>
         {c.guessMode==='score'&&<div className="muted" style={{fontSize:12}}>Adivinó: {c.response?.guessScore||'—'} · Nota real de {names[c.from]}: {c.senderScore||'—'}</div>}
         {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12}}>Adivinó: {qualitativeLabel(c.response?.guessQualitative)||'—'} · Real: {qualitativeLabel(c.senderQualitative)||'—'}</div>}
@@ -2883,26 +2935,32 @@ function RetosTab({challenges,genres,u1,u2,onCreateChallenge,onUpdateChallenge,o
   }
   return <div>
     <h1>🎯 Retos musicales</h1>
-    <p className="muted" style={{marginBottom:12}}>Retos con objetivo, respuesta y componente de adivinanza. No son recomendaciones pasivas.</p>
+    <p className="muted" style={{marginBottom:12}}>Retos con objetivo, respuesta y componente competitivo opcional. No son recomendaciones pasivas.</p>
+    {!!pendingForMe.length&&<div className="challenge-alert">Tienes {pendingForMe.length} reto{pendingForMe.length===1?'':'s'} pendiente{pendingForMe.length===1?'':'s'} para ti. Entra aquí para completarlos.</div>}
     <div className="card">
       <h2>Crear reto</h2>
       <div className="grid2">
-        <div><label style={{fontSize:12,color:'var(--muted)'}}>De</label><select value={form.from} onChange={e=>setForm(p=>({...p,from:e.target.value,to:e.target.value==='u1'?'u2':'u1'}))}><option value="u1">{u1}</option><option value="u2">{u2}</option></select></div>
+        <div><label style={{fontSize:12,color:'var(--muted)'}}>De</label><select value={form.from} onChange={e=>resetForm(form.type,e.target.value)}><option value="u1">{u1}</option><option value="u2">{u2}</option></select></div>
         <div><label style={{fontSize:12,color:'var(--muted)'}}>Para</label><select value={form.to} onChange={e=>setForm(p=>({...p,to:e.target.value}))}><option value="u1">{u1}</option><option value="u2">{u2}</option></select></div>
-        <div><label style={{fontSize:12,color:'var(--muted)'}}>Tipo</label><select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))}><option value="song">Canción</option><option value="artist">Artista</option><option value="genre">Género</option><option value="mood">Mood con canción</option></select></div>
-        <div><label style={{fontSize:12,color:'var(--muted)'}}>Modo de adivinanza</label><select value={form.guessMode} onChange={e=>setForm(p=>({...p,guessMode:e.target.value}))}><option value="score">Adivinar puntuación</option><option value="qualitative">Adivinar calificativo</option></select></div>
-        {form.type==='genre'?<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)'}}>Género</label><select value={form.genreId} onChange={e=>setForm(p=>({...p,genreId:e.target.value}))}><option value="">— Selecciona —</option>{genres.map(g=><option key={g.id} value={g.id}>{g.name} · {g.parentFamily}</option>)}</select></div>:<>
+        <div><label style={{fontSize:12,color:'var(--muted)'}}>Tipo</label><select value={form.type} onChange={e=>resetForm(e.target.value,form.from)}><option value="song">Canción</option><option value="artist">Artista</option><option value="genre">Género</option><option value="mood">Mood con canción</option></select></div>
+        {challengeAllowsGuess(form.type)&&<div><label style={{fontSize:12,color:'var(--muted)'}}>Modo de adivinanza</label><select value={form.guessMode} onChange={e=>setForm(p=>({...p,guessMode:e.target.value}))}><option value="none">Sin adivinanza</option><option value="score">Adivinar puntuación</option><option value="qualitative">Adivinar calificativo</option></select></div>}
+        {form.type==='genre'?<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)'}}>Género</label><select value={form.genreId} onChange={e=>setForm(p=>({...p,genreId:e.target.value}))}><option value="">— Selecciona —</option>{genres.map(g=><option key={g.id} value={g.id}>{g.name} · {g.parentFamily}</option>)}</select></div>:form.type==='mood'?<div style={{gridColumn:'1/-1'}} className="learning-box"><div className="learning-box-title">Mood con canción</div><div style={{fontSize:13}}>No tienes que meter canción ahora: el retado elegirá artista y canción para describir su mood.</div></div>:<>
           <div><label style={{fontSize:12,color:'var(--muted)'}}>Artista</label><input value={form.artistName} onChange={e=>setForm(p=>({...p,artistName:e.target.value}))} placeholder="Artista"/></div>
           {form.type!=='artist'&&<div><label style={{fontSize:12,color:'var(--muted)'}}>Canción</label><input value={form.songTitle} onChange={e=>setForm(p=>({...p,songTitle:e.target.value}))} placeholder="Canción"/></div>}
         </>}
-        {form.guessMode==='score'?<div><label style={{fontSize:12,color:'var(--muted)'}}>Tu valoración real</label><input type="number" min="0" max="10" value={form.senderScore} onChange={e=>setForm(p=>({...p,senderScore:e.target.value}))} placeholder="0-10"/></div>:<div><label style={{fontSize:12,color:'var(--muted)'}}>Tu calificativo real</label><select value={form.senderQualitative} onChange={e=>setForm(p=>({...p,senderQualitative:e.target.value}))}><option value="love">Me encantó</option><option value="like">Me gustó</option><option value="neutral">Indiferente</option><option value="hard">Me costó</option><option value="nope">No me gustó</option></select></div>}
-        <div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)'}}>Instrucciones del reto</label><textarea rows={2} value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Ej.: escucha con auriculares, describe el mood, intenta adivinar mi nota..."/></div>
+        {form.guessMode==='score'&&challengeAllowsGuess(form.type)?<div><label style={{fontSize:12,color:'var(--muted)'}}>Tu valoración real</label><input type="number" min="0" max="10" value={form.senderScore} onChange={e=>setForm(p=>({...p,senderScore:e.target.value}))} placeholder="0-10"/></div>:form.guessMode==='qualitative'&&challengeAllowsGuess(form.type)?<div><label style={{fontSize:12,color:'var(--muted)'}}>Tu calificativo real</label><select value={form.senderQualitative} onChange={e=>setForm(p=>({...p,senderQualitative:e.target.value}))}><option value="love">Me encantó</option><option value="like">Me gustó</option><option value="neutral">Indiferente</option><option value="hard">Me costó</option><option value="nope">No me gustó</option></select></div>:null}
+        <div><label style={{fontSize:12,color:'var(--muted)'}}>Plazo opcional</label><input type="date" value={form.deadline} onChange={e=>setForm(p=>({...p,deadline:e.target.value}))}/></div>
+        <div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)'}}>Instrucciones del reto</label><textarea rows={2} value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))} placeholder="Ej.: completa este género antes del domingo, intenta adivinar si me gustó..."/></div>
       </div>
       <button className="btn btn-primary" style={{marginTop:12}} onClick={submit}>Crear reto</button>
     </div>
-    <h2>Pendientes</h2>
-    {pending.map(c=><ChallengeCard key={c.id} c={c}/>) }
-    {!pending.length&&<p className="muted" style={{marginBottom:12}}>No hay retos pendientes.</p>}
+    <h2>Para ti</h2>
+    {pendingForMe.map(c=><ChallengeCard key={c.id} c={c}/>) }
+    {!pendingForMe.length&&<p className="muted" style={{marginBottom:12}}>No tienes retos pendientes.</p>}
+    <h2>Enviados por ti</h2>
+    {sentByMe.map(c=><ChallengeCard key={c.id} c={c}/>) }
+    {!sentByMe.length&&<p className="muted" style={{marginBottom:12}}>No has enviado retos pendientes.</p>}
+    {!!otherPending.length&&<><h2>Otros pendientes</h2>{otherPending.map(c=><ChallengeCard key={c.id} c={c}/>)}</>}
     <h2>Completados</h2>
     {completed.map(c=><ChallengeCard key={c.id} c={c}/>) }
     {!completed.length&&<p className="muted">Todavía no hay retos completados.</p>}
@@ -3119,6 +3177,8 @@ function App(){
   const {settings,genres,weeks,activeWeekId,completedGenreIds,challenges=[]}=safeData;
   const u1=settings.user1||'Jonathan';
   const u2=settings.user2||'Lucy';
+  const currentUserKey=getUserKeyFromEmail(authUser&&authUser.email)||'u1';
+  const pendingChallengeCount=challengePendingForUser(challenges,currentUserKey);
 
   const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
 
@@ -3225,19 +3285,6 @@ function App(){
     })}:w)}));
   }
 
-  function toggleSongFavorite(weekId,artId,songIdx,userKey){
-    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>{
-      if(a.id!==artId)return a;
-      const listenedSongs=(a.listenedSongs||[]).map((s,i)=>{
-        if(i!==songIdx)return s;
-        const current=isFavoriteBy(s,userKey);
-        const favoriteBy={...(s.favoriteBy||{}),[userKey]:!current};
-        return {...s,favoriteBy};
-      });
-      return {...a,listenedSongs};
-    })}:w)}));
-  }
-
   function updateLearningQuiz(weekId,userKey,result){
     update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,learningQuiz:{...(w.learningQuiz||{}),[userKey]:{...result,answeredAt:new Date().toISOString()}}}:w)}));
   }
@@ -3321,6 +3368,11 @@ function App(){
         </div>
       </div>
 
+      {pendingChallengeCount>0&&<div className="challenge-alert" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+        <span>🎯 Tienes {pendingChallengeCount} reto{pendingChallengeCount===1?'':'s'} pendiente{pendingChallengeCount===1?'':'s'}.</span>
+        <button className="btn btn-xs" onClick={()=>setTab('retos')}>Ver retos</button>
+      </div>}
+
       <nav className="nav">
         {[
           ['dashboard','🏠 Dashboard'],
@@ -3333,6 +3385,7 @@ function App(){
         ].map(([id,label])=>(
           <button key={id} className={`nav-btn ${tab===id?'active':''}`} onClick={()=>setTab(id)}>
             {label}
+            {id==='retos'&&pendingChallengeCount>0&&<span className="nav-badge">{pendingChallengeCount}</span>}
             {id==='semana'&&activeWeek&&<span style={{marginLeft:5,width:7,height:7,borderRadius:'50%',background:'var(--c1)',display:'inline-block',verticalAlign:'middle'}}/>}
           </button>
         ))}
@@ -3340,11 +3393,11 @@ function App(){
 
       <div>
         {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
-        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onToggleSongFavorite={toggleSongFavorite} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz}/>}
+        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz}/>}
         {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
         {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
-        {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}}/>}
+        {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}}/>}
         {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade}/>}
       </div>
 
