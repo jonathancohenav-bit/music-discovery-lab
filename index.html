@@ -20,6 +20,8 @@ body{font-family:'Circular','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',
   --border:#2a2a2a;--card-bg:#181818;--surface:#121212;
   --gradient:linear-gradient(180deg,#1f1f1f 0%,#121212 100%);
   --danger:#f15e6c;--warning:#ffa42b;
+  --c1:var(--green);--c2:var(--green);--c3:rgba(29,185,84,.15);--c4:var(--green-dark);
+  --success:var(--green);--muted:var(--text-sub);
 }
 .app{max-width:1280px;margin:0 auto;padding:16px;background:var(--gradient);min-height:100vh}
 /* NAV */
@@ -194,6 +196,13 @@ const {useState,useEffect,useCallback,useMemo,useRef}=React;
 const STORAGE_KEY='musicDiscoveryLab_v1';
 const CLOUD_COLLECTION='musicDiscoveryLab';
 const CLOUD_DOCUMENT='main';
+const ALLOWED_EMAILS=['jonathancohenav@gmail.com','lucymayoneill5@gmail.com'];
+function getUserKeyFromEmail(email){
+  const e=(email||'').toLowerCase();
+  if(e==='jonathancohenav@gmail.com')return 'u1';
+  if(e==='lucymayoneill5@gmail.com')return 'u2';
+  return null;
+}
 
 /* ============================================================
    DATA: INITIAL GENRES (100+)
@@ -703,6 +712,13 @@ function calcArtistAvg(a){
   if(!v.length)return null;
   return v.reduce((a,b)=>a+b,0)/v.length;
 }
+function hasArtistUserEval(a,user){
+  const suf=user==='u1'?'U1':'U2';
+  return !!(a['score'+suf]||a['comment'+suf]||a['fav'+suf]||a['replay'+suf]||a['mood'+suf]||a['situations'+suf]);
+}
+function replayLabel(v){
+  return {si:'Sí',tal_vez:'Tal vez',no:'No'}[v]||'';
+}
 
 /* ============================================================
    SMALL COMPONENTS
@@ -837,8 +853,28 @@ function WeekDetailModal({week,u1,u2,onClose}){
               {week.rating.scoreU1&&<div className="metric"><div className="metric-label">{u1}</div><div className="metric-value">{parseFloat(week.rating.scoreU1).toFixed(1)}</div></div>}
               {week.rating.scoreU2&&<div className="metric"><div className="metric-label">{u2}</div><div className="metric-value">{parseFloat(week.rating.scoreU2).toFixed(1)}</div></div>}
             </div>
-            {week.rating.favSongU1&&<p style={{fontSize:12,marginTop:8}}>🎵 {u1}: {week.rating.favSongU1}</p>}
-            {week.rating.favSongU2&&<p style={{fontSize:12}}>🎵 {u2}: {week.rating.favSongU2}</p>}
+            <div className="grid2" style={{marginTop:10}}>
+              <div style={{fontSize:12}}>
+                <div style={{fontWeight:700,marginBottom:4}}>{u1}</div>
+                {week.rating.favSongU1&&<p>🎵 Canción: {week.rating.favSongU1}</p>}
+                {week.rating.favArtistU1&&<p>⭐ Artista: {week.rating.favArtistU1}</p>}
+                {week.rating.listenAgainU1&&<p>🔁 Volvería: {replayLabel(week.rating.listenAgainU1)}</p>}
+                {week.rating.situationsU1&&<p>📍 Situaciones: {week.rating.situationsU1}</p>}
+                {week.rating.surpriseU1&&<p>✨ Sorpresa: {week.rating.surpriseU1}</p>}
+                {week.rating.hardU1&&<p>🧱 Costó: {week.rating.hardU1}</p>}
+                {week.rating.commentU1&&<p style={{fontStyle:'italic'}}>"{week.rating.commentU1}"</p>}
+              </div>
+              <div style={{fontSize:12}}>
+                <div style={{fontWeight:700,marginBottom:4}}>{u2}</div>
+                {week.rating.favSongU2&&<p>🎵 Canción: {week.rating.favSongU2}</p>}
+                {week.rating.favArtistU2&&<p>⭐ Artista: {week.rating.favArtistU2}</p>}
+                {week.rating.listenAgainU2&&<p>🔁 Volvería: {replayLabel(week.rating.listenAgainU2)}</p>}
+                {week.rating.situationsU2&&<p>📍 Situaciones: {week.rating.situationsU2}</p>}
+                {week.rating.surpriseU2&&<p>✨ Sorpresa: {week.rating.surpriseU2}</p>}
+                {week.rating.hardU2&&<p>🧱 Costó: {week.rating.hardU2}</p>}
+                {week.rating.commentU2&&<p style={{fontStyle:'italic'}}>"{week.rating.commentU2}"</p>}
+              </div>
+            </div>
             {week.rating.comment&&<p style={{marginTop:8,fontSize:13,borderTop:'0.5px solid var(--border)',paddingTop:8}}>{week.rating.comment}</p>}
           </div>
         )}
@@ -855,10 +891,11 @@ function WeekDetailModal({week,u1,u2,onClose}){
                   {a.listened&&<Badge type="completed"/>}
                 </div>
               </div>
-              {(a.scoreU1||a.scoreU2)&&<div className="row" style={{marginTop:3,gap:12,fontSize:12,color:'var(--muted)'}}>
-                {a.scoreU1&&<span>{u1}: {a.scoreU1}</span>}
-                {a.scoreU2&&<span>{u2}: {a.scoreU2}</span>}
+              {(a.scoreU1||a.scoreU2||a.replayU1||a.replayU2)&&<div className="row" style={{marginTop:3,gap:12,fontSize:12,color:'var(--muted)'}}>
+                {a.scoreU1&&<span>{u1}: {a.scoreU1}{a.replayU1?` · Replay: ${replayLabel(a.replayU1)}`:''}</span>}
+                {a.scoreU2&&<span>{u2}: {a.scoreU2}{a.replayU2?` · Replay: ${replayLabel(a.replayU2)}`:''}</span>}
                 {a.commentU1&&<span style={{fontStyle:'italic'}}>"{a.commentU1}"</span>}
+                {a.commentU2&&<span style={{fontStyle:'italic'}}>"{a.commentU2}"</span>}
               </div>}
             </div>
           );
@@ -1051,34 +1088,53 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
 
         <div className="card">
           <h2 style={{marginBottom:12}}>Valoración del género completo</h2>
-          <div className="grid2" style={{marginBottom:10}}>
-            <ScoreInput label={`Nota ${u1} (0-10)`} value={weekRating.scoreU1||''} onChange={v=>setWeekRating(p=>({...p,scoreU1:v}))}/>
-            <ScoreInput label={`Nota ${u2} (0-10)`} value={weekRating.scoreU2||''} onChange={v=>setWeekRating(p=>({...p,scoreU2:v}))}/>
-          </div>
-          <div className="grid2" style={{marginBottom:10}}>
-            <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u1}</label><input value={weekRating.favSongU1||''} onChange={e=>setWeekRating(p=>({...p,favSongU1:e.target.value}))} placeholder="Título..."/></div>
-            <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u2}</label><input value={weekRating.favSongU2||''} onChange={e=>setWeekRating(p=>({...p,favSongU2:e.target.value}))} placeholder="Título..."/></div>
-          </div>
-          <div style={{marginBottom:10}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo escucharíamos de nuevo?</label>
-            <select value={weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgain:e.target.value}))}>
-              <option value="">—</option>
-              <option value="si">Sí, definitivamente</option>
-              <option value="tal_vez">Tal vez</option>
-              <option value="no">No</option>
-            </select>
-          </div>
-          <div style={{marginBottom:10}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué os ha sorprendido?</label>
-            <textarea rows={2} value={weekRating.surprise||''} onChange={e=>setWeekRating(p=>({...p,surprise:e.target.value}))} placeholder="Lo más inesperado..."/>
-          </div>
-          <div style={{marginBottom:10}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué os ha costado?</label>
-            <textarea rows={2} value={weekRating.hard||''} onChange={e=>setWeekRating(p=>({...p,hard:e.target.value}))} placeholder="Lo más difícil de escuchar..."/>
+          <div className="grid2" style={{marginBottom:12}}>
+            <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+              <h3>Evaluación {u1}</h3>
+              <ScoreInput label={`Nota ${u1} (0-10)`} value={weekRating.scoreU1||''} onChange={v=>setWeekRating(p=>({...p,scoreU1:v}))}/>
+              <div style={{height:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Volverías a escuchar este género?</label>
+              <select value={weekRating.listenAgainU1||weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgainU1:e.target.value}))} style={{marginBottom:8}}>
+                <option value="">—</option><option value="si">Sí, definitivamente</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
+              </select>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u1}</label>
+              <input value={weekRating.favSongU1||''} onChange={e=>setWeekRating(p=>({...p,favSongU1:e.target.value}))} placeholder="Título..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Artista favorito {u1}</label>
+              <input value={weekRating.favArtistU1||''} onChange={e=>setWeekRating(p=>({...p,favArtistU1:e.target.value}))} placeholder="Artista..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+              <input value={weekRating.situationsU1||''} onChange={e=>setWeekRating(p=>({...p,situationsU1:e.target.value}))} placeholder="viaje, fiesta, concentración..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te sorprendió?</label>
+              <textarea rows={2} value={weekRating.surpriseU1||weekRating.surprise||''} onChange={e=>setWeekRating(p=>({...p,surpriseU1:e.target.value}))} placeholder="Lo más inesperado..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te costó?</label>
+              <textarea rows={2} value={weekRating.hardU1||weekRating.hard||''} onChange={e=>setWeekRating(p=>({...p,hardU1:e.target.value}))} placeholder="Lo más difícil de escuchar..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
+              <textarea rows={3} value={weekRating.commentU1||''} onChange={e=>setWeekRating(p=>({...p,commentU1:e.target.value}))} placeholder="Reflexión personal..."/>
+            </div>
+            <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+              <h3>Evaluación {u2}</h3>
+              <ScoreInput label={`Nota ${u2} (0-10)`} value={weekRating.scoreU2||''} onChange={v=>setWeekRating(p=>({...p,scoreU2:v}))}/>
+              <div style={{height:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Volverías a escuchar este género?</label>
+              <select value={weekRating.listenAgainU2||weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgainU2:e.target.value}))} style={{marginBottom:8}}>
+                <option value="">—</option><option value="si">Sí, definitivamente</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
+              </select>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u2}</label>
+              <input value={weekRating.favSongU2||''} onChange={e=>setWeekRating(p=>({...p,favSongU2:e.target.value}))} placeholder="Título..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Artista favorito {u2}</label>
+              <input value={weekRating.favArtistU2||''} onChange={e=>setWeekRating(p=>({...p,favArtistU2:e.target.value}))} placeholder="Artista..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+              <input value={weekRating.situationsU2||''} onChange={e=>setWeekRating(p=>({...p,situationsU2:e.target.value}))} placeholder="viaje, fiesta, concentración..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te sorprendió?</label>
+              <textarea rows={2} value={weekRating.surpriseU2||''} onChange={e=>setWeekRating(p=>({...p,surpriseU2:e.target.value}))} placeholder="Lo más inesperado..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te costó?</label>
+              <textarea rows={2} value={weekRating.hardU2||''} onChange={e=>setWeekRating(p=>({...p,hardU2:e.target.value}))} placeholder="Lo más difícil de escuchar..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
+              <textarea rows={3} value={weekRating.commentU2||''} onChange={e=>setWeekRating(p=>({...p,commentU2:e.target.value}))} placeholder="Reflexión personal..."/>
+            </div>
           </div>
           <div style={{marginBottom:14}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario conjunto</label>
-            <textarea rows={3} value={weekRating.comment||''} onChange={e=>setWeekRating(p=>({...p,comment:e.target.value}))} placeholder="Reflexiones, recuerdos, lo que os lleváis de esta semana..."/>
+            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario conjunto opcional</label>
+            <textarea rows={3} value={weekRating.comment||''} onChange={e=>setWeekRating(p=>({...p,comment:e.target.value}))} placeholder="Conclusión conjunta si coincidís en algo..."/>
           </div>
           <button className="btn btn-primary" onClick={onConfirmClose}>✅ Cerrar semana y guardar</button>
         </div>
@@ -1179,42 +1235,47 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
             {isExp&&(
               <div style={{marginTop:10,borderTop:'0.5px solid var(--border)',paddingTop:12}}>
                 <div className="grid2" style={{marginBottom:10}}>
-                  <ScoreInput label={u1} value={artist.scoreU1} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU1',v)}/>
-                  <ScoreInput label={u2} value={artist.scoreU2} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU2',v)}/>
-                </div>
-                <div className="grid2" style={{marginBottom:10}}>
-                  <div>
-                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
-                    <textarea rows={2} style={{fontSize:12}} value={artist.commentU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU1',e.target.value)} placeholder="¿Qué te parece?"/>
-                  </div>
-                  <div>
-                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
-                    <textarea rows={2} style={{fontSize:12}} value={artist.commentU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU2',e.target.value)} placeholder="¿Qué te parece?"/>
-                  </div>
-                </div>
-                <div className="row" style={{marginBottom:10,gap:16,flexWrap:'wrap'}}>
-                  <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
-                    <input type="checkbox" checked={!!artist.favU1} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU1',e.target.checked)} style={{width:'auto'}}/>
-                    ⭐ Favorito {u1}
-                  </label>
-                  <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
-                    <input type="checkbox" checked={!!artist.favU2} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU2',e.target.checked)} style={{width:'auto'}}/>
-                    ⭐ Favorito {u2}
-                  </label>
-                  <div className="row" style={{gap:6}}>
-                    <label style={{fontSize:12,color:'var(--text-sub)'}}>Replay:</label>
-                    <select value={artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replay',e.target.value)} style={{width:'auto',fontSize:12,padding:'4px 8px'}}>
-                      <option value="">—</option>
-                      <option value="si">Sí</option>
-                      <option value="tal_vez">Tal vez</option>
-                      <option value="no">No</option>
+                  <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+                    <h3 style={{marginBottom:10}}>Evaluación {u1}</h3>
+                    <ScoreInput label={`Nota ${u1}`} value={artist.scoreU1} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU1',v)}/>
+                    <div style={{height:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo volverías a escuchar?</label>
+                    <select value={artist.replayU1||artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replayU1',e.target.value)} style={{fontSize:12,marginBottom:8}}>
+                      <option value="">—</option><option value="si">Sí</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
                     </select>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Mood / sensación {u1}</label>
+                    <input value={artist.moodU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'moodU1',e.target.value)} placeholder="energía, nostalgia, calma..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+                    <input value={artist.situationsU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'situationsU1',e.target.value)} placeholder="gym, conducir, cena..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
+                    <textarea rows={2} style={{fontSize:12,marginBottom:8}} value={artist.commentU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU1',e.target.value)} placeholder="¿Qué te parece?"/>
+                    <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
+                      <input type="checkbox" checked={!!artist.favU1} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU1',e.target.checked)} style={{width:'auto'}}/> ⭐ Favorito {u1}
+                    </label>
+                  </div>
+                  <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+                    <h3 style={{marginBottom:10}}>Evaluación {u2}</h3>
+                    <ScoreInput label={`Nota ${u2}`} value={artist.scoreU2} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU2',v)}/>
+                    <div style={{height:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo volverías a escuchar?</label>
+                    <select value={artist.replayU2||artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replayU2',e.target.value)} style={{fontSize:12,marginBottom:8}}>
+                      <option value="">—</option><option value="si">Sí</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
+                    </select>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Mood / sensación {u2}</label>
+                    <input value={artist.moodU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'moodU2',e.target.value)} placeholder="energía, nostalgia, calma..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+                    <input value={artist.situationsU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'situationsU2',e.target.value)} placeholder="gym, conducir, cena..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
+                    <textarea rows={2} style={{fontSize:12,marginBottom:8}} value={artist.commentU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU2',e.target.value)} placeholder="¿Qué te parece?"/>
+                    <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
+                      <input type="checkbox" checked={!!artist.favU2} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU2',e.target.checked)} style={{width:'auto'}}/> ⭐ Favorito {u2}
+                    </label>
                   </div>
                 </div>
                 <div className="row" style={{justifyContent:'space-between',gap:8,paddingTop:10,borderTop:'1px solid var(--border)'}}>
                   <span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>✓ Guardado automáticamente</span>
                   <div className="row" style={{gap:6}}>
-                    {(artist.scoreU1||artist.scoreU2||artist.commentU1||artist.commentU2||artist.favU1||artist.favU2||artist.replay)&&(
+                    {(hasArtistUserEval(artist,'u1')||hasArtistUserEval(artist,'u2'))&&(
                       <button className="btn btn-sm btn-danger" onClick={()=>onClearRating(activeWeek.id,artist.id)}>🗑 Borrar valoración</button>
                     )}
                     <button className="btn btn-sm btn-primary" onClick={()=>setExpandedArtist(null)}>Cerrar</button>
@@ -1549,6 +1610,13 @@ function App(){
           setAuthUser(null);setAuthMode('signed_out');setData(null);setSyncStatus('offline');setSyncMessage('Inicia sesión para acceder.');
           return;
         }
+        const email=(user.email||'').toLowerCase();
+        if(!ALLOWED_EMAILS.includes(email)){
+          setAuthUser(null);setData(null);setAuthMode('error');setSyncStatus('error');
+          setSyncMessage('Cuenta no autorizada. Usa el correo de Jonathan o el de Lucy.');
+          api.signOut(api.auth);
+          return;
+        }
         setAuthUser(user);setAuthMode('loading');setSyncStatus('loading');setSyncMessage('Verificando acceso y cargando nube...');
         const ref=api.doc(api.db,CLOUD_COLLECTION,CLOUD_DOCUMENT);
         unsubscribeDocRef.current=api.onSnapshot(ref,async snap=>{
@@ -1605,20 +1673,27 @@ function App(){
   async function signIn(){
     const api=firebaseApi||await window.firebaseReady;
     setFirebaseApi(api);
-    try{await api.signInWithPopup(api.auth,api.provider);}
-    catch(e){console.warn('Popup login failed, using redirect',e);await api.signInWithRedirect(api.auth,api.provider);}
+    setSyncStatus('loading');setSyncMessage('Abriendo inicio de sesión con Google...');
+    try{
+      await api.signInWithPopup(api.auth,api.provider);
+    }catch(e){
+      console.error('Google login error',e);
+      setAuthMode('error');setSyncStatus('error');
+      let msg='No se pudo iniciar sesión con Google.';
+      if(e.code==='auth/unauthorized-domain')msg='Dominio no autorizado en Firebase Auth. Añade jonathancohenav-bit.github.io en Authentication > Settings > Authorized domains.';
+      if(e.code==='auth/popup-blocked')msg='El navegador bloqueó la ventana de Google. Permite popups para esta web o prueba Safari/Chrome directamente, no desde apps internas.';
+      if(e.code==='auth/popup-closed-by-user')msg='Se cerró la ventana de Google antes de completar el inicio de sesión.';
+      if(e.message)msg+=' Detalle: '+e.message;
+      setSyncMessage(msg);
+    }
   }
   async function signOutNow(){
     const api=firebaseApi||await window.firebaseReady;
     await api.signOut(api.auth);
   }
 
-  if(authMode==='checking')return <AuthGate mode="checking" message="Comprobando sesión persistente..." onLogin={signIn}/>;
-  if(authMode==='signed_out')return <AuthGate mode="signed_out" message="Solo Jonathan y Lucy pueden acceder. La sesión queda iniciada en este navegador." onLogin={signIn}/>;
-  if((authMode==='error'||authMode==='firebase_error')&&!data)return <AuthGate mode="error" message={syncMessage} onLogin={signIn} onSignOut={signOutNow}/>;
-  if(!data)return <AuthGate mode="loading" message={syncMessage} onLogin={signIn}/>;
-
-  const {settings,genres,weeks,activeWeekId,completedGenreIds}=data;
+  const safeData=data||{settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[]};
+  const {settings,genres,weeks,activeWeekId,completedGenreIds}=safeData;
   const u1=settings.user1||'Jonathan';
   const u2=settings.user2||'Lucy';
 
@@ -1651,6 +1726,11 @@ function App(){
     return all.sort((a,b)=>b.avg-a.avg);
   },[completedWeeks]);
 
+  if(authMode==='checking')return <AuthGate mode="checking" message="Comprobando sesión persistente..." onLogin={signIn}/>;
+  if(authMode==='signed_out')return <AuthGate mode="signed_out" message="Solo Jonathan y Lucy pueden acceder. La sesión queda iniciada en este navegador." onLogin={signIn}/>;
+  if((authMode==='error'||authMode==='firebase_error')&&!data)return <AuthGate mode="error" message={syncMessage} onLogin={signIn} onSignOut={signOutNow}/>;
+  if(!data)return <AuthGate mode="loading" message={syncMessage} onLogin={signIn}/>;
+
   function generateWeek(genreId){
     const genre=genres.find(g=>g.id===genreId);
     if(!genre)return;
@@ -1662,7 +1742,8 @@ function App(){
         ...a,
         listened:false,scoreU1:'',scoreU2:'',
         commentU1:'',commentU2:'',
-        mood:'',replay:'',
+        moodU1:'',moodU2:'',situationsU1:'',situationsU2:'',
+        replayU1:'',replayU2:'',
         favU1:false,favU2:false,
         listenedSongs:(a.suggestedSongs||[]).map(s=>({...s,listened:false}))
       }));
@@ -1709,7 +1790,7 @@ function App(){
   }
 
   function clearArtistRatingNow(weekId,artId){
-    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,scoreU1:'',scoreU2:'',commentU1:'',commentU2:'',favU1:false,favU2:false,replay:''}:a)}:w)}));
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,scoreU1:'',scoreU2:'',commentU1:'',commentU2:'',favU1:false,favU2:false,replay:'',replayU1:'',replayU2:'',moodU1:'',moodU2:'',situationsU1:'',situationsU2:''}:a)}:w)}));
     setConfirm(null);
   }
 
