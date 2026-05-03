@@ -195,6 +195,10 @@ textarea{resize:vertical}
 .challenge-type{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;background:rgba(255,164,43,.13);color:#ffd08a;border:1px solid rgba(255,164,43,.25)}
 .challenge-meta{font-size:11px;color:var(--text-sub);line-height:1.45}
 .challenge-result{background:rgba(29,185,84,.10);border:1px solid rgba(29,185,84,.28);border-radius:10px;padding:10px;margin-top:10px}
+.challenge-collapsed-summary{background:var(--bg-elev3);border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0}
+.xp-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.badge-earned{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:rgba(29,185,84,.12);border:1px solid rgba(29,185,84,.28);color:var(--green);font-size:11px;font-weight:800;margin:2px}
+.badge-locked{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:var(--bg-elev3);border:1px solid var(--border);color:var(--text-muted);font-size:11px;font-weight:800;margin:2px}
 
 
 </style>
@@ -1712,7 +1716,7 @@ function getWeekUserProgress(week,userKey){
     const songs=(a.listenedSongs)||[];
     return songs.length?songs.every(song=>isHeardBy(song,userKey)):isHeardBy(a,userKey);
   }).length;
-  const favoriteSongs=artists.filter(a=>!!a['fav'+(userKey==='u1'?'U1':'U2')]).length;
+  const favoriteSongs=artists.reduce((sum,a)=>sum+((a.listenedSongs)||[]).filter(song=>isFavoriteBy(song,userKey)).length,0);
   const pct=totalSongs?Math.round((heardSongs/totalSongs)*100):0;
   const artistPct=totalArtists?Math.round((completedArtists/totalArtists)*100):0;
   return {totalSongs,heardSongs,favoriteSongs,totalArtists,heardArtists,completedArtists,pct,artistPct};
@@ -1789,6 +1793,88 @@ function getComparisonInsights(completedWeeks){
   const divergences=[...allPairs].sort((a,b)=>b.diff-a.diff).slice(0,5);
   const closeMatches=[...allPairs].filter(x=>x.diff<=1).sort((a,b)=>a.diff-b.diff).slice(0,5);
   return {agreement,avgDiff,divergences,closeMatches,totalPairs:allPairs.length};
+}
+
+function getCloseWeekInsights(week,u1Name,u2Name){
+  const artists=(week&&week.artists)||[];
+  const scoredU1=artists.filter(a=>a.scoreU1!==''&&!isNaN(parseFloat(a.scoreU1))).sort((a,b)=>parseFloat(b.scoreU1)-parseFloat(a.scoreU1));
+  const scoredU2=artists.filter(a=>a.scoreU2!==''&&!isNaN(parseFloat(a.scoreU2))).sort((a,b)=>parseFloat(b.scoreU2)-parseFloat(a.scoreU2));
+  const joint=artists.filter(a=>calcArtistAvg(a)!==null).sort((a,b)=>calcArtistAvg(b)-calcArtistAvg(a));
+  const both=artists.filter(a=>a.scoreU1!==''&&a.scoreU2!==''&&!isNaN(parseFloat(a.scoreU1))&&!isNaN(parseFloat(a.scoreU2)));
+  const divisive=both.length?[...both].sort((a,b)=>Math.abs(parseFloat(b.scoreU1)-parseFloat(b.scoreU2))-Math.abs(parseFloat(a.scoreU1)-parseFloat(a.scoreU2)))[0]:null;
+  const consensual=both.length?[...both].sort((a,b)=>Math.abs(parseFloat(a.scoreU1)-parseFloat(a.scoreU2))-Math.abs(parseFloat(b.scoreU1)-parseFloat(b.scoreU2)))[0]:null;
+  const p1=getWeekUserProgress(week,'u1');
+  const p2=getWeekUserProgress(week,'u2');
+  const quiz=week&&week.learningQuiz?week.learningQuiz:{};
+  const q1=quiz.u1; const q2=quiz.u2;
+  let quizWinner='—';
+  if(q1&&q2){quizWinner=(Number(q1.score)>Number(q2.score)?u1Name:(Number(q2.score)>Number(q1.score)?u2Name:'Empate'));}
+  else if(q1)quizWinner=u1Name; else if(q2)quizWinner=u2Name;
+  return {
+    bestU1:scoredU1[0]||null,bestU2:scoredU2[0]||null,bestJoint:joint[0]||null,divisive,consensual,
+    progressU1:p1,progressU2:p2,quizWinner
+  };
+}
+function buildCloseWeekInsightsSnapshot(week,u1Name,u2Name){
+  const x=getCloseWeekInsights(week,u1Name,u2Name);
+  return {
+    bestArtistU1:x.bestU1?x.bestU1.name:null,
+    bestArtistU2:x.bestU2?x.bestU2.name:null,
+    bestJointArtist:x.bestJoint?x.bestJoint.name:null,
+    mostDivisive:x.divisive?x.divisive.name:null,
+    mostConsensual:x.consensual?x.consensual.name:null,
+    progressU1:x.progressU1,
+    progressU2:x.progressU2,
+    quizWinner:x.quizWinner
+  };
+}
+function getUserGamificationStats(weeks,challenges,userKey){
+  const completedWeeks=(weeks||[]).filter(w=>w.status==='completed');
+  let songs=0,fullWeeks=0,favs=0,tests=0,testScore=0,challengeWins=0,completedChallenges=0;
+  completedWeeks.forEach(w=>{
+    const p=getWeekUserProgress(w,userKey); songs+=p.heardSongs; favs+=p.favoriteSongs; if(p.pct>=100)fullWeeks++;
+    const q=w.learningQuiz&&w.learningQuiz[userKey]; if(q&&typeof q.score!=='undefined'){tests++;testScore+=Number(q.score)||0;}
+  });
+  (challenges||[]).forEach(c=>{
+    if(c.status==='completed'&&c.to===userKey){completedChallenges++;
+      if(c.guessMode==='score'&&c.senderScore!==''&&c.response&&c.response.guessScore!==''){
+        if(Math.abs(Number(c.senderScore)-Number(c.response.guessScore))<=1)challengeWins++;
+      } else if(c.guessMode==='qualitative'&&c.senderQualitative&&c.response&&c.response.guessQualitative===c.senderQualitative){challengeWins++;}
+    }
+  });
+  const xp=songs*2+fullWeeks*50+tests*15+completedChallenges*20+challengeWins*20+favs*5;
+  const level=Math.max(1,Math.floor(xp/150)+1);
+  const next=level*150;
+  const current=Math.max(0,xp-(level-1)*150);
+  const needed=150;
+  const badges=[];
+  if(songs>=25)badges.push({id:'listener25',label:'Oyente 25',icon:'🎧'});
+  if(songs>=100)badges.push({id:'listener100',label:'Maratón 100',icon:'🔥'});
+  if(fullWeeks>=1)badges.push({id:'complete1',label:'Completista',icon:'✅'});
+  if(fullWeeks>=5)badges.push({id:'complete5',label:'Constante',icon:'📈'});
+  if(tests>=5)badges.push({id:'tests5',label:'Alumno aplicado',icon:'🧠'});
+  if(challengeWins>=3)badges.push({id:'challenge3',label:'Adivino musical',icon:'🎯'});
+  if(favs>=10)badges.push({id:'fav10',label:'Cazador de joyas',icon:'⭐'});
+  return {xp,level,next,current,needed,songs,fullWeeks,favs,tests,avgTest:tests?testScore/tests:null,completedChallenges,challengeWins,badges};
+}
+function XpUserCard({name,stats,userKey}){
+  const pct=Math.min(100,Math.round((stats.current/stats.needed)*100));
+  const locked=[
+    {id:'listener25',label:'Oyente 25',icon:'🎧'},{id:'listener100',label:'Maratón 100',icon:'🔥'},{id:'complete1',label:'Completista',icon:'✅'},
+    {id:'complete5',label:'Constante',icon:'📈'},{id:'tests5',label:'Alumno aplicado',icon:'🧠'},{id:'challenge3',label:'Adivino musical',icon:'🎯'},{id:'fav10',label:'Cazador de joyas',icon:'⭐'}
+  ].filter(b=>!stats.badges.some(x=>x.id===b.id));
+  return <div className="xp-card">
+    <div className="row" style={{justifyContent:'space-between',marginBottom:8}}><span className={`user-chip ${userKey}`}>{name}</span><strong>Nivel {stats.level}</strong></div>
+    <div className="muted" style={{fontSize:12,marginBottom:6}}>{stats.xp} XP · {stats.current}/{stats.needed} hasta el siguiente nivel</div>
+    <div className="progress-bar" style={{marginBottom:10}}><div className="progress-fill" style={{width:`${pct}%`}}/></div>
+    <div className="grid3" style={{marginBottom:10}}>
+      <div className="metric card-sm"><div className="metric-label">Canciones</div><div className="metric-value">{stats.songs}</div></div>
+      <div className="metric card-sm"><div className="metric-label">Semanas 100%</div><div className="metric-value">{stats.fullWeeks}</div></div>
+      <div className="metric card-sm"><div className="metric-label">Retos</div><div className="metric-value">{stats.completedChallenges}</div></div>
+    </div>
+    <div>{stats.badges.map(b=><span key={b.id} className="badge-earned">{b.icon} {b.label}</span>)}{!stats.badges.length&&<span className="muted" style={{fontSize:12}}>Sin insignias todavía.</span>}</div>
+    {!!locked.length&&<div style={{marginTop:6}}>{locked.slice(0,3).map(b=><span key={b.id} className="badge-locked">🔒 {b.label}</span>)}</div>}
+  </div>;
 }
 
 /* ============================================================
@@ -2081,7 +2167,7 @@ function WeekDetailModal({week,u1,u2,onClose}){
 /* ============================================================
    TABS
    ============================================================ */
-function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artistRankings,genres,completedGenreIds,onGenerate,onGoSemana,onManualSelect}){
+function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artistRankings,genres,completedGenreIds,challenges,onGenerate,onGoSemana,onManualSelect}){
   const avgU1=useMemo(()=>{
     const v=completedWeeks.filter(w=>!isNaN(parseFloat(w.rating?.scoreU1))).map(w=>parseFloat(w.rating.scoreU1));
     return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;
@@ -2095,6 +2181,8 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   const activeProgress=useMemo(()=>getWeekSongProgress(activeWeek),[activeWeek]);
   const streak=useMemo(()=>getCurrentStreak(completedWeeks),[completedWeeks]);
   const comparison=useMemo(()=>getComparisonInsights(completedWeeks),[completedWeeks]);
+  const xpU1=useMemo(()=>getUserGamificationStats(weeks,challenges,'u1'),[weeks,challenges]);
+  const xpU2=useMemo(()=>getUserGamificationStats(weeks,challenges,'u2'),[weeks,challenges]);
 
   return(
     <div>
@@ -2137,6 +2225,12 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
           <div className="insight-value">{comparison.divergences[0]?comparison.divergences[0].diff.toFixed(1):'—'}</div>
           <div className="insight-copy">{comparison.divergences[0]?`${comparison.divergences[0].name} · ${u1} ${comparison.divergences[0].u1} / ${u2} ${comparison.divergences[0].u2}`:'Aún no hay discrepancias medibles'}</div>
         </div>
+      </div>
+
+
+      <div className="grid2" style={{marginBottom:16}}>
+        <XpUserCard name={u1} stats={xpU1} userKey="u1" />
+        <XpUserCard name={u2} stats={xpU2} userKey="u2" />
       </div>
 
       {activeWeek&&(
@@ -2268,12 +2362,28 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
     const divisive=both.length?[...both].sort((a,b)=>Math.abs(parseFloat(b.scoreU1)-parseFloat(b.scoreU2))-Math.abs(parseFloat(a.scoreU1)-parseFloat(a.scoreU2)))[0]:null;
     const consensual=both.filter(a=>calcArtistAvg(a)>=7).sort((a,b)=>Math.abs(parseFloat(a.scoreU1)-parseFloat(a.scoreU2))-Math.abs(parseFloat(b.scoreU1)-parseFloat(b.scoreU2)))[0]||null;
     const topJoint=[...arts].filter(a=>calcArtistAvg(a)!==null).sort((a,b)=>calcArtistAvg(b)-calcArtistAvg(a)).slice(0,3);
+    const closeInsights=getCloseWeekInsights(activeWeek,u1,u2);
 
     return(
       <div>
         <div className="row" style={{marginBottom:16}}>
           <button className="btn btn-sm" onClick={()=>setWeekCloseMode(false)}>← Volver</button>
           <h1>Cerrar semana: {activeWeek.genreName}</h1>
+        </div>
+
+
+        <div className="card" style={{marginBottom:12,borderLeft:'3px solid var(--green)'}}>
+          <h2 style={{marginBottom:8}}>✨ Insights de cierre</h2>
+          <div className="grid2">
+            <div className="learning-box"><div className="learning-box-title">Artista favorito {u1}</div><div>{closeInsights.bestU1?`${closeInsights.bestU1.name} (${closeInsights.bestU1.scoreU1})`:'—'}</div></div>
+            <div className="learning-box"><div className="learning-box-title">Artista favorito {u2}</div><div>{closeInsights.bestU2?`${closeInsights.bestU2.name} (${closeInsights.bestU2.scoreU2})`:'—'}</div></div>
+            <div className="learning-box"><div className="learning-box-title">Ganador conjunto</div><div>{closeInsights.bestJoint?`${closeInsights.bestJoint.name} (${calcArtistAvg(closeInsights.bestJoint).toFixed(1)})`:'—'}</div></div>
+            <div className="learning-box"><div className="learning-box-title">Mayor discrepancia</div><div>{closeInsights.divisive?`${closeInsights.divisive.name} · Δ ${Math.abs(parseFloat(closeInsights.divisive.scoreU1)-parseFloat(closeInsights.divisive.scoreU2)).toFixed(1)}`:'—'}</div></div>
+            <div className="learning-box"><div className="learning-box-title">Progreso {u1}</div><div>{closeInsights.progressU1.heardSongs}/{closeInsights.progressU1.totalSongs} canciones · {closeInsights.progressU1.pct}%</div></div>
+            <div className="learning-box"><div className="learning-box-title">Progreso {u2}</div><div>{closeInsights.progressU2.heardSongs}/{closeInsights.progressU2.totalSongs} canciones · {closeInsights.progressU2.pct}%</div></div>
+            <div className="learning-box"><div className="learning-box-title">Test Aprende</div><div>{closeInsights.quizWinner}</div></div>
+            <div className="learning-box"><div className="learning-box-title">Consenso</div><div>{closeInsights.consensual?closeInsights.consensual.name:'—'}</div></div>
+          </div>
         </div>
 
         {(topJoint.length>0||divisive||consensual)&&(
@@ -2543,12 +2653,14 @@ function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
   const comparison=getComparisonInsights(completedWeeks);
   const quizStats=calcQuizStats(completedWeeks);
   const quizRows=quizStats.rows||[];
+  const xpU1=getUserGamificationStats(completedWeeks,[], 'u1');
+  const xpU2=getUserGamificationStats(completedWeeks,[], 'u2');
 
   return(
     <div>
       <h1 style={{marginBottom:10}}>Rankings</h1>
       <div className="sub-tabs">
-        {[['genres','🎵 Géneros'],['artists','🎤 Artistas'],['families','🗂 Familias'],['divisive','⚡ Divisivos'],['match','🤝 Coincidencias'],['quiz','🧠 Tests']].map(([id,l])=>(
+        {[['genres','🎵 Géneros'],['artists','🎤 Artistas'],['families','🗂 Familias'],['divisive','⚡ Divisivos'],['match','🤝 Coincidencias'],['quiz','🧠 Tests'],['xp','🎖 Progreso']].map(([id,l])=>(
           <button key={id} className={`sub-tab ${rt===id?'active':''}`} onClick={()=>setRt(id)}>{l}</button>
         ))}
       </div>
@@ -2707,6 +2819,13 @@ function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
           </div>
         </div>
       )}
+
+      {rt==='xp'&&(
+        <div className="grid2">
+          <XpUserCard name={u1} stats={xpU1} userKey="u1" />
+          <XpUserCard name={u2} stats={xpU2} userKey="u2" />
+        </div>
+      )}
     </div>
   );
 }
@@ -2860,6 +2979,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   }
   function ChallengeCard({c}){
     const [local,setLocal]=useState(c.response||{});
+    const [expanded,setExpanded]=useState(!(c.status==='completed'&&c.type==='genre'));
     const genre=genres.find(g=>g.id===c.genreId);
     const isSongLike=c.type==='song'||(c.type==='mood'&&(c.response?.artistName&&c.response?.songTitle||local.artistName&&local.songTitle));
     const displayArtist=c.type==='mood'?(c.response?.artistName||local.artistName||'Canción propuesta por el retado'):c.artistName;
@@ -2883,10 +3003,18 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
       {c.type==='mood'&&<div className="learning-box" style={{marginBottom:8}}><div className="learning-box-title">Reto mood</div><div style={{fontSize:13}}>El retado debe elegir una canción y artista que describan su mood. Después podrá abrirla en Spotify y valorarla si quiere.</div></div>}
       {c.guessMode==='score'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo opcional: adivinar la valoración de {names[c.from]} en puntos.</div>}
       {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo opcional: adivinar el calificativo de {names[c.from]}: de “me encantó” a “no me gustó”.</div>}
-      {c.type==='genre'&&genre&&<div className="challenge-genre-panel">
+      {c.type==='genre'&&genre&&c.status==='completed'&&!expanded&&<div className="challenge-collapsed-summary">
+        {(()=>{const st=genreProgressStats(c,genre);return <>
+          <div className="row" style={{justifyContent:'space-between',gap:8}}><strong>🎧 Género completado: {genre.name}</strong><span className="sync-pill sync-saved">{st.pct}%</span></div>
+          <div className="muted" style={{fontSize:12,marginTop:4}}>{st.done}/{st.total} canciones registradas. El detalle está comprimido para no ocupar toda la pantalla.</div>
+          <button className="btn btn-sm" style={{marginTop:8}} onClick={()=>setExpanded(true)}>Ver detalle del género</button>
+        </>;})()}
+      </div>}
+      {c.type==='genre'&&genre&&expanded&&<div className="challenge-genre-panel">
         {(()=>{const st=genreProgressStats(c,genre);return <>
           <div className="row" style={{justifyContent:'space-between',marginBottom:6}}><strong>🎧 Género de reto: {genre.name}</strong><span className="muted" style={{fontSize:11}}>{st.done}/{st.total} canciones · {st.pct}%</span></div>
           <div className="progress-bar" style={{marginBottom:8}}><div className="progress-fill" style={{width:`${st.pct}%`}}/></div>
+          {c.status==='completed'&&<button className="btn btn-xs" style={{marginTop:8}} onClick={()=>setExpanded(false)}>Comprimir detalle</button>}
         </>;})()}
         <p className="muted" style={{fontSize:12,marginBottom:8}}>{genre.description}</p>
         {(genre.artists||[]).slice(0,8).map(a=><div key={a.id} style={{fontSize:12,padding:'7px 0',borderTop:'0.5px solid var(--border)'}}>
@@ -3303,7 +3431,7 @@ function App(){
   function closeWeek(){
     update(prev=>({
       ...prev,
-      weeks:prev.weeks.map(w=>w.id===activeWeek.id?{...w,status:'completed',rating:weekRating}:w),
+      weeks:prev.weeks.map(w=>w.id===activeWeek.id?{...w,status:'completed',rating:weekRating,insights:buildCloseWeekInsightsSnapshot(activeWeek,prev.settings?.user1||'Jonathan',prev.settings?.user2||'Lucy')}:w),
       activeWeekId:null,
       completedGenreIds:[...(prev.completedGenreIds||[]),activeWeek.genreId]
     }));
