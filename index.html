@@ -135,9 +135,41 @@ window.addEventListener('error',function(e){
 });
 </script>
 
+<!-- Firebase / Firestore cloud sync. CDN mode, compatible with this single-file GitHub Pages app. -->
+<script>
+  window.MDLFirebaseReady = new Promise(function(resolve,reject){
+    window.__resolveMDLFirebaseReady = resolve;
+    window.__rejectMDLFirebaseReady = reject;
+  });
+</script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDb2CBZONsx_MkZFsVTdRZQf_-ojNYlNjw",
+    authDomain: "music-discovery-lab-jonathan.firebaseapp.com",
+    projectId: "music-discovery-lab-jonathan",
+    storageBucket: "music-discovery-lab-jonathan.firebasestorage.app",
+    messagingSenderId: "269677896387",
+    appId: "1:269677896387:web:0035968c3827b785e23876"
+  };
+
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.__resolveMDLFirebaseReady({ app, db, doc, getDoc, setDoc, onSnapshot, serverTimestamp });
+  } catch (e) {
+    window.__rejectMDLFirebaseReady(e);
+  }
+</script>
+
 <script type="text/babel">
 const {useState,useEffect,useCallback,useMemo,useRef}=React;
 const STORAGE_KEY='musicDiscoveryLab_v1';
+const CLIENT_ID_KEY='musicDiscoveryLab_clientId';
+const FIRESTORE_COLLECTION='musicDiscoveryLab';
+const FIRESTORE_DOCUMENT='main';
 
 /* ============================================================
    DATA: INITIAL GENRES (100+)
@@ -604,12 +636,51 @@ const INITIAL_GENRES=[
 /* ============================================================
    STORAGE HELPERS
    ============================================================ */
+function validDataShape(d){
+  return !!(d && typeof d==='object' && d.settings && Array.isArray(d.genres) && Array.isArray(d.weeks));
+}
+
+function normalizeData(d){
+  const now=new Date().toISOString();
+  const base=initData();
+  if(!d||typeof d!=='object') return base;
+  return{
+    ...base,
+    ...d,
+    settings:{...base.settings,...(d.settings||{})},
+    genres:Array.isArray(d.genres)?d.genres:base.genres,
+    weeks:Array.isArray(d.weeks)?d.weeks:[],
+    activeWeekId:d.activeWeekId||null,
+    completedGenreIds:Array.isArray(d.completedGenreIds)?[...new Set(d.completedGenreIds)]:[],
+    createdAt:d.createdAt||now,
+    updatedAt:d.updatedAt||now
+  };
+}
+
+function getClientId(){
+  try{
+    let id=localStorage.getItem(CLIENT_ID_KEY);
+    if(!id){
+      id='client_'+Math.random().toString(36).slice(2)+'_'+Date.now().toString(36);
+      localStorage.setItem(CLIENT_ID_KEY,id);
+    }
+    return id;
+  }catch(e){
+    return 'client_'+Math.random().toString(36).slice(2);
+  }
+}
+
+function stableStateString(d){
+  try{return JSON.stringify(normalizeData(d));}
+  catch{return '';}
+}
+
 function loadData(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
     if(raw){
       const d=JSON.parse(raw);
-      if(d&&d.settings&&d.genres) return d;
+      if(d&&d.settings&&d.genres) return normalizeData(d);
     }
   }catch(e){console.warn('Error loading localStorage:',e);}
   return null;
@@ -617,8 +688,10 @@ function loadData(){
 
 function saveData(data){
   try{
-    localStorage.setItem(STORAGE_KEY,JSON.stringify({...data,updatedAt:new Date().toISOString()}));
-  }catch(e){console.warn('Error saving localStorage:',e);}
+    const next=normalizeData({...data,updatedAt:data.updatedAt||new Date().toISOString()});
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(next));
+    return true;
+  }catch(e){console.warn('Error saving localStorage:',e);return false;}
 }
 
 function initData(){
@@ -1386,7 +1459,7 @@ function BibliotecaTab({genres,filteredGenres,genreSearch,setGenreSearch,genreFi
   );
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,cloudStatus,cloudError,onForceSync}){
   const [form,setForm]=useState({...settings});
   useEffect(()=>setForm({...settings}),[settings]);
   return(
@@ -1402,10 +1475,23 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset}){
       </div>
 
       <div className="card" style={{marginBottom:12}}>
+        <h2 style={{marginBottom:6}}>Sincronización en la nube</h2>
+        <p className="muted" style={{fontSize:12,marginBottom:12}}>
+          Firestore es la fuente principal compartida para Jonathan y Lucy. localStorage queda como copia local de emergencia.
+        </p>
+        <div className="row" style={{marginBottom:10}}>
+          <span className="badge" style={{background:cloudStatus==='synced'?'rgba(29,185,84,.15)':cloudStatus==='saving'?'rgba(255,164,43,.15)':cloudStatus==='error'?'rgba(241,94,108,.15)':'rgba(179,179,179,.15)',color:cloudStatus==='synced'?'var(--green)':cloudStatus==='saving'?'var(--warning)':cloudStatus==='error'?'var(--danger)':'var(--text-sub)'}}>
+            {cloudStatus==='synced'?'Guardado en la nube':cloudStatus==='saving'?'Guardando…':cloudStatus==='cloud-loading'?'Cargando nube…':cloudStatus==='error'?'Error de nube':'Inicializando…'}
+          </span>
+          <button className="btn btn-sm" onClick={onForceSync}>Forzar sincronización</button>
+        </div>
+        {cloudError&&<p className="muted" style={{fontSize:12,color:'var(--danger)',marginBottom:10}}>Último error: {cloudError}</p>}
+      </div>
+
+      <div className="card" style={{marginBottom:12}}>
         <h2 style={{marginBottom:6}}>Backup y datos</h2>
         <p className="muted" style={{fontSize:12,marginBottom:12}}>
-          Los datos se guardan automáticamente en localStorage del navegador.<br/>
-          Exporta un backup JSON para no perder nada si limpias el navegador.
+          Aunque la app guarda en Firestore, exporta un backup JSON de vez en cuando, sobre todo antes de cambios grandes.
         </p>
         <div className="row">
           <button className="btn" onClick={onExport}>⬇ Exportar backup JSON</button>
@@ -1446,15 +1532,131 @@ function App(){
   const [newArtistForm,setNewArtistForm]=useState(null);
   const [manualGenreSelect,setManualGenreSelect]=useState(false);
   const [viewWeek,setViewWeek]=useState(null);
+  const [cloudStatus,setCloudStatus]=useState('loading');
+  const [cloudError,setCloudError]=useState('');
+  const latestDataRef=useRef(data);
+  const remoteApplyingRef=useRef(false);
+  const cloudInitializedRef=useRef(false);
+  const cloudRefRef=useRef(null);
+  const lastCloudJsonRef=useRef('');
+  const saveTimerRef=useRef(null);
+  const clientIdRef=useRef(getClientId());
 
   const {settings,genres,weeks,activeWeekId,completedGenreIds}=data;
   const u1=settings.user1||'Jonathan';
   const u2=settings.user2||'Lucy';
 
-  // Save on every data change
-  useEffect(()=>{saveData(data);},[data]);
+  // Always keep a local emergency copy updated.
+  useEffect(()=>{
+    latestDataRef.current=data;
+    saveData(data);
+  },[data]);
 
-  const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
+  // Initial cloud load + live listener. Firestore document used: musicDiscoveryLab/main
+  useEffect(()=>{
+    let unsub=null;
+    let cancelled=false;
+    (async()=>{
+      try{
+        setCloudStatus('cloud-loading');
+        const fb=await window.MDLFirebaseReady;
+        if(cancelled)return;
+        const ref=fb.doc(fb.db,FIRESTORE_COLLECTION,FIRESTORE_DOCUMENT);
+        cloudRefRef.current=ref;
+        const snap=await fb.getDoc(ref);
+        const localNow=normalizeData(latestDataRef.current);
+        if(snap.exists() && validDataShape(snap.data().appState)){
+          const remote=normalizeData(snap.data().appState);
+          remoteApplyingRef.current=true;
+          latestDataRef.current=remote;
+          setData(remote);
+          saveData(remote);
+          lastCloudJsonRef.current=stableStateString(remote);
+          setCloudStatus('synced');
+          setTimeout(()=>{remoteApplyingRef.current=false;},0);
+        }else{
+          const payload={...localNow,updatedAt:new Date().toISOString()};
+          await fb.setDoc(ref,{appState:payload,updatedAt:fb.serverTimestamp(),createdAt:fb.serverTimestamp(),updatedBy:clientIdRef.current},{merge:true});
+          lastCloudJsonRef.current=stableStateString(payload);
+          setCloudStatus('synced');
+        }
+        cloudInitializedRef.current=true;
+        unsub=fb.onSnapshot(ref,(docSnap)=>{
+          try{
+            if(!docSnap.exists())return;
+            const remoteRaw=docSnap.data().appState;
+            if(!validDataShape(remoteRaw))return;
+            const remote=normalizeData(remoteRaw);
+            const remoteStr=stableStateString(remote);
+            if(remoteStr===lastCloudJsonRef.current || remoteStr===stableStateString(latestDataRef.current)){
+              setCloudStatus('synced');
+              return;
+            }
+            remoteApplyingRef.current=true;
+            latestDataRef.current=remote;
+            setData(remote);
+            saveData(remote);
+            lastCloudJsonRef.current=remoteStr;
+            setCloudStatus('synced');
+            setTimeout(()=>{remoteApplyingRef.current=false;},0);
+          }catch(e){
+            console.warn('Firestore snapshot error:',e);
+            setCloudStatus('error');setCloudError(e.message||String(e));
+          }
+        },(err)=>{
+          console.warn('Firestore listener error:',err);
+          setCloudStatus('error');setCloudError(err.message||String(err));
+        });
+      }catch(e){
+        console.warn('Cloud init error:',e);
+        setCloudStatus('error');setCloudError(e.message||String(e));
+        cloudInitializedRef.current=true;
+      }
+    })();
+    return()=>{cancelled=true;if(unsub)unsub();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);};
+  },[]);
+
+  // Debounced cloud save after every local change.
+  useEffect(()=>{
+    if(!cloudInitializedRef.current || remoteApplyingRef.current || !cloudRefRef.current)return;
+    const next=normalizeData({...data,updatedAt:new Date().toISOString()});
+    const nextStr=stableStateString(next);
+    if(nextStr===lastCloudJsonRef.current)return;
+    if(saveTimerRef.current)clearTimeout(saveTimerRef.current);
+    setCloudStatus('saving');
+    saveTimerRef.current=setTimeout(async()=>{
+      try{
+        const fb=await window.MDLFirebaseReady;
+        await fb.setDoc(cloudRefRef.current,{appState:next,updatedAt:fb.serverTimestamp(),updatedBy:clientIdRef.current},{merge:true});
+        lastCloudJsonRef.current=nextStr;
+        setCloudStatus('synced');setCloudError('');
+      }catch(e){
+        console.warn('Cloud save error:',e);
+        setCloudStatus('error');setCloudError(e.message||String(e));
+      }
+    },650);
+    return()=>{if(saveTimerRef.current)clearTimeout(saveTimerRef.current);};
+  },[data]);
+
+  const update=useCallback(fn=>setData(prev=>normalizeData({...fn(prev),updatedAt:new Date().toISOString()})),[]);
+
+
+  const forceCloudSync=useCallback(async()=>{
+    try{
+      setCloudStatus('saving');
+      const fb=await window.MDLFirebaseReady;
+      const ref=cloudRefRef.current||fb.doc(fb.db,FIRESTORE_COLLECTION,FIRESTORE_DOCUMENT);
+      cloudRefRef.current=ref;
+      const next=normalizeData({...latestDataRef.current,updatedAt:new Date().toISOString()});
+      await fb.setDoc(ref,{appState:next,updatedAt:fb.serverTimestamp(),updatedBy:clientIdRef.current},{merge:true});
+      lastCloudJsonRef.current=stableStateString(next);
+      setCloudStatus('synced');setCloudError('');
+      alert('✅ Sincronización enviada a Firestore.');
+    }catch(e){
+      setCloudStatus('error');setCloudError(e.message||String(e));
+      alert('❌ Error al sincronizar: '+(e.message||e));
+    }
+  },[]);
 
   const activeWeek=useMemo(()=>weeks.find(w=>w.id===activeWeekId),[weeks,activeWeekId]);
   const completedWeeks=useMemo(()=>weeks.filter(w=>w.status==='completed'),[weeks]);
@@ -1546,7 +1748,7 @@ function App(){
   }
 
   function wipeAllNow(){
-    const fresh=initData();setData(fresh);saveData(fresh);
+    const fresh=normalizeData({...initData(),updatedAt:new Date().toISOString()});setData(fresh);saveData(fresh);
     setConfirm(null);
   }
 
@@ -1562,7 +1764,7 @@ function App(){
     reader.onload=ev=>{
       try{
         const d=JSON.parse(ev.target.result);
-        if(d&&d.settings&&d.genres){setData(d);alert('✅ Backup importado correctamente.');}
+        if(d&&d.settings&&d.genres){setData(normalizeData({...d,updatedAt:new Date().toISOString()}));alert('✅ Backup importado correctamente. Se subirá también a Firestore.');}
         else alert('❌ Archivo inválido.');
       }catch{alert('❌ Error al parsear el archivo.');}
     };
@@ -1582,7 +1784,12 @@ function App(){
           <div style={{fontWeight:500,fontSize:17,color:'var(--c2)'}}>Music Discovery Lab</div>
           <div className="muted" style={{fontSize:12}}>{u1} & {u2} · {completedWeeks.length} semanas · {genres.length} géneros</div>
         </div>
-        {activeWeek&&<div style={{marginLeft:'auto'}}><Badge type="in_progress"/></div>}
+        <div style={{marginLeft:'auto'}} className="row">
+          <span className="badge" style={{background:cloudStatus==='synced'?'rgba(29,185,84,.15)':cloudStatus==='saving'?'rgba(255,164,43,.15)':cloudStatus==='error'?'rgba(241,94,108,.15)':'rgba(179,179,179,.15)',color:cloudStatus==='synced'?'var(--green)':cloudStatus==='saving'?'var(--warning)':cloudStatus==='error'?'var(--danger)':'var(--text-sub)'}}>
+            {cloudStatus==='synced'?'☁ Guardado':cloudStatus==='saving'?'☁ Guardando…':cloudStatus==='cloud-loading'?'☁ Cargando…':cloudStatus==='error'?'☁ Error':'☁ Iniciando…'}
+          </span>
+          {activeWeek&&<Badge type="in_progress"/>}
+        </div>
       </div>
 
       <nav className="nav">
@@ -1607,7 +1814,7 @@ function App(){
         {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
         {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:''},{title:'',note:''}]}})}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} cloudStatus={cloudStatus} cloudError={cloudError} onForceSync={forceCloudSync}/>}
       </div>
 
       {/* MODALS */}
