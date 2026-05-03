@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Discovery Lab 🎵</title>
+<script>
+(function(){var w=console.warn;console.warn=function(){var m=arguments[0];if(typeof m==='string'&&m.indexOf('in-browser Babel transformer')>-1)return;return w.apply(console,arguments);};})();
+</script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.5/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Circular','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#000;color:#fff;min-height:100vh;-webkit-font-smoothing:antialiased}
+:root{
+  --green:#1DB954;--green-hover:#1ED760;--green-dark:#169C46;
+  --bg:#000;--bg-elev:#121212;--bg-elev2:#181818;--bg-elev3:#242424;--bg-hover:#2a2a2a;
+  --text:#fff;--text-sub:#b3b3b3;--text-muted:#6a6a6a;
+  --border:#2a2a2a;--card-bg:#181818;--surface:#121212;
+  --gradient:linear-gradient(180deg,#1f1f1f 0%,#121212 100%);
+  --danger:#f15e6c;--warning:#ffa42b;
+}
+.app{max-width:1280px;margin:0 auto;padding:16px;background:var(--gradient);min-height:100vh}
+/* NAV */
+.nav{display:flex;gap:8px;padding:6px;background:rgba(0,0,0,.5);backdrop-filter:blur(20px);border-radius:500px;margin-bottom:24px;overflow-x:auto;flex-wrap:wrap;border:1px solid var(--border)}
+.nav-btn{padding:10px 20px;border:none;background:transparent;border-radius:500px;cursor:pointer;font-size:14px;color:var(--text-sub);white-space:nowrap;transition:all .2s;font-family:inherit;font-weight:600}
+.nav-btn:hover{color:var(--text);transform:scale(1.04)}
+.nav-btn.active{background:var(--text);color:#000}
+/* CARDS */
+.card{background:var(--card-bg);border-radius:8px;padding:20px;margin-bottom:16px;transition:background .2s}
+.card:hover{background:var(--bg-elev2)}
+.card-sm{padding:14px}
+/* GRID */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+/* METRIC */
+.metric{background:var(--bg-elev2);border-radius:8px;padding:18px;text-align:center;transition:background .2s}
+.metric:hover{background:var(--bg-elev3)}
+.metric-label{font-size:11px;color:var(--text-sub);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;font-weight:700}
+.metric-value{font-size:28px;font-weight:700;color:var(--green);letter-spacing:-.5px}
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:500px;font-size:10px;font-weight:700;line-height:1.6;text-transform:uppercase;letter-spacing:.5px}
+.badge-core{background:rgba(29,185,84,.15);color:var(--green)}
+.badge-variation{background:rgba(255,164,43,.15);color:var(--warning)}
+.badge-wildcard{background:rgba(186,113,255,.15);color:#ba71ff}
+.badge-completed{background:rgba(29,185,84,.15);color:var(--green)}
+.badge-planned{background:rgba(179,179,179,.15);color:var(--text-sub)}
+.badge-inprogress{background:rgba(70,131,255,.18);color:#7eb0ff}
+/* TYPOGRAPHY */
+h1{font-size:32px;font-weight:900;margin-bottom:6px;letter-spacing:-1px}
+h2{font-size:22px;font-weight:700;margin-bottom:12px;letter-spacing:-.5px}
+h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.muted{color:var(--text-sub);font-size:14px}
+/* BUTTONS */
+.btn{padding:10px 22px;border-radius:500px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:14px;transition:all .2s;font-family:inherit;font-weight:700}
+.btn:hover{border-color:var(--text);background:var(--bg-hover);transform:scale(1.04)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--green);color:#000;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-hover);border-color:var(--green-hover);transform:scale(1.04)}
+.btn-danger{background:transparent;color:var(--danger);border-color:var(--danger)}
+.btn-danger:hover{background:rgba(241,94,108,.1)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-xs{padding:4px 10px;font-size:11px}
+/* FORMS */
+input,select,textarea{padding:10px 14px;border-radius:4px;border:1px solid var(--border);font-size:14px;width:100%;font-family:inherit;background:var(--bg-elev3);color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--text);background:var(--bg-elev3)}
+input::placeholder,textarea::placeholder{color:var(--text-muted)}
+textarea{resize:vertical}
+/* LAYOUT HELPERS */
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:8px}
+/* ARTIST CARD */
+.artist-card{border-radius:8px;padding:14px;margin-bottom:10px;background:var(--bg-elev2);transition:background .2s}
+.artist-card:hover{background:var(--bg-elev3)}
+.artist-card.listened{border-left:3px solid var(--green)}
+/* TAGS */
+.tag{background:var(--bg-elev3);color:var(--text-sub);padding:3px 10px;border-radius:500px;font-size:11px;display:inline-block;margin:2px;font-weight:500}
+/* SECTION TITLE */
+.section-title{font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:1.2px;margin:20px 0 10px}
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:56px 20px;color:var(--text-sub)}
+.empty-state .icon{font-size:48px;margin-bottom:14px;opacity:.5}
+/* RANK ITEM */
+.rank-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:6px;background:var(--bg-elev2);margin-bottom:6px;transition:background .2s}
+.rank-item:hover{background:var(--bg-elev3)}
+.rank-num{width:28px;height:28px;border-radius:50%;background:rgba(29,185,84,.15);color:var(--green);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:14px 0}
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal{background:var(--bg-elev2);border-radius:8px;padding:24px;max-width:640px;width:100%;max-height:88vh;overflow-y:auto;border:1px solid var(--border)}
+/* GENRE FAMILY LABEL */
+.genre-family{font-size:11px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+/* PROGRESS */
+.progress-bar{height:4px;background:var(--bg-elev3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+/* CHECKBOX CIRCLE */
+.check-circle{width:22px;height:22px;border-radius:50%;border:2px solid var(--text-sub);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:12px;color:#000}
+.check-circle:hover{border-color:var(--text)}
+.check-circle.checked{background:var(--green);border-color:var(--green)}
+/* SONG CHIP */
+.song-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:500px;font-size:12px;cursor:pointer;transition:all .2s;border:1px solid var(--border);background:var(--bg-elev2);color:var(--text-sub);user-select:none;font-weight:500}
+.song-chip:hover{background:var(--bg-elev3);color:var(--text);border-color:var(--text-sub)}
+.song-chip.heard{background:rgba(29,185,84,.15);border-color:var(--green);color:var(--green)}
+/* HISTORY ROW */
+.history-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:6px;background:var(--bg-elev2);margin-bottom:6px;flex-wrap:wrap;transition:background .2s}
+.history-row:hover{background:var(--bg-elev3)}
+/* SCORE INPUT */
+.score-box{display:flex;flex-direction:column;align-items:center;gap:4px}
+.score-box label{font-size:10px;color:var(--text-sub);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.score-box input{width:68px;text-align:center;padding:6px 4px}
+/* SUB-NAV TABS */
+.sub-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.sub-tab{padding:6px 14px;border-radius:500px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;color:var(--text-sub);font-family:inherit;transition:all .2s;font-weight:600}
+.sub-tab:hover{color:var(--text);border-color:var(--text-sub)}
+.sub-tab.active{background:var(--text);color:#000;border-color:var(--text)}
+/* HEADER */
+.app-header{display:flex;align-items:center;gap:14px;padding:12px 4px;margin-bottom:18px}
+.app-logo{width:48px;height:48px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;color:#000}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:6px;border:3px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#4a4a4a}
+
+/* AUTH / CLOUD SYNC */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at top,#1f1f1f 0%,#000 70%)}
+.auth-card{max-width:460px;width:100%;background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:28px;text-align:center;box-shadow:0 20px 80px rgba(0,0,0,.45)}
+.auth-icon{width:72px;height:72px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:34px;color:#000}
+.auth-title{font-size:28px;font-weight:900;margin-bottom:8px;letter-spacing:-.8px}
+.auth-copy{color:var(--text-sub);font-size:14px;line-height:1.55;margin-bottom:18px}
+.auth-warning{background:rgba(255,164,43,.12);border:1px solid rgba(255,164,43,.35);color:#ffd08a;border-radius:10px;padding:12px;font-size:12px;text-align:left;margin:14px 0}
+.sync-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.sync-saved{background:rgba(29,185,84,.16);color:var(--green)}
+.sync-saving,.sync-loading,.sync-checking{background:rgba(70,131,255,.18);color:#8db8ff}
+.sync-error{background:rgba(241,94,108,.18);color:#ff8793}
+.secure-session{font-size:11px;color:var(--text-sub);margin-top:2px}
+
+</style>
+</head>
+<body>
+<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:#888">Cargando Music Discovery Lab…</div></div>
+<script>
+window.addEventListener('error',function(e){
+  var r=document.getElementById('root');
+  if(r)r.innerHTML='<div style="padding:20px;font-family:monospace;color:#c00;white-space:pre-wrap">Error: '+(e.message||e.error||'desconocido')+'\n'+(e.filename||'')+':'+ (e.lineno||'')+'</div>';
+});
+</script>
+
+
+<script>
+window.firebaseReady = new Promise(function(resolve,reject){
+  window.__resolveFirebase = resolve;
+  window.__rejectFirebase = reject;
+});
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDb2CBZONsx_MkZFsVTdRZQf_-ojNYlNjw",
+  authDomain: "music-discovery-lab-jonathan.firebaseapp.com",
+  projectId: "music-discovery-lab-jonathan",
+  storageBucket: "music-discovery-lab-jonathan.firebasestorage.app",
+  messagingSenderId: "269677896387",
+  appId: "1:269677896387:web:0035968c3827b785e23876"
+};
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  await setPersistence(auth, browserLocalPersistence);
+  getRedirectResult(auth).catch(function(e){ console.warn("Redirect auth result error", e); });
+  window.__resolveFirebase({
+    app, db, auth, provider,
+    doc, getDoc, setDoc, onSnapshot, serverTimestamp,
+    signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut
+  });
+} catch (e) {
+  console.error("Firebase init error", e);
+  window.__rejectFirebase(e);
+}
+</script>
+
+<script type="text/babel">
+const {useState,useEffect,useCallback,useMemo,useRef}=React;
+const STORAGE_KEY='musicDiscoveryLab_v1';
+const CLOUD_COLLECTION='musicDiscoveryLab';
+const CLOUD_DOCUMENT='main';
+
+/* ============================================================
+   DATA: INITIAL GENRES (100+)
+   ============================================================ */
+const INITIAL_GENRES=[
+  /* ROCK FAMILY */
+  {id:'rock-classic',name:'Rock clásico',parentFamily:'Rock',description:'El género que definió la música popular del s.XX. Guitarras eléctricas, batería y actitud.',originContext:'EE.UU. y Reino Unido, años 50-70',moodTags:['energético','nostálgico','poderoso'],suggestedSituations:['conducir','workout','fiesta'],artists:[
+    {id:'led-zep',name:'Led Zeppelin',role:'core',shortDescription:'Pioneros del hard rock. Épicos en directo.',suggestedSongs:[{title:'Stairway to Heaven',note:'La canción más larga de la radio'},{title:'Whole Lotta Love',note:'Riff inmortal'},{title:'Kashmir',note:'Hipnótica y épica'}]},
+    {id:'rolling',name:'The Rolling Stones',role:'core',shortDescription:'Los chicos malos del rock. 60 años de escenario.',suggestedSongs:[{title:'Paint It Black',note:'Oriental y oscura'},{title:'Satisfaction',note:'El himno rebelde'},{title:'Gimme Shelter',note:'Urgente y amenazante'}]},
+    {id:'beatles',name:'The Beatles',role:'core',shortDescription:'Cambiaron la música popular para siempre.',suggestedSongs:[{title:'Come Together',note:'Groove misterioso'},{title:'Let It Be',note:'Balada clásica'},{title:'Blackbird',note:'Delicada'}]},
+    {id:'queen',name:'Queen',role:'core',shortDescription:'Teatralidad, ópera rock y Mercury en estado puro.',suggestedSongs:[{title:'Bohemian Rhapsody',note:'Ópera rock maestra'},{title:'Under Pressure',note:'Con Bowie'},{title:'Don\'t Stop Me Now',note:'Eufórica'}]},
+    {id:'acdc',name:'AC/DC',role:'core',shortDescription:'Hard rock australiano de alta tensión.',suggestedSongs:[{title:'Back in Black',note:'El riff de los riffs'},{title:'Highway to Hell',note:'Imprescindible'},{title:'Thunderstruck',note:'Intro icónico'}]},
+    {id:'jimi',name:'Jimi Hendrix',role:'core',shortDescription:'El guitarrista de otro planeta.',suggestedSongs:[{title:'Purple Haze',note:'Psicodelia y virtuosismo'},{title:'Little Wing',note:'Más íntima, bella'},{title:'Voodoo Child',note:'Libertad pura'}]},
+    {id:'doors',name:'The Doors',role:'variation',shortDescription:'Rock psicodélico con Morrison como chamán.',suggestedSongs:[{title:'Riders on the Storm',note:'Oscura y cinematográfica'},{title:'Light My Fire',note:'Clásico total'},{title:'People Are Strange',note:'Peculiar y hermosa'}]},
+    {id:'bruce',name:'Bruce Springsteen',role:'wildcard',shortDescription:'El Boss, rock americano trabajador.',suggestedSongs:[{title:'Born to Run',note:'Himno de carretera'},{title:'The River',note:'Épica y emotiva'}]},
+    {id:'cream',name:'Cream',role:'variation',shortDescription:'Power trio con Clapton, Baker y Bruce.',suggestedSongs:[{title:'Sunshine of Your Love',note:'Blues psicodélico'},{title:'White Room',note:'Atmósfera densa'}]},
+  ]},
+  {id:'grunge',name:'Grunge',parentFamily:'Rock',description:'Rock alternativo sucio y angustiado. Seattle, flannel y distorsión.',originContext:'Seattle, años 80-90',moodTags:['angustiado','crudo','intenso'],suggestedSituations:['catarsis','gym','días difíciles'],artists:[
+    {id:'nirvana',name:'Nirvana',role:'core',shortDescription:'Nevermind cambió el rock popular para siempre.',suggestedSongs:[{title:'Smells Like Teen Spirit',note:'El himno generacional'},{title:'Come as You Are',note:'Gancho irresistible'},{title:'Heart-Shaped Box',note:'Oscura y hermosa'}]},
+    {id:'pearl-jam',name:'Pearl Jam',role:'core',shortDescription:'Los supervivientes. Eddie Vedder como chamán.',suggestedSongs:[{title:'Alive',note:'Épica y emocional'},{title:'Black',note:'Balada devastadora'},{title:'Jeremy',note:'Poderosa y urgente'}]},
+    {id:'soundgarden',name:'Soundgarden',role:'core',shortDescription:'Heaviest de Seattle. Cornell era único.',suggestedSongs:[{title:'Black Hole Sun',note:'Surrealista y pesada'},{title:'Spoonman',note:'Ritmo extraño irresistible'},{title:'Burden in My Hand',note:'Lenta y devastadora'}]},
+    {id:'alice',name:'Alice in Chains',role:'core',shortDescription:'Metal grunge oscuro. Armonías vocales únicas.',suggestedSongs:[{title:'Would?',note:'Emotiva y pesada'},{title:'Down in a Hole',note:'Melancólica hermosa'},{title:'Rooster',note:'Narrativa y cruda'}]},
+    {id:'mudhoney',name:'Mudhoney',role:'wildcard',shortDescription:'El grunge más punk y sucio. Los primeros.',suggestedSongs:[{title:'Touch Me I\'m Sick',note:'Proto-grunge esencial'}]},
+    {id:'screaming-trees',name:'Screaming Trees',role:'variation',shortDescription:'Grunge psicodélico con mucho corazón.',suggestedSongs:[{title:'Nearly Lost You',note:'Grunge melódico brillante'},{title:'Dollar Bill',note:'Energética'}]},
+  ]},
+  {id:'indie',name:'Indie rock',parentFamily:'Rock',description:'Rock alternativo e independiente. Del underground al mainstream sin perder la esencia.',originContext:'Reino Unido y EE.UU., años 80-actualidad',moodTags:['reflexivo','melancólico','auténtico'],suggestedSituations:['conducir','tarde libre','lluvia'],artists:[
+    {id:'radiohead',name:'Radiohead',role:'core',shortDescription:'El grupo más importante del rock alt. Evolución constante.',suggestedSongs:[{title:'No Surprises',note:'Glaseada y bella'},{title:'Karma Police',note:'Irresistible'},{title:'Paranoid Android',note:'Multi-parte épica'}]},
+    {id:'smiths',name:'The Smiths',role:'core',shortDescription:'Morrissey y Marr. Indie melancólico definitivo.',suggestedSongs:[{title:'There Is a Light That Never Goes Out',note:'Romanticismo exagerado perfecto'},{title:'This Charming Man',note:'Debut icónico'},{title:'How Soon Is Now?',note:'Riff hipnótico'}]},
+    {id:'arctic',name:'Arctic Monkeys',role:'core',shortDescription:'Sheffield. Del garage al rock sofisticado.',suggestedSongs:[{title:'R U Mine?',note:'Riff adictivo'},{title:'Do I Wanna Know?',note:'Groove oscuro magistral'},{title:'505',note:'Emotiva y oscura'}]},
+    {id:'strokes',name:'The Strokes',role:'core',shortDescription:'El renacimiento del rock de principios de 2000.',suggestedSongs:[{title:'Last Nite',note:'Garage rock icónico'},{title:'Reptilia',note:'Energía pura'},{title:'Hard to Explain',note:'Urgente y brillante'}]},
+    {id:'national',name:'The National',role:'variation',shortDescription:'Indie adulto, melancólico y literario.',suggestedSongs:[{title:'Bloodbuzz Ohio',note:'Épica de letras'},{title:'Terrible Love',note:'Build-up emocional'}]},
+    {id:'modest-mouse',name:'Modest Mouse',role:'variation',shortDescription:'Indie rock narrativo y peculiar de Pacific Northwest.',suggestedSongs:[{title:'Float On',note:'Optimismo post-angst'},{title:'Dashboard',note:'Intensa y extraña'}]},
+    {id:'sufjan',name:'Sufjan Stevens',role:'wildcard',shortDescription:'Folk indie espiritual y orquestal.',suggestedSongs:[{title:'Chicago',note:'Folk orquestal épico'},{title:'Death With Dignity',note:'Íntima y devastadora'}]},
+  ]},
+  {id:'shoegaze',name:'Shoegaze',parentFamily:'Rock',description:'Guitarras en capas, voces etéreas, distorsión como textura. Mirar al suelo en el escenario.',originContext:'Reino Unido, años 80-90',moodTags:['onírico','etéreo','melancólico'],suggestedSituations:['dormir','lluvia','introspección'],artists:[
+    {id:'mbv',name:'My Bloody Valentine',role:'core',shortDescription:'Loveless es el álbum definitivo del shoegaze.',suggestedSongs:[{title:'Only Shallow',note:'Apertura perfecta de Loveless'},{title:'Sometimes',note:'Delicada y onírica'},{title:'When You Sleep',note:'Melodía envolvente'}]},
+    {id:'slowdive',name:'Slowdive',role:'core',shortDescription:'El shoegaze más emotivo y melódico.',suggestedSongs:[{title:'Alison',note:'Belleza perfecta'},{title:'When the Sun Hits',note:'Clímax shoegaze'},{title:'Dagger',note:'Minimalista y devastadora'}]},
+    {id:'ride',name:'Ride',role:'core',shortDescription:'Shoegaze con más melodía y energía.',suggestedSongs:[{title:'Vapour Trail',note:'Nostálgica y hermosa'},{title:'Leave Them All Behind',note:'Epic shoegaze'}]},
+    {id:'cocteau',name:'Cocteau Twins',role:'wildcard',shortDescription:'Dream pop. Voz de Elizabeth Fraser como instrumento.',suggestedSongs:[{title:'Heaven or Las Vegas',note:'Pico emocional'},{title:'Pearly-Dewdrops\' Drops',note:'Única y bella'}]},
+    {id:'beach-house',name:'Beach House',role:'variation',shortDescription:'Dream pop moderno. Victoria Legrand.',suggestedSongs:[{title:'Space Song',note:'Dream pop perfecto'},{title:'Myth',note:'Melancólica y hermosa'}]},
+  ]},
+  {id:'britpop',name:'Britpop',parentFamily:'Rock',description:'Rock británico de los 90. Oasis vs Blur. Nostalgia y actitud.',originContext:'Reino Unido, años 90',moodTags:['nostálgico','enérgico','irónico'],suggestedSituations:['fiesta retro','conducir','buenos recuerdos'],artists:[
+    {id:'oasis',name:'Oasis',role:'core',shortDescription:'Wonderwall es la canción más conocida del britpop.',suggestedSongs:[{title:'Wonderwall',note:'El inevitable'},{title:'Champagne Supernova',note:'Épica de 7 minutos'},{title:'Don\'t Look Back in Anger',note:'Himno total'}]},
+    {id:'blur',name:'Blur',role:'core',shortDescription:'El lado artístico del britpop. Gorillaz después.',suggestedSongs:[{title:'Song 2',note:'Woo-hoo irresistible'},{title:'Country House',note:'La batalla del britpop'},{title:'Coffee & TV',note:'Indie pop tierno'}]},
+    {id:'pulp',name:'Pulp',role:'core',shortDescription:'Jarvis Cocker. Ironía de clase en el britpop.',suggestedSongs:[{title:'Common People',note:'La canción de clase más brillante'},{title:'Babies',note:'Pop indie brillante'},{title:'Mis-Shapes',note:'B-side legendaria'}]},
+    {id:'suede',name:'Suede',role:'variation',shortDescription:'El britpop más glamuroso y oscuro.',suggestedSongs:[{title:'Animal Nitrate',note:'Glam rock britpop'},{title:'The Wild Ones',note:'Emotiva y perfecta'}]},
+    {id:'elastica',name:'Elastica',role:'wildcard',shortDescription:'Post-punk britpop con Justine Frischmann.',suggestedSongs:[{title:'Connection',note:'Post-punk brilante'},{title:'Line Up',note:'Urgente y corta'}]},
+  ]},
+  {id:'post-rock',name:'Post-rock',parentFamily:'Rock',description:'Rock sin cantante. Texturas, crescendos y silencio. Instrumental épico.',originContext:'Reino Unido / Global, años 90',moodTags:['épico','cinematográfico','emotivo'],suggestedSituations:['conducir','estudio','concentración'],artists:[
+    {id:'sigur-ros',name:'Sigur Rós',role:'core',shortDescription:'Post-rock islandés. Hopelandic y belleza extraña.',suggestedSongs:[{title:'Hoppípolla',note:'La más conocida. Emotiva'},{title:'Ára bátur',note:'Catedral de sonido'},{title:'Festival',note:'Alegría extraña'}]},
+    {id:'godspeed',name:'Godspeed You! Black Emperor',role:'core',shortDescription:'Post-rock político y apocalíptico.',suggestedSongs:[{title:'East Hastings',note:'Épica que crece'},{title:'Storm',note:'Urgente y hermosa'}]},
+    {id:'explosions',name:'Explosions in the Sky',role:'core',shortDescription:'Post-rock emocional americano. Friday Night Lights.',suggestedSongs:[{title:'Your Hand in Mine',note:'El climax emocional'},{title:'The Birth and Death of the Day',note:'Instrumental perfecto'}]},
+    {id:'mogwai',name:'Mogwai',role:'variation',shortDescription:'Post-rock escocés entre lo suave y lo brutal.',suggestedSongs:[{title:'Mogwai Fear Satan',note:'De la calma al ruido'},{title:'2 Rights Make 1 Wrong',note:'Aplastante'}]},
+    {id:'russian-circles',name:'Russian Circles',role:'wildcard',shortDescription:'Post-metal post-rock. Trío instrumental brutal.',suggestedSongs:[{title:'Geneva',note:'Crecimiento brutal'},{title:'Youngblood',note:'Pesada y hermosa'}]},
+  ]},
+  {id:'psychedelic',name:'Rock psicodélico',parentFamily:'Rock',description:'Guitarras con efectos, letras surrealistas, estados alterados de conciencia.',originContext:'EE.UU. y Reino Unido, años 60-70',moodTags:['onírico','psicodélico','contemplativo'],suggestedSituations:['tarde tranquila','introspección','escuchar concentrado'],artists:[
+    {id:'pink-floyd',name:'Pink Floyd',role:'core',shortDescription:'El viaje definitivo. Dark Side of the Moon.',suggestedSongs:[{title:'Comfortably Numb',note:'Solo de guitarra legendario'},{title:'Wish You Were Here',note:'Emocional y directa'},{title:'Echoes',note:'Viaje de 23 minutos'}]},
+    {id:'velvet',name:'The Velvet Underground',role:'core',shortDescription:'Lou Reed y la vanguardia pop.',suggestedSongs:[{title:'Sunday Morning',note:'Delicada y melancólica'},{title:'Pale Blue Eyes',note:'Intimísima'},{title:'Venus in Furs',note:'Oscura y repetitiva'}]},
+    {id:'grateful-dead',name:'Grateful Dead',role:'variation',shortDescription:'Jam band psicodélico. Los conciertos son la obra.',suggestedSongs:[{title:'Truckin\'',note:'Rock psicodélico accesible'},{title:'Casey Jones',note:'Enérgica'}]},
+    {id:'tame-impala',name:'Tame Impala',role:'wildcard',shortDescription:'Psicodelia moderna. Kevin Parker en solitario.',suggestedSongs:[{title:'Let It Happen',note:'Psicodelia moderna perfecta'},{title:'The Less I Know the Better',note:'Pop psicodélico irresistible'}]},
+  ]},
+  /* BLUES */
+  {id:'blues',name:'Blues',parentFamily:'Blues',description:'La raíz de toda la música popular occidental. Dolor, soul y 12 compases.',originContext:'Delta del Mississippi, finales siglo XIX',moodTags:['melancólico','profundo','visceral'],suggestedSituations:['tarde lluviosa','introspección','relajación'],artists:[
+    {id:'bb-king',name:'B.B. King',role:'core',shortDescription:'El Rey del Blues. Lucille siempre presente.',suggestedSongs:[{title:'The Thrill Is Gone',note:'Definitivo'},{title:'How Blue Can You Get',note:'Dramático'},{title:'Every Day I Have the Blues',note:'Estándar absoluto'}]},
+    {id:'muddy',name:'Muddy Waters',role:'core',shortDescription:'El que llevó el blues del delta a Chicago.',suggestedSongs:[{title:'Mannish Boy',note:'Riff inmortal'},{title:'Rollin\' Stone',note:'Inspiró a los Stones'},{title:'Hoochie Coochie Man',note:'Willie Dixon maestro'}]},
+    {id:'robert-johnson',name:'Robert Johnson',role:'core',shortDescription:'El mito fundacional. Vendió el alma al diablo.',suggestedSongs:[{title:'Cross Road Blues',note:'La leyenda'},{title:'Sweet Home Chicago',note:'Estándar del blues'},{title:'Love in Vain',note:'Emotiva'}]},
+    {id:'howlin',name:'Howlin\' Wolf',role:'core',shortDescription:'Voz como trueno, presencia de gigante.',suggestedSongs:[{title:'Smokestack Lightning',note:'Hipnótica'},{title:'Back Door Man',note:'Oscura y sensual'},{title:'Spoonful',note:'Minimalismo blues'}]},
+    {id:'etta',name:'Etta James',role:'core',shortDescription:'Voz devastadora entre blues, soul y R&B.',suggestedSongs:[{title:'At Last',note:'El clásico romántico'},{title:'I\'d Rather Go Blind',note:'Desgarradora'},{title:'Tell Mama',note:'Soul blues brillante'}]},
+    {id:'srv',name:'Stevie Ray Vaughan',role:'variation',shortDescription:'Texas blues con técnica sobrehumana.',suggestedSongs:[{title:'Pride and Joy',note:'Energía pura'},{title:'Lenny',note:'Íntima y virtuosa'},{title:'Texas Flood',note:'Blues largo brillante'}]},
+    {id:'john-lee',name:'John Lee Hooker',role:'wildcard',shortDescription:'Boogie hipnótico y repetitivo. Trance blues.',suggestedSongs:[{title:'Boom Boom',note:'Una nota, todo el mundo'},{title:'One Bourbon, One Scotch, One Beer',note:'Narrativa perfecta'}]},
+    {id:'clapton',name:'Eric Clapton',role:'variation',shortDescription:'God, dicen algunos. Blues con clase británica.',suggestedSongs:[{title:'Lay Down Sally',note:'Relajada'},{title:'Cocaine',note:'Ritmo adictivo'}]},
+  ]},
+  /* JAZZ */
+  {id:'jazz',name:'Jazz',parentFamily:'Jazz',description:'Improvisación, sofisticación armónica y conversación musical entre músicos.',originContext:'Nueva Orleans, principios siglo XX',moodTags:['sofisticado','relajante','cerebral'],suggestedSituations:['cena','trabajo concentrado','bar íntimo'],artists:[
+    {id:'miles',name:'Miles Davis',role:'core',shortDescription:'Reinventó el jazz cinco veces. Padre del cool.',suggestedSongs:[{title:'So What',note:'Minimal y cool'},{title:'Blue in Green',note:'Belleza pura'},{title:'Kind of Blue (álbum)',note:'El más accesible y mejor'}]},
+    {id:'coltrane',name:'John Coltrane',role:'core',shortDescription:'Espiritual, matemático, trascendente.',suggestedSongs:[{title:'A Love Supreme, Pt. 1',note:'Épica espiritual'},{title:'My Favorite Things',note:'Sorprendente versión'},{title:'Naima',note:'Íntima y perfecta'}]},
+    {id:'armstrong',name:'Louis Armstrong',role:'core',shortDescription:'El origen. La trompeta y esa voz.',suggestedSongs:[{title:'What a Wonderful World',note:'Himno universal'},{title:'West End Blues',note:'Técnica prodigiosa'},{title:'Stardust',note:'Interpretación perfecta'}]},
+    {id:'monk',name:'Thelonious Monk',role:'core',shortDescription:'Harmonías raras, ritmo peculiar. Un genio excéntrico.',suggestedSongs:[{title:'Round Midnight',note:'Oscura y bella'},{title:'Straight No Chaser',note:'Jazzística pura'},{title:'Blue Monk',note:'Accesible y brillante'}]},
+    {id:'bill-evans',name:'Bill Evans',role:'core',shortDescription:'Piano jazz de máxima delicadeza y emoción.',suggestedSongs:[{title:'Peace Piece',note:'Meditativa'},{title:'Waltz for Debby',note:'Íntima'},{title:'Blue in Green',note:'Con Miles'}]},
+    {id:'charlie-parker',name:'Charlie Parker',role:'core',shortDescription:'Bird. El padre del bebop.',suggestedSongs:[{title:'Ko-Ko',note:'Velocidad sobrehumana'},{title:'Confirmation',note:'Estándar bebop'},{title:'Donna Lee',note:'Bebop técnico maestro'}]},
+    {id:'ella',name:'Ella Fitzgerald',role:'variation',shortDescription:'La Primera Dama de la Canción. Voz perfecta.',suggestedSongs:[{title:'Summertime',note:'Versión definitiva'},{title:'How High the Moon',note:'Scat en estado puro'}]},
+    {id:'herbie',name:'Herbie Hancock',role:'wildcard',shortDescription:'Jazz eléctrico y funk. Headhunters es cumbre.',suggestedSongs:[{title:'Cantaloupe Island',note:'Jazz funk icónico'},{title:'Chameleon',note:'Groove maestro'}]},
+  ]},
+  {id:'jazz-fusion',name:'Jazz fusión',parentFamily:'Jazz',description:'Jazz eléctrico mezclado con funk, rock y música del mundo.',originContext:'EE.UU., finales años 60-70',moodTags:['complejo','funky','eléctrico'],suggestedSituations:['concentración','trabajo creativo','cena sofisticada'],artists:[
+    {id:'weather',name:'Weather Report',role:'core',shortDescription:'El grupo de jazz fusión más importante.',suggestedSongs:[{title:'Birdland',note:'Jazz fusión accesible perfecto'},{title:'Teen Town',note:'Bajo de Jaco increíble'}]},
+    {id:'mahavishnu',name:'Mahavishnu Orchestra',role:'core',shortDescription:'Jazz rock extremo. McLaughlin y su guitarra de fuego.',suggestedSongs:[{title:'The Inner Mounting Flame',note:'Épica de fusión'},{title:'Birds of Fire',note:'Virtuosismo colectivo'}]},
+    {id:'chick-corea',name:'Chick Corea',role:'variation',shortDescription:'Return to Forever. Elegancia y complejidad.',suggestedSongs:[{title:'Spain',note:'El tema más conocido'},{title:'La Fiesta',note:'Flamenco jazz brillante'}]},
+    {id:'pat-metheny',name:'Pat Metheny',role:'wildcard',shortDescription:'Jazz contemporáneo con sonido único y cálido.',suggestedSongs:[{title:'Last Train Home',note:'Hermosa y accesible'},{title:'Minuano',note:'Emotiva y compleja'}]},
+  ]},
+  /* SOUL/R&B */
+  {id:'soul',name:'Soul',parentFamily:'R&B / Soul',description:'Fusión de gospel y R&B. Emoción directa al corazón.',originContext:'EE.UU., años 60',moodTags:['emotivo','festivo','apasionado'],suggestedSituations:['cocinar','fiesta íntima','romance'],artists:[
+    {id:'aretha',name:'Aretha Franklin',role:'core',shortDescription:'La Reina del Soul. R-E-S-P-E-C-T.',suggestedSongs:[{title:'Respect',note:'Himno feminista'},{title:'(You Make Me Feel Like) A Natural Woman',note:'Definitiva'},{title:'Chain of Fools',note:'Groove irresistible'}]},
+    {id:'marvin',name:'Marvin Gaye',role:'core',shortDescription:'Sensual, político, espiritual.',suggestedSongs:[{title:'What\'s Going On',note:'Álbum y canción fundamental'},{title:'Let\'s Get It On',note:'Sensualidad máxima'},{title:'Heard It Through the Grapevine',note:'Clásico Motown'}]},
+    {id:'otis',name:'Otis Redding',role:'core',shortDescription:'Energía en vivo, voz rasgada. Murió joven.',suggestedSongs:[{title:'(Sittin\' On) The Dock of the Bay',note:'Melancólica y hermosa'},{title:'Try a Little Tenderness',note:'Crescendo brutal'},{title:'I\'ve Been Loving You Too Long',note:'Desgarradora'}]},
+    {id:'sam-cooke',name:'Sam Cooke',role:'core',shortDescription:'El inventor del soul moderno. Voz celestial.',suggestedSongs:[{title:'A Change Is Gonna Come',note:'Políticamente crucial'},{title:'Wonderful World',note:'Alegre y simple'}]},
+    {id:'al-green',name:'Al Green',role:'core',shortDescription:'Soul suave y espiritual.',suggestedSongs:[{title:'Let\'s Stay Together',note:'Clásico romántico'},{title:'Take Me to the River',note:'Versión icónica'},{title:'Tired of Being Alone',note:'Suave y bello'}]},
+    {id:'james-brown',name:'James Brown',role:'core',shortDescription:'El Padrino del Soul. El inventor del funk.',suggestedSongs:[{title:'I Got You (I Feel Good)',note:'Energía pura'},{title:'Sex Machine',note:'El groove definitivo'},{title:'It\'s a Man\'s Man\'s World',note:'Dramática y hermosa'}]},
+    {id:'temptations',name:'The Temptations',role:'variation',shortDescription:'Motown en su máximo esplendor.',suggestedSongs:[{title:'My Girl',note:'Irresistible'},{title:'Papa Was a Rollin\' Stone',note:'Épica psych-soul'}]},
+    {id:'stevie',name:'Stevie Wonder',role:'variation',shortDescription:'Músico total. Soul, funk, pop, jazz. Todo.',suggestedSongs:[{title:'Superstition',note:'Funk soul irresistible'},{title:'Isn\'t She Lovely',note:'Celebración pura'},{title:'Higher Ground',note:'Groove maestro'}]},
+  ]},
+  {id:'neosoul',name:'Neo-soul',parentFamily:'R&B / Soul',description:'Soul moderno con producción alternativa. Erykah, D\'Angelo, y la generación 90-2000.',originContext:'EE.UU., años 90',moodTags:['íntimo','sensual','reflexivo'],suggestedSituations:['noche tranquila','cocinar','romance'],artists:[
+    {id:'erykah',name:'Erykah Badu',role:'core',shortDescription:'La reina del neo-soul. Mística y poderosa.',suggestedSongs:[{title:'On & On',note:'Debut icónico'},{title:'Bag Lady',note:'Reflexiva'},{title:'Didn\'t Cha Know',note:'Groove neo-soul perfecto'}]},
+    {id:'dangelo',name:'D\'Angelo',role:'core',shortDescription:'Voodoo es uno de los mejores álbumes de R&B.',suggestedSongs:[{title:'Untitled (How Does It Feel)',note:'Sensualidad máxima'},{title:'Brown Sugar',note:'Debut seductor'},{title:'Chicken Grease',note:'Funk neo-soul'}]},
+    {id:'maxwell',name:'Maxwell',role:'core',shortDescription:'Romántico y espiritual. Soul urbano moderno.',suggestedSongs:[{title:'Ascension (Don\'t Ever Wonder)',note:'Himno romántico'},{title:'Fortunate',note:'Suave y bello'}]},
+    {id:'anderson-paak',name:'Anderson .Paak',role:'variation',shortDescription:'Funk, soul, hip-hop. Baterista y vocalista.',suggestedSongs:[{title:'Come Down',note:'Funk neo-soul'},{title:'Make It Better',note:'Romántica y suave'}]},
+    {id:'jhene',name:'Jhené Aiko',role:'wildcard',shortDescription:'R&B alternativo íntimo y melancólico.',suggestedSongs:[{title:'The Worst',note:'Vulnerable y bella'},{title:'Sativa',note:'Dreamy'}]},
+  ]},
+  {id:'rnb',name:'R&B contemporáneo',parentFamily:'R&B / Soul',description:'Rhythm & Blues moderno. Producción pop sofisticada con voz emotiva.',originContext:'EE.UU., años 90-actualidad',moodTags:['sensual','emocional','bailable'],suggestedSituations:['cita','noche','relajación'],artists:[
+    {id:'beyonce',name:'Beyoncé',role:'core',shortDescription:'La reina del pop-R&B. Performance y arte.',suggestedSongs:[{title:'Crazy in Love',note:'Debut como solista perfecto'},{title:'Formation',note:'Empoderador y político'},{title:'Halo',note:'Pop R&B perfecto'}]},
+    {id:'usher',name:'Usher',role:'core',shortDescription:'El más completo del R&B de los 2000.',suggestedSongs:[{title:'Yeah!',note:'Irresistible'},{title:'Confessions Part II',note:'Emotiva'},{title:'My Boo',note:'Romántica'}]},
+    {id:'alicia-keys',name:'Alicia Keys',role:'core',shortDescription:'Piano y voz. R&B con alma clásica.',suggestedSongs:[{title:'Fallin\'',note:'Poderosa debut'},{title:'No One',note:'Himno emocional'},{title:'If I Ain\'t Got You',note:'Soul balada'}]},
+    {id:'frank-ocean',name:'Frank Ocean',role:'core',shortDescription:'El más artístico. Channel Orange es obra maestra.',suggestedSongs:[{title:'Thinkin Bout You',note:'Vulnerable y bella'},{title:'Pyramids',note:'Épica de 10 minutos'},{title:'Nights',note:'Bipolar perfecta'}]},
+    {id:'sza',name:'SZA',role:'variation',shortDescription:'R&B alternativo femenino. Honesta y compleja.',suggestedSongs:[{title:'Good Days',note:'Melancólica y hermosa'},{title:'Kill Bill',note:'Oscura y adictiva'}]},
+    {id:'the-weeknd',name:'The Weeknd',role:'variation',shortDescription:'Dark R&B. De las sombras al mainstream.',suggestedSongs:[{title:'Blinding Lights',note:'Synthpop R&B masivo'},{title:'The Hills',note:'Oscuro y adictivo'},{title:'Save Your Tears',note:'Pop R&B brillante'}]},
+    {id:'bryson',name:'Bryson Tiller',role:'wildcard',shortDescription:'Trap R&B. Nuevo estilo de los 2010.',suggestedSongs:[{title:'Exchange',note:'Íntima y bella'},{title:'Don\'t',note:'Groove oscuro'}]},
+  ]},
+  /* FUNK */
+  {id:'funk',name:'Funk',parentFamily:'R&B / Soul',description:'El groove antes que todo. Bajo pesado, guitarra sincopada, percusión.',originContext:'EE.UU., finales años 60',moodTags:['bailable','eufórico','sensual'],suggestedSituations:['fiesta','cocinar','correr'],artists:[
+    {id:'jb-funk',name:'James Brown',role:'core',shortDescription:'Sin él no hay funk. El Padrino.',suggestedSongs:[{title:'Sex Machine',note:'El manual del funk'},{title:'Funky Drummer',note:'El sample más sampleado'},{title:'The Payback',note:'Funk largo irresistible'}]},
+    {id:'parliament',name:'Parliament-Funkadelic',role:'core',shortDescription:'George Clinton y el universo funk-psicodélico.',suggestedSongs:[{title:'Flash Light',note:'Sintetizador funk único'},{title:'One Nation Under a Groove',note:'Manifiesto funk'},{title:'Tear the Roof Off the Sucker',note:'Euforia total'}]},
+    {id:'sly',name:'Sly & The Family Stone',role:'core',shortDescription:'Rock, soul y funk. Integración racial y musical.',suggestedSongs:[{title:'Thank You',note:'Groove perfecto'},{title:'Everyday People',note:'Pop funk brillante'},{title:'Family Affair',note:'Oscura y densa'}]},
+    {id:'curtis',name:'Curtis Mayfield',role:'core',shortDescription:'Funk con conciencia social y cuerdas hermosas.',suggestedSongs:[{title:'Move On Up',note:'Himno de motivación'},{title:'Superfly',note:'Banda sonora icónica'}]},
+    {id:'prince',name:'Prince',role:'variation',shortDescription:'Funk, pop, rock, R&B. Género en sí mismo.',suggestedSongs:[{title:'Kiss',note:'Funk mínimo y sensual'},{title:'Purple Rain',note:'Épica definitiva'},{title:'When Doves Cry',note:'Funk sin bajo único'}]},
+    {id:'chic',name:'Chic',role:'variation',shortDescription:'Nile Rodgers. El puente funk-disco.',suggestedSongs:[{title:'Good Times',note:'El bass line más sampleado'},{title:'Le Freak',note:'Disco funk irresistible'}]},
+    {id:'meters',name:'The Meters',role:'wildcard',shortDescription:'Funk de Nueva Orleans. Groove mínimo máximo.',suggestedSongs:[{title:'Cissy Strut',note:'Instrumental de culto'},{title:'Look-Ka Py Py',note:'Groove hipnótico'}]},
+  ]},
+  /* HIP-HOP */
+  {id:'hip-hop',name:'Hip-hop clásico',parentFamily:'Hip-hop',description:'Rapping, sampling y cultura urbana de Nueva York. El lenguaje del siglo XXI.',originContext:'Bronx, Nueva York, años 70-90',moodTags:['urbano','rítmico','narrativo'],suggestedSituations:['conducir','gym','sesión creativa'],artists:[
+    {id:'biggie',name:'The Notorious B.I.G.',role:'core',shortDescription:'Mejor flow del East Coast. Storytelling supremo.',suggestedSongs:[{title:'Juicy',note:'Motivacional clásica'},{title:'Big Poppa',note:'Suave e irresistible'},{title:'Hypnotize',note:'West Coast feel'}]},
+    {id:'tupac',name:'2Pac',role:'core',shortDescription:'Emocional, político, icónico. Leyenda.',suggestedSongs:[{title:'Changes',note:'Reflexiva y actual'},{title:'California Love',note:'West Coast definitiva'},{title:'Dear Mama',note:'Emotiva'}]},
+    {id:'nas',name:'Nas',role:'core',shortDescription:'Illmatic es el álbum de hip-hop definitivo.',suggestedSongs:[{title:'N.Y. State of Mind',note:'Lirismo máximo'},{title:'The World Is Yours',note:'Dreamy y ambiciosa'},{title:'One Love',note:'Narrativa brillante'}]},
+    {id:'jay-z',name:'Jay-Z',role:'core',shortDescription:'Businessman y MC de primera línea.',suggestedSongs:[{title:'99 Problems',note:'Producción de Rick Rubin'},{title:'Empire State of Mind',note:'Himno de NY'}]},
+    {id:'wu-tang',name:'Wu-Tang Clan',role:'core',shortDescription:'Staten Island. Arte marcial y poesía hip-hop.',suggestedSongs:[{title:'C.R.E.A.M.',note:'Clásico absoluto'},{title:'Protect Ya Neck',note:'Intro brutal'},{title:'Triumph',note:'Épica larga'}]},
+    {id:'lauryn',name:'Lauryn Hill',role:'variation',shortDescription:'La mejor voz y pluma del hip-hop/soul.',suggestedSongs:[{title:'Doo Wop (That Thing)',note:'Soul hip-hop perfecto'},{title:'Ex-Factor',note:'Emotiva y poderosa'},{title:'Lost Ones',note:'Poderosa'}]},
+    {id:'tribe',name:'A Tribe Called Quest',role:'variation',shortDescription:'Jazz rap. Lo más intelectual del hip-hop.',suggestedSongs:[{title:'Can I Kick It?',note:'Sample de Lou Reed, perfecto'},{title:'Electric Relaxation',note:'Groove hip-hop suave'},{title:'Check the Rhime',note:'Interplay perfecto'}]},
+    {id:'nwa',name:'N.W.A',role:'wildcard',shortDescription:'Gangsta rap de Compton. Straight outta controversy.',suggestedSongs:[{title:'Straight Outta Compton',note:'Declaración de guerra'},{title:'Gangsta Gangsta',note:'West Coast crudo'}]},
+  ]},
+  {id:'boom-bap',name:'Boom bap',parentFamily:'Hip-hop',description:'El hip-hop de los 90. Sample de jazz, kicks pesados y lirismo.',originContext:'Nueva York, años 90',moodTags:['lírico','urbano','nostálgico'],suggestedSituations:['trabajo creativo','paseo','concentración'],artists:[
+    {id:'gang-starr',name:'Gang Starr',role:'core',shortDescription:'Guru y DJ Premier. Jazz y hip-hop perfectos.',suggestedSongs:[{title:'Mass Appeal',note:'Boom bap con clase'},{title:'DWYCK',note:'Feat. Nice & Smooth'},{title:'You Know My Steez',note:'Premier al máximo'}]},
+    {id:'pete-rock',name:'Pete Rock & C.L. Smooth',role:'core',shortDescription:'Mecca and the Soul Brother. Boom bap emocional.',suggestedSongs:[{title:'T.R.O.Y.',note:'Sample de saxo icónico'},{title:'They Reminisce Over You',note:'Nostalgia perfecta'}]},
+    {id:'epmd',name:'EPMD',role:'variation',shortDescription:'Funky boom bap de Long Island.',suggestedSongs:[{title:'You Gots to Chill',note:'Groove funk hip-hop'},{title:'Strictly Business',note:'Fundacional'}]},
+    {id:'common',name:'Common',role:'wildcard',shortDescription:'El más poético del boom bap moderno.',suggestedSongs:[{title:'The Light',note:'Romántica e intelectual'},{title:'I Used to Love H.E.R.',note:'Metáfora maestra'}]},
+    {id:'black-thought',name:'The Roots',role:'variation',shortDescription:'Banda en vivo de hip-hop. Black Thought es el MC.',suggestedSongs:[{title:'You Got Me',note:'Neo-soul hip-hop'},{title:'The Seed (2.0)',note:'Rock hip-hop'}]},
+  ]},
+  {id:'trap',name:'Trap',parentFamily:'Hip-hop',description:'Hi-hats en tresillo, 808s pesados, beats oscuros. El hip-hop del sur.',originContext:'Atlanta, años 2000-2010',moodTags:['oscuro','intenso','agresivo'],suggestedSituations:['gym','conducir de noche','gaming'],artists:[
+    {id:'future',name:'Future',role:'core',shortDescription:'Autotune y melancolía. El rey del dark trap.',suggestedSongs:[{title:'Mask Off',note:'Flauta y 808, perfección'},{title:'March Madness',note:'Introspección trap'},{title:'Codeine Crazy',note:'Dark trap máximo'}]},
+    {id:'travis',name:'Travis Scott',role:'core',shortDescription:'Psych-trap. Conciertos como experiencias religiosas.',suggestedSongs:[{title:'SICKO MODE',note:'Multi-parte, sorprendente'},{title:'Goosebumps',note:'Dark y bailable'},{title:'Antidote',note:'Bailable'}]},
+    {id:'youngthug',name:'Young Thug',role:'core',shortDescription:'El más experimental. Inventor del melodic trap.',suggestedSongs:[{title:'Wyclef Jean',note:'Eufórica y contagiosa'},{title:'Digits',note:'Melodic trap brillante'}]},
+    {id:'21savage',name:'21 Savage',role:'variation',shortDescription:'Flow frío y minimalista. Horror trap.',suggestedSongs:[{title:'Bank Account',note:'Minimalismo máximo'},{title:'A Lot',note:'Reflexiva y poderosa'}]},
+    {id:'kendrick',name:'Kendrick Lamar',role:'wildcard',shortDescription:'El más lirical. Trapea pero sobre todo narra.',suggestedSongs:[{title:'HUMBLE.',note:'Trap minimalista con mensaje'},{title:'DNA.',note:'Explosiva'},{title:'Money Trees',note:'Cinematográfica'}]},
+    {id:'gucci',name:'Gucci Mane',role:'variation',shortDescription:'Pionero del trap de Atlanta. Brrr.',suggestedSongs:[{title:'Lemonade',note:'Trap clásico'},{title:'Both',note:'Con Drake'}]},
+  ]},
+  {id:'drill',name:'Drill',parentFamily:'Hip-hop',description:'Trap oscuro y nihilista. Chicago y luego UK Drill.',originContext:'Chicago (luego UK), años 2010',moodTags:['oscuro','amenazante','urbano'],suggestedSituations:['gym','conducir de noche'],artists:[
+    {id:'chief-keef',name:'Chief Keef',role:'core',shortDescription:'El inventor del drill de Chicago. Sosa.',suggestedSongs:[{title:'I Don\'t Like',note:'El primer hit drill'},{title:'Love Sosa',note:'Icónico y minimal'}]},
+    {id:'pop-smoke',name:'Pop Smoke',role:'core',shortDescription:'UK drill americanizado. Voz única profunda.',suggestedSongs:[{title:'Welcome to the Party',note:'UK drill energy'},{title:'Dior',note:'Posthumous hit'},{title:'Element',note:'Oscura y potente'}]},
+    {id:'central-cee',name:'Central Cee',role:'variation',shortDescription:'El mejor del UK drill actual.',suggestedSongs:[{title:'Loading',note:'UK drill moderno'},{title:'Doja',note:'Viral y bailable'}]},
+    {id:'headie-one',name:'Headie One',role:'wildcard',shortDescription:'UK drill con matices emotivos.',suggestedSongs:[{title:'Know Better',note:'UK drill con melodía'},{title:'18Hunna',note:'Con Dave, épica UK'}]},
+  ]},
+  {id:'lofi',name:'Lo-fi hip hop',parentFamily:'Hip-hop',description:'Beats suaves, muestras de jazz y ruido de vinilo. El género del estudio y la concentración.',originContext:'Internet, años 2010',moodTags:['relajado','nostálgico','concentración'],suggestedSituations:['estudiar','trabajar','lluvia'],artists:[
+    {id:'nujabes',name:'Nujabes',role:'core',shortDescription:'El maestro japonés. Padre espiritual del lo-fi.',suggestedSongs:[{title:'Feather',note:'Con CL Smooth, perfecta'},{title:'Aruarian Dance',note:'Naruto OST icónica'},{title:'Luv(sic) Part 3',note:'Emotiva'}]},
+    {id:'jdilla',name:'J Dilla',role:'core',shortDescription:'El más influyente en beats. Hip-hop abstracto.',suggestedSongs:[{title:'Workinonit',note:'Extraña y bella'},{title:'Don\'t Cry',note:'Emocional'},{title:'Two Can Win',note:'Groove suave'}]},
+    {id:'mf-doom',name:'MF DOOM',role:'core',shortDescription:'El Villain. Lirismo y beats únicos.',suggestedSongs:[{title:'Accordion',note:'Lo-fi rap perfecto'},{title:'Rhinestone Cowboy',note:'Brillante'},{title:'Doomsday',note:'Debut icónico'}]},
+    {id:'knxwledge',name:'Knxwledge',role:'wildcard',shortDescription:'Beats lo-fi modernos muy influyentes.',suggestedSongs:[{title:'Wrldsms',note:'Dreamy'},{title:'Numb Numb Juice',note:'Con SiR'}]},
+  ]},
+  {id:'phonk',name:'Phonk',parentFamily:'Hip-hop',description:'Trap sucio con samples de Memphis rap y cowbell. Viral en TikTok.',originContext:'Internet/Memphis, años 2010',moodTags:['agresivo','caótico','adrenalínico'],suggestedSituations:['gym','gaming','adrenalina'],artists:[
+    {id:'kordhell',name:'Kordhell',role:'core',shortDescription:'MURDER IN MY MIND. Phonk icónico.',suggestedSongs:[{title:'Murder In My Mind',note:'El phonk más viral'},{title:'Vibe',note:'Phonk agresivo'}]},
+    {id:'soudiere',name:'Soudiere',role:'core',shortDescription:'Phonk electrónico bailable.',suggestedSongs:[{title:'MOTOR',note:'Phonk electro viral'},{title:'ARROCHA',note:'Bailable y rápido'}]},
+    {id:'dj-smokey',name:'DJ Smokey',role:'wildcard',shortDescription:'Memphis phonk original y sucio.',suggestedSongs:[{title:'Faded N Fiendin',note:'Memphis rap puro'}]},
+    {id:'night-lovell',name:'Night Lovell',role:'variation',shortDescription:'Phonk oscuro canadiense. Dark y melancólico.',suggestedSongs:[{title:'Dark Light',note:'Oscuro y denso'},{title:'Dark Eyes',note:'Minimalismo phonk'}]},
+  ]},
+  /* POP */
+  {id:'pop',name:'Pop',parentFamily:'Pop',description:'Popular, accesible, pegadizo. El género más escuchado del mundo.',originContext:'Global, años 50-actualidad',moodTags:['alegre','bailable','accesible'],suggestedSituations:['fondo musical','conducir','fiesta'],artists:[
+    {id:'mj',name:'Michael Jackson',role:'core',shortDescription:'El Rey del Pop. Thriller habla por sí solo.',suggestedSongs:[{title:'Thriller',note:'El videoclip que cambió todo'},{title:'Billie Jean',note:'Bassline icónico'},{title:'Man in the Mirror',note:'Himno de cambio'}]},
+    {id:'madonna',name:'Madonna',role:'core',shortDescription:'La Reina del Pop. Reinvenciones constantes.',suggestedSongs:[{title:'Like a Prayer',note:'Polémica y brillante'},{title:'Material Girl',note:'Icono ochentero'},{title:'Vogue',note:'House pop magistral'}]},
+    {id:'abba',name:'ABBA',role:'core',shortDescription:'Pop sueco perfecto. Producción atemporal.',suggestedSongs:[{title:'Dancing Queen',note:'Alegría pura'},{title:'The Winner Takes It All',note:'Drama emocional'},{title:'Waterloo',note:'Pop perfecto'}]},
+    {id:'taylor',name:'Taylor Swift',role:'core',shortDescription:'La más influyente de su generación.',suggestedSongs:[{title:'All Too Well (10 Min Version)',note:'Escritura emocional brutal'},{title:'Anti-Hero',note:'Introspectiva'},{title:'Love Story',note:'Pop narrativo}'}]},
+    {id:'dua',name:'Dua Lipa',role:'variation',shortDescription:'Nu-disco pop. Future Nostalgia es brillante.',suggestedSongs:[{title:'Don\'t Start Now',note:'Bassline irresistible'},{title:'Physical',note:'Disco pop eufórico'},{title:'Levitating',note:'Bailable y brillante'}]},
+    {id:'billie',name:'Billie Eilish',role:'variation',shortDescription:'Pop oscuro minimalista. Generación Z.',suggestedSongs:[{title:'bad guy',note:'Minimalista e hipnótica'},{title:'Happier Than Ever',note:'Build-up brillante'}]},
+    {id:'harry-styles',name:'Harry Styles',role:'wildcard',shortDescription:'Rock pop de los 70 revivalizado.',suggestedSongs:[{title:'Watermelon Sugar',note:'Pop rock breezy'},{title:'As It Was',note:'Synthpop emotivo'}]},
+  ]},
+  {id:'kpop',name:'K-pop',parentFamily:'Pop',description:'Pop coreano de producción perfecta. Coreografía, imagen y fandoms globales.',originContext:'Corea del Sur, años 90-actualidad',moodTags:['eufórico','bailable','visual'],suggestedSituations:['gym','fiesta','estado animado'],artists:[
+    {id:'bts',name:'BTS',role:'core',shortDescription:'El grupo más grande del mundo. ARMY.',suggestedSongs:[{title:'Dynamite',note:'Pop disco bailable'},{title:'DNA',note:'Synthpop k-pop perfecto'},{title:'Spring Day',note:'Melancólica y hermosa'}]},
+    {id:'blackpink',name:'BLACKPINK',role:'core',shortDescription:'Las reinas del K-pop.',suggestedSongs:[{title:'DDU-DU DDU-DU',note:'Trap k-pop irresistible'},{title:'Kill This Love',note:'Poderosa'},{title:'Pink Venom',note:'Dark k-pop'}]},
+    {id:'twice',name:'TWICE',role:'variation',shortDescription:'K-pop cute y bailable.',suggestedSongs:[{title:'CHEER UP',note:'Catchy y alegre'},{title:'Fancy',note:'Más sofisticada'}]},
+    {id:'exo',name:'EXO',role:'wildcard',shortDescription:'K-pop masculino con R&B y EDM.',suggestedSongs:[{title:'Growl',note:'Coreo legendaria'},{title:'Power',note:'Eufórico pop'}]},
+    {id:'newjeans',name:'NewJeans',role:'variation',shortDescription:'K-pop minimalista y Y2K. El grupo del momento.',suggestedSongs:[{title:'Hype Boy',note:'Adictiva y fresca'},{title:'OMG',note:'Pop alternativo k'}]},
+  ]},
+  {id:'hyperpop',name:'Hyperpop',parentFamily:'Pop',description:'Pop llevado al extremo. Autotune agresivo, bass distorsionado, velocidad máxima.',originContext:'Internet/UK, años 2010',moodTags:['caótico','eufórico','digital'],suggestedSituations:['fiesta experimental','gaming','trabajo creativo'],artists:[
+    {id:'charli',name:'Charli XCX',role:'core',shortDescription:'La cara mainstream del hyperpop. Brat.',suggestedSongs:[{title:'Gone',note:'Hyperpop con A.G. Cook'},{title:'Speed Drive',note:'Brat pop energético'},{title:'360',note:'Camp y brillante'}]},
+    {id:'100-gecs',name:'100 gecs',role:'core',shortDescription:'El hyperpop más extremo y divertido.',suggestedSongs:[{title:'800db cloud',note:'Caos musical puro'},{title:'Hand Crushed by a Mallet',note:'Extremo e irresistible'}]},
+    {id:'arca',name:'Arca',role:'wildcard',shortDescription:'Hyperpop art. La más vanguardista.',suggestedSongs:[{title:'Piel',note:'Experimental y única'},{title:'Riquiqui',note:'Vertiginosa'}]},
+    {id:'sophie',name:'SOPHIE',role:'variation',shortDescription:'Productora visionaria del hyperpop. Leyenda.',suggestedSongs:[{title:'BIPP',note:'Hyperpop fundacional'},{title:'It\'s Okay to Cry',note:'Emotiva y única'}]},
+  ]},
+  /* ELECTRÓNICA */
+  {id:'techno',name:'Techno',parentFamily:'Electrónica',description:'Ritmo industrial de 4/4, sintetizadores, repetición hipnótica. Detroit.',originContext:'Detroit, años 80',moodTags:['hipnótico','energético','industrial'],suggestedSituations:['club','conducir de noche','concentración intensa'],artists:[
+    {id:'derrick-may',name:'Derrick May',role:'core',shortDescription:'El padre del techno de Detroit.',suggestedSongs:[{title:'Strings of Life',note:'El track que define el techno'},{title:'Nude Photo',note:'Detroit techno esencial'}]},
+    {id:'juan-atkins',name:'Juan Atkins',role:'core',shortDescription:'Uno de los tres pioneros de Detroit.',suggestedSongs:[{title:'No UFOs',note:'Primer gran track techno'},{title:'Techno Music',note:'Manifiesto del género'}]},
+    {id:'plastikman',name:'Plastikman',role:'core',shortDescription:'Richie Hawtin. Minimal techno hipnótico.',suggestedSongs:[{title:'Spastik',note:'Minimal techno definitivo'},{title:'Ask Yourself',note:'Oscuro y repetitivo'}]},
+    {id:'aphex-twin',name:'Aphex Twin',role:'variation',shortDescription:'Techno experimental que trasciende géneros.',suggestedSongs:[{title:'Windowlicker',note:'IDM techno pop extraño'},{title:'Come to Daddy',note:'Industrial perturbador'}]},
+    {id:'bicep',name:'Bicep',role:'wildcard',shortDescription:'Techno emocional moderno. Belfast duo.',suggestedSongs:[{title:'Glue',note:'Techno acid emocional'},{title:'Cazenove',note:'Emotional rave'}]},
+  ]},
+  {id:'house',name:'House',parentFamily:'Electrónica',description:'Chicago, bajo profundo, sintetizador y four-on-the-floor.',originContext:'Chicago, años 80',moodTags:['bailable','eufórico','festivo'],suggestedSituations:['fiesta','cocinar bailando','buen humor'],artists:[
+    {id:'frankie',name:'Frankie Knuckles',role:'core',shortDescription:'El Padrino del House. Warehouse de Chicago.',suggestedSongs:[{title:'Your Love',note:'House primitivo esencial'},{title:'Baby Wants to Ride',note:'Clásico house'}]},
+    {id:'larry-heard',name:'Larry Heard',role:'core',shortDescription:'Mr. Fingers. Deep house emocional fundacional.',suggestedSongs:[{title:'Can You Feel It',note:'Deep house espiritual'},{title:'Mystery of Love',note:'Emotivo y profundo'}]},
+    {id:'daft-punk',name:'Daft Punk',role:'core',shortDescription:'French house. Homework cambió la dance music.',suggestedSongs:[{title:'Da Funk',note:'French house glorioso'},{title:'One More Time',note:'Euforia house perfecta'},{title:'Around the World',note:'Repetición como arte'}]},
+    {id:'disclosure',name:'Disclosure',role:'variation',shortDescription:'UK house moderno. Garage house del siglo XXI.',suggestedSongs:[{title:'Latch',note:'Feat. Sam Smith, enorme'},{title:'White Noise',note:'UK house electrizante'}]},
+    {id:'maya-jane',name:'Maya Jane Coles',role:'wildcard',shortDescription:'Deep house minimalista y atmosférico.',suggestedSongs:[{title:'What They Say',note:'Deep house perfecto'},{title:'Comfort',note:'Oscuro y elegante'}]},
+  ]},
+  {id:'trance',name:'Trance',parentFamily:'Electrónica',description:'Sintetizadores en capas, arpegiadores, build-ups y drops. Estado de trance.',originContext:'Alemania, años 90',moodTags:['eufórico','emotivo','energético'],suggestedSituations:['conducir autopista','workout','viaje largo'],artists:[
+    {id:'armin',name:'Armin van Buuren',role:'core',shortDescription:'El DJ nº1 del mundo durante años.',suggestedSongs:[{title:'Blue Fear',note:'Trance clásico'},{title:'In and Out of Love',note:'Vocal trance emocional'}]},
+    {id:'tiesto',name:'Tiësto',role:'core',shortDescription:'El mejor DJ del mundo. Trance épico.',suggestedSongs:[{title:'Adagio for Strings',note:'Clásico del trance'},{title:'Traffic',note:'Progressive trance esencial'}]},
+    {id:'above-beyond',name:'Above & Beyond',role:'variation',shortDescription:'Trance progresivo emocional. ANJUNABEATS.',suggestedSongs:[{title:'Sun & Moon',note:'Euforia emocional'},{title:'We\'re All We Need',note:'Uplifting trance'}]},
+    {id:'paul-van-dyk',name:'Paul van Dyk',role:'wildcard',shortDescription:'Trance alemán sofisticado. Berlín.',suggestedSongs:[{title:'For an Angel',note:'Trance emocional clásico'},{title:'We Are One',note:'Uplifting trance'}]},
+  ]},
+  {id:'dnb',name:'Drum & Bass',parentFamily:'Electrónica',description:'BPM de 160-180, bajo profundo y breaks sincopados. Londres.',originContext:'Londres, años 90',moodTags:['intenso','urbano','veloz'],suggestedSituations:['workout','gaming','maratón de estudio'],artists:[
+    {id:'goldie',name:'Goldie',role:'core',shortDescription:'El padre del D&B. Timeless es la obra cumbre.',suggestedSongs:[{title:'Inner City Life',note:'D&B con voz emocional'},{title:'Timeless',note:'Épica de 20 minutos'}]},
+    {id:'ltj-bukem',name:'LTJ Bukem',role:'core',shortDescription:'Atmospheric D&B. Jazzy y sofisticado.',suggestedSongs:[{title:'Music',note:'Atmosférico y hermoso'},{title:'Horizons',note:'Jazz D&B fundacional'}]},
+    {id:'pendulum',name:'Pendulum',role:'variation',shortDescription:'D&B con influencias rock. Mainstream.',suggestedSongs:[{title:'Witchcraft',note:'Guitarra y D&B'},{title:'Slam',note:'Clásico rave'}]},
+    {id:'noisia',name:'Noisia',role:'wildcard',shortDescription:'Neuro D&B técnico y oscuro.',suggestedSongs:[{title:'Split the Atom',note:'Neuro D&B maestro'},{title:'Shellshock',note:'Intenso y oscuro'}]},
+    {id:'chase-status',name:'Chase & Status',role:'variation',shortDescription:'D&B mainstream con elementos dubstep y grime.',suggestedSongs:[{title:'No Problem',note:'D&B con voz grime'},{title:'Take Me Away',note:'Emotivo D&B'}]},
+  ]},
+  {id:'ambient',name:'Ambient',parentFamily:'Electrónica',description:'Atmósfera sobre ritmo. Brian Eno lo definió. Música para espacios.',originContext:'Reino Unido, años 70',moodTags:['relajante','meditativo','atmosférico'],suggestedSituations:['dormir','meditar','trabajar concentrado'],artists:[
+    {id:'brian-eno',name:'Brian Eno',role:'core',shortDescription:'El padre del ambient. Music for Airports.',suggestedSongs:[{title:'Ambient 1: Music for Airports',note:'El comienzo del género'},{title:'By This River',note:'Delicada y contemplativa'}]},
+    {id:'stars-lid',name:'Stars of the Lid',role:'core',shortDescription:'Ambient orquestal. Cuerdas y síntesis.',suggestedSongs:[{title:'Requiem for Dying Mothers',note:'Orquestal y devastador'},{title:'The Ballasted Orchestra',note:'Épica ambient'}]},
+    {id:'boards-canada',name:'Boards of Canada',role:'variation',shortDescription:'IDM ambient nostálgico y extraño.',suggestedSongs:[{title:'Roygbiv',note:'Nostálgico y bello'},{title:'Dayvan Cowboy',note:'Climática y emocionante'}]},
+    {id:'william-basinski',name:'William Basinski',role:'wildcard',shortDescription:'Disintegration Loops. Arte conceptual sonoro.',suggestedSongs:[{title:'dlp 1.1',note:'Tape loops desintegrándose'}]},
+    {id:'tim-hecker',name:'Tim Hecker',role:'wildcard',shortDescription:'Drone ambient melancólico y espiritual.',suggestedSongs:[{title:'The Work',note:'Orgue ambient'},{title:'Virginal I',note:'Expansivo y oscuro'}]},
+  ]},
+  {id:'idm',name:'IDM',parentFamily:'Electrónica',description:'Intelligent Dance Music. Electrónica compleja no bailable. Arte y cerebro.',originContext:'Reino Unido, años 90',moodTags:['cerebral','onírico','complejo'],suggestedSituations:['trabajo creativo','concentración'],artists:[
+    {id:'aphex-idm',name:'Aphex Twin',role:'core',shortDescription:'Richard D. James. El dios del IDM.',suggestedSongs:[{title:'Avril 14th',note:'Piano IDM emotivo'},{title:'Flim',note:'Bello y complejo'},{title:'Alberto Balsalm',note:'Juguetón y brillante'}]},
+    {id:'autechre',name:'Autechre',role:'core',shortDescription:'IDM extremadamente abstracto y técnico.',suggestedSongs:[{title:'Cipater',note:'IDM rítmico complejo'},{title:'Fold4,Wrap5',note:'Abstracto y fascinante'}]},
+    {id:'squarepusher',name:'Squarepusher',role:'wildcard',shortDescription:'IDM con jazz y D&B extremo.',suggestedSongs:[{title:'Come on My Selector',note:'IDM frenético'},{title:'Tommib',note:'IDM precioso y tranquilo'}]},
+    {id:'plaid',name:'Plaid',role:'variation',shortDescription:'IDM más melódico y accesible.',suggestedSongs:[{title:'Eyen',note:'IDM melodic hermoso'},{title:'Get What You Gave',note:'Bailable y complejo'}]},
+  ]},
+  {id:'trip-hop',name:'Trip hop',parentFamily:'Electrónica',description:'Hip-hop a 70 BPM. Beats lentos, melancolía, Bristol.',originContext:'Bristol, años 90',moodTags:['melancólico','cinematográfico','sensual'],suggestedSituations:['noche','introspección','cena íntima'],artists:[
+    {id:'massive-attack',name:'Massive Attack',role:'core',shortDescription:'Blue Lines y Mezzanine. El trip hop definitivo.',suggestedSongs:[{title:'Teardrop',note:'Beth Gibbons. Perfecta'},{title:'Unfinished Sympathy',note:'Épica cinematográfica'},{title:'Dissolved Girl',note:'Oscura y sensual'}]},
+    {id:'portishead',name:'Portishead',role:'core',shortDescription:'El trip hop más oscuro y emotivo.',suggestedSongs:[{title:'Glory Box',note:'Melancólica y sensual'},{title:'Sour Times',note:'Oscura y hermosa'},{title:'The Rip',note:'Stripped down maestro'}]},
+    {id:'tricky',name:'Tricky',role:'core',shortDescription:'El más experimental del trip hop.',suggestedSongs:[{title:'Hell Is Around the Corner',note:'Oscuro y perturbador'},{title:'Black Steel',note:'Densa y poderosa'}]},
+    {id:'faithless',name:'Faithless',role:'variation',shortDescription:'Trip hop dance. Insomnia es himno.',suggestedSongs:[{title:'Insomnia',note:'Trip hop dance épico'},{title:'God Is a DJ',note:'Filosófica y bailable'}]},
+  ]},
+  {id:'disco',name:'Disco',parentFamily:'R&B / Soul',description:'Bajo funky, cuerdas, caja en todos los tiempos. Nueva York, años 70.',originContext:'Nueva York, años 70',moodTags:['festivo','bailable','eufórico'],suggestedSituations:['fiesta','cocinar','estado de ánimo alto'],artists:[
+    {id:'donna',name:'Donna Summer',role:'core',shortDescription:'La Reina del Disco. Giorgio Moroder.',suggestedSongs:[{title:'I Feel Love',note:'El futuro del dance'},{title:'Hot Stuff',note:'Disco rock brillante'},{title:'Love to Love You Baby',note:'Sensual y hipnótica'}]},
+    {id:'bee-gees',name:'Bee Gees',role:'core',shortDescription:'Saturday Night Fever. Falsete icónico.',suggestedSongs:[{title:'Stayin\' Alive',note:'Riff más conocido del disco'},{title:'How Deep Is Your Love',note:'Romántica perfecta'},{title:'Night Fever',note:'Bailable irresistible'}]},
+    {id:'chic-disco',name:'Chic',role:'core',shortDescription:'Nile Rodgers. Good Times es inmortal.',suggestedSongs:[{title:'Good Times',note:'El bass line más sampleado'},{title:'Le Freak',note:'Bailable irresistible'}]},
+    {id:'sylvester',name:'Sylvester',role:'wildcard',shortDescription:'Disco house pionero. Gay disco fundacional.',suggestedSongs:[{title:'You Make Me Feel (Mighty Real)',note:'Euforia disco máxima'},{title:'Do You Wanna Funk',note:'Clásico'}]},
+    {id:'diana-ross',name:'Diana Ross',role:'variation',shortDescription:'De las Supremes al disco elegante.',suggestedSongs:[{title:'I\'m Coming Out',note:'Himno disco gay'},{title:'Upside Down',note:'Funk disco irresistible'}]},
+  ]},
+  {id:'synthpop',name:'Synthpop',parentFamily:'Pop / New Wave',description:'Sintetizadores y cajas de ritmo como base. Fría, elegante y nostálgica.',originContext:'Reino Unido, años 80',moodTags:['nostálgico','frío','elegante'],suggestedSituations:['conducir','noche urbana','trabajo'],artists:[
+    {id:'depeche',name:'Depeche Mode',role:'core',shortDescription:'Los maestros del synthpop oscuro.',suggestedSongs:[{title:'Personal Jesus',note:'Rockero y oscuro'},{title:'Enjoy the Silence',note:'Melancólico y poderoso'},{title:'Policy of Truth',note:'Sinister y brillante'}]},
+    {id:'new-order',name:'New Order',role:'core',shortDescription:'Post-Joy Division. Puente synthpop-dance.',suggestedSongs:[{title:'Blue Monday',note:'El single más vendido de UK'},{title:'Bizarre Love Triangle',note:'Bailable y melancólico'},{title:'True Faith',note:'Pop synthético perfecto'}]},
+    {id:'human-league',name:'The Human League',role:'core',shortDescription:'Pop sintético puro.',suggestedSongs:[{title:'Don\'t You Want Me',note:'Synthpop icónico'},{title:'Human',note:'Emocional y perfecto'}]},
+    {id:'pet-shop',name:'Pet Shop Boys',role:'variation',shortDescription:'Synthpop intelectual e irónico.',suggestedSongs:[{title:'West End Girls',note:'Clásico inmortal'},{title:'It\'s a Sin',note:'Teatral y conmovedor'}]},
+    {id:'gary-numan',name:'Gary Numan',role:'wildcard',shortDescription:'Pioneer del synthpop. Cars es el himno.',suggestedSongs:[{title:'Cars',note:'El primer hit synthpop'},{title:'Are Friends Electric?',note:'Oscuro y pionero'}]},
+  ]},
+  {id:'new-wave',name:'New Wave',parentFamily:'Pop / New Wave',description:'Post-punk pop. Más accesible que el punk, más fresco que el rock.',originContext:'Reino Unido y EE.UU., años 80',moodTags:['enérgico','quirky','ecléctico'],suggestedSituations:['fiesta retro','conducir','buen humor'],artists:[
+    {id:'talking-heads',name:'Talking Heads',role:'core',shortDescription:'Funk, world music y new wave. David Byrne.',suggestedSongs:[{title:'Psycho Killer',note:'Icónica y perturbadora'},{title:'Once in a Lifetime',note:'Filosófica y bailable'},{title:'Burning Down the House',note:'Eufórica'}]},
+    {id:'blondie',name:'Blondie',role:'core',shortDescription:'Punk pop y new wave con Debbie Harry.',suggestedSongs:[{title:'Heart of Glass',note:'Disco new wave perfecto'},{title:'Call Me',note:'Pop punk irresistible'}]},
+    {id:'devo',name:'DEVO',role:'wildcard',shortDescription:'New wave avant-garde.',suggestedSongs:[{title:'Whip It',note:'El hit más raro de la radio'},{title:'Mongoloid',note:'Art rock extraño'}]},
+    {id:'b-52s',name:'The B-52s',role:'variation',shortDescription:'Party rock kitsch y divertido.',suggestedSongs:[{title:'Love Shack',note:'Fiesta pura'},{title:'Rock Lobster',note:'Extraña e irresistible'}]},
+  ]},
+  {id:'post-punk',name:'Post-punk',parentFamily:'Punk / Post-punk',description:'Punk deconstruido. Oscuridad, letras literarias y texturas sonoras.',originContext:'Reino Unido, finales años 70',moodTags:['oscuro','cerebral','melancólico'],suggestedSituations:['lectura','noche','introspección'],artists:[
+    {id:'joy-division',name:'Joy Division',role:'core',shortDescription:'Ian Curtis. La oscuridad más bella del rock.',suggestedSongs:[{title:'Love Will Tear Us Apart',note:'El himno post-punk'},{title:'Atmosphere',note:'Devastadora y hermosa'},{title:'Transmission',note:'Urgente y oscura'}]},
+    {id:'cure',name:'The Cure',role:'core',shortDescription:'De post-punk a pop oscuro. Robert Smith.',suggestedSongs:[{title:'Lovesong',note:'Pop oscuro romántico'},{title:'A Forest',note:'Post-punk de libro'},{title:'Close to Me',note:'Pop oscuro accesible'}]},
+    {id:'siouxsie',name:'Siouxsie and the Banshees',role:'core',shortDescription:'Post-punk con glamour gótico.',suggestedSongs:[{title:'Hong Kong Garden',note:'Debut icónico'},{title:'Spellbound',note:'Energía post-punk'}]},
+    {id:'wire',name:'Wire',role:'wildcard',shortDescription:'El post-punk más minimal y vanguardista.',suggestedSongs:[{title:'Three Girl Rhumba',note:'Minimalismo rock'},{title:'Ex Lion Tamer',note:'Punk art'}]},
+    {id:'bauhaus',name:'Bauhaus',role:'variation',shortDescription:'Goth rock post-punk. Dark a tope.',suggestedSongs:[{title:'Bela Lugosi\'s Dead',note:'Goth rock fundacional'},{title:'She\'s in Parties',note:'Oscura y densa'}]},
+  ]},
+  {id:'punk',name:'Punk rock',parentFamily:'Punk / Post-punk',description:'Tres acordes, actitud, velocidad y rabia. Anti-establishment.',originContext:'Reino Unido y EE.UU., años 70',moodTags:['rabioso','energético','irreverente'],suggestedSituations:['catarsis','workout','mala semana'],artists:[
+    {id:'sex-pistols',name:'Sex Pistols',role:'core',shortDescription:'Never Mind the Bollocks. El shock cultural punk.',suggestedSongs:[{title:'Anarchy in the U.K.',note:'El rugido inicial'},{title:'God Save the Queen',note:'Polémica real'},{title:'Pretty Vacant',note:'Punk simple perfecto'}]},
+    {id:'clash',name:'The Clash',role:'core',shortDescription:'El más musical e intelectual.',suggestedSongs:[{title:'London Calling',note:'Himno generacional'},{title:'Should I Stay or Should I Go',note:'Gancho enorme'},{title:'Rock the Casbah',note:'Pop punk brillante'}]},
+    {id:'ramones',name:'Ramones',role:'core',shortDescription:'Los inventores del punk. 2 minutos, fin.',suggestedSongs:[{title:'Blitzkrieg Bop',note:'Hey-ho, let\'s go'},{title:'I Wanna Be Sedated',note:'Velocidad perfecta'},{title:'Sheena Is a Punk Rocker',note:'Alegre y rápida'}]},
+    {id:'dead-kennedys',name:'Dead Kennedys',role:'core',shortDescription:'Hardcore punk político. Jello Biafra.',suggestedSongs:[{title:'Holiday in Cambodia',note:'Sátira política brutal'},{title:'California Über Alles',note:'Punk satírico'}]},
+    {id:'buzzcocks',name:'Buzzcocks',role:'variation',shortDescription:'Punk pop melódico.',suggestedSongs:[{title:'Ever Fallen in Love',note:'Punk melódico perfecto'}]},
+    {id:'misfits',name:'Misfits',role:'wildcard',shortDescription:'Horror punk. Serie B y punk rabioso.',suggestedSongs:[{title:'Skulls',note:'Oscura y rápida'},{title:'Last Caress',note:'Provocadora'}]},
+  ]},
+  /* METAL */
+  {id:'metal',name:'Heavy metal',parentFamily:'Metal',description:'Distorsión extrema, velocidad y potencia.',originContext:'Reino Unido y EE.UU., años 70',moodTags:['poderoso','agresivo','épico'],suggestedSituations:['workout','catarsis','gaming'],artists:[
+    {id:'black-sabbath',name:'Black Sabbath',role:'core',shortDescription:'Los inventores del metal. Ozzy e Iommi.',suggestedSongs:[{title:'Iron Man',note:'El riff más conocido del metal'},{title:'Paranoid',note:'Proto-metal definitivo'},{title:'War Pigs',note:'Antibelicista épica'}]},
+    {id:'iron-maiden',name:'Iron Maiden',role:'core',shortDescription:'Heavy metal épico. Eddie y las letras literarias.',suggestedSongs:[{title:'The Trooper',note:'Épica bélica'},{title:'Hallowed Be Thy Name',note:'Metal conceptual'},{title:'Run to the Hills',note:'Velocidad épica'}]},
+    {id:'metallica',name:'Metallica',role:'core',shortDescription:'El thrash metal más famoso del mundo.',suggestedSongs:[{title:'Master of Puppets',note:'Thrash metal magistral'},{title:'Nothing Else Matters',note:'Balada metal clásica'},{title:'Enter Sandman',note:'Accesible y poderosa'}]},
+    {id:'judas-priest',name:'Judas Priest',role:'core',shortDescription:'Metal británico con cuero y gemidos vocales.',suggestedSongs:[{title:'Breaking the Law',note:'Icónica'},{title:'Painkiller',note:'Velocidad máxima'}]},
+    {id:'motorhead',name:'Motörhead',role:'core',shortDescription:'Lemmy. Metal punk. Duro y rápido.',suggestedSongs:[{title:'Ace of Spades',note:'El himno'},{title:'Killed by Death',note:'Pesada y divertida'}]},
+    {id:'ozzy',name:'Ozzy Osbourne',role:'variation',shortDescription:'El Príncipe de las Tinieblas.',suggestedSongs:[{title:'Crazy Train',note:'Intro icónico'},{title:'Mr. Crowley',note:'Oscura y épica'}]},
+    {id:'dio',name:'Dio',role:'wildcard',shortDescription:'El gesto del diablo. Metal más épico que nadie.',suggestedSongs:[{title:'Holy Diver',note:'El más épico del metal'},{title:'Rainbow in the Dark',note:'Heavy pop maestro'}]},
+  ]},
+  {id:'power-metal',name:'Power metal',parentFamily:'Metal',description:'Metal rápido, melódico y épico. Dragones, fantasía y vocales de ópera.',originContext:'Europa, años 80-90',moodTags:['épico','heroico','fantástico'],suggestedSituations:['trabajar','gaming épico','motivación'],artists:[
+    {id:'helloween',name:'Helloween',role:'core',shortDescription:'Los fundadores del power metal europeo.',suggestedSongs:[{title:'I Want Out',note:'El himno del género'},{title:'Eagle Fly Free',note:'Velocidad y melodía'}]},
+    {id:'nightwish',name:'Nightwish',role:'core',shortDescription:'Power metal sinfónico finlandés.',suggestedSongs:[{title:'Nemo',note:'Sinfónico y emotivo'},{title:'Ghost Love Score',note:'Épica de 10 minutos'}]},
+    {id:'blind-guardian',name:'Blind Guardian',role:'variation',shortDescription:'Power metal progresivo. Letras sobre Tolkien.',suggestedSongs:[{title:'The Bard\'s Song',note:'Acústica hermosa'},{title:'Imaginations from the Other Side',note:'Progresiva épica'}]},
+    {id:'rhapsody',name:'Rhapsody of Fire',role:'wildcard',shortDescription:'Power metal italiano más cinematográfico.',suggestedSongs:[{title:'Emerald Sword',note:'El himno más épico'},{title:'Power of the Dragonflame',note:'Rápida y épica'}]},
+    {id:'stratovarius',name:'Stratovarius',role:'variation',shortDescription:'Power metal melódico finlandés.',suggestedSongs:[{title:'Hunting High and Low',note:'Melodía perfecta'},{title:'Forever',note:'Balada power metal'}]},
+  ]},
+  {id:'black-metal',name:'Black metal',parentFamily:'Metal',description:'Extremo, frío, atmosférico. Noruega, oscuridad.',originContext:'Noruega, años 80-90',moodTags:['oscuro','atmosférico','extremo'],suggestedSituations:['introspección oscura','noches frías'],artists:[
+    {id:'mayhem',name:'Mayhem',role:'core',shortDescription:'La banda fundacional. Controversia y arte oscuro.',suggestedSongs:[{title:'Freezing Moon',note:'Black metal definitivo'},{title:'Deathcrush',note:'Crudo y extremo'}]},
+    {id:'burzum',name:'Burzum',role:'core',shortDescription:'Ambient black metal.',suggestedSongs:[{title:'Dunkelheit',note:'Atmosférico y envolvente'},{title:'Jesus\' Tod',note:'Oscuro y frío'}]},
+    {id:'emperor',name:'Emperor',role:'core',shortDescription:'Black metal sinfónico.',suggestedSongs:[{title:'I Am the Black Wizards',note:'Épica sinfónica oscura'}]},
+    {id:'wolves-throne',name:'Wolves in the Throne Room',role:'wildcard',shortDescription:'Black metal ambiental americano.',suggestedSongs:[{title:'Permanent Changes in Consciousness',note:'Épica post-black'},{title:'Vastness and Sorrow',note:'Atmosférica'}]},
+  ]},
+  {id:'nu-metal',name:'Nu-metal',parentFamily:'Metal',description:'Metal con hip-hop, turntables y letras de angustia adolescente.',originContext:'California, finales años 90',moodTags:['angustiado','agresivo','catártico'],suggestedSituations:['gym','catarsis'],artists:[
+    {id:'korn',name:'Korn',role:'core',shortDescription:'Los fundadores del nu-metal.',suggestedSongs:[{title:'Freak on a Leash',note:'Definición del nu-metal'},{title:'Blind',note:'Debutó el género'},{title:'Falling Away from Me',note:'Más oscura y intensa'}]},
+    {id:'linkin-park',name:'Linkin Park',role:'core',shortDescription:'Nu-metal más melódico. Los más vendidos.',suggestedSongs:[{title:'In the End',note:'Generacional'},{title:'Numb',note:'Emocional y heavy'},{title:'Crawling',note:'Angustia máxima'}]},
+    {id:'limp-bizkit',name:'Limp Bizkit',role:'variation',shortDescription:'El más controvertido. Fred Durst y Wes Borland.',suggestedSongs:[{title:'Break Stuff',note:'Ira adolescente pura'},{title:'Rollin\'',note:'Irresistiblemente mala'}]},
+    {id:'slipknot',name:'Slipknot',role:'variation',shortDescription:'9 miembros con máscaras. Nu-metal extremo.',suggestedSongs:[{title:'Wait and Bleed',note:'Heavy y melódico'},{title:'Psychosocial',note:'Tremendo riff'}]},
+    {id:'system-down',name:'System of a Down',role:'wildcard',shortDescription:'Nu-metal armenio político.',suggestedSongs:[{title:'Chop Suey!',note:'Extremos dinámicos'},{title:'B.Y.O.B.',note:'Antibelicista brutal'}]},
+  ]},
+  /* FOLK/COUNTRY */
+  {id:'folk',name:'Folk',parentFamily:'Folk / Country',description:'Música de tradición oral. Guitarra acústica, voz y narrativa.',originContext:'EE.UU. y Europa, tradición oral',moodTags:['íntimo','nostálgico','narrativo'],suggestedSituations:['hoguera','paseo campo','tarde tranquila'],artists:[
+    {id:'dylan',name:'Bob Dylan',role:'core',shortDescription:'El profeta del folk. Premio Nobel de Literatura.',suggestedSongs:[{title:'Blowin\' in the Wind',note:'Himno de protesta folk'},{title:'The Times They Are A-Changin\'',note:'Voz generacional'},{title:'Tangled Up in Blue',note:'Narrativa perfecta'}]},
+    {id:'joni',name:'Joni Mitchell',role:'core',shortDescription:'La más literaria y musical del folk-pop.',suggestedSongs:[{title:'Big Yellow Taxi',note:'Folk ecologista'},{title:'Both Sides Now',note:'Filosófica y hermosa'},{title:'River',note:'Navideña y melancólica'}]},
+    {id:'simon-garfunkel',name:'Simon & Garfunkel',role:'core',shortDescription:'Folk pop urbano.',suggestedSongs:[{title:'The Sound of Silence',note:'Melancólica perfecta'},{title:'Mrs. Robinson',note:'Pop folk brillante'},{title:'The Boxer',note:'Narrativa épica'}]},
+    {id:'neil-young',name:'Neil Young',role:'variation',shortDescription:'Folk rock. Corazón de oro canadiense.',suggestedSongs:[{title:'Heart of Gold',note:'Folk perfecto'},{title:'Old Man',note:'Íntima y hermosa'}]},
+    {id:'nick-drake',name:'Nick Drake',role:'wildcard',shortDescription:'Folk melancólico de culto. Murió ignorado.',suggestedSongs:[{title:'Pink Moon',note:'Minimalismo folk precioso'},{title:'River Man',note:'Orquestal y hermosa'}]},
+    {id:'iron-wine',name:'Iron & Wine',role:'variation',shortDescription:'Folk indie americano íntimo y suave.',suggestedSongs:[{title:'Flightless Bird',note:'Twilight lo hizo famoso'},{title:'Naked As We Came',note:'Íntima y hermosa'}]},
+  ]},
+  {id:'country',name:'Country',parentFamily:'Folk / Country',description:'Nashville, pedal steel y corazón roto. La América rural cantada.',originContext:'EE.UU., años 20',moodTags:['nostálgico','emocional','narrativo'],suggestedSituations:['carretera americana','tardes','barbacoa'],artists:[
+    {id:'johnny-cash',name:'Johnny Cash',role:'core',shortDescription:'El hombre de negro. Country oscuro y espiritual.',suggestedSongs:[{title:'Ring of Fire',note:'Icónica e inmortal'},{title:'Hurt',note:'Cover de NIN devastadora'},{title:'I Walk the Line',note:'Clásico puro'}]},
+    {id:'willie',name:'Willie Nelson',role:'core',shortDescription:'Outlaw country. On the Road Again.',suggestedSongs:[{title:'On the Road Again',note:'Himno de libertad'},{title:'Always on My Mind',note:'Emotiva clásica'}]},
+    {id:'dolly',name:'Dolly Parton',role:'core',shortDescription:'La reina. Jolene es perfecta.',suggestedSongs:[{title:'Jolene',note:'La mejor canción country'},{title:'I Will Always Love You',note:'Original de Whitney es suya'}]},
+    {id:'patsy',name:'Patsy Cline',role:'variation',shortDescription:'La voz femenina definitiva del country clásico.',suggestedSongs:[{title:'Crazy',note:'Country soul sublime'},{title:'Walkin\' After Midnight',note:'Honky tonk'}]},
+    {id:'hank',name:'Hank Williams',role:'wildcard',shortDescription:'El fundador. Country clásico definitivo.',suggestedSongs:[{title:'Your Cheatin\' Heart',note:'Country puro fundamental'},{title:'I\'m So Lonesome I Could Cry',note:'Melancólica máxima'}]},
+  ]},
+  {id:'bluegrass',name:'Bluegrass',parentFamily:'Folk / Country',description:'Country acústico con banjo y mandolina. Virtuosismo y tradición appalachiana.',originContext:'Appalachian, EE.UU., años 40',moodTags:['alegre','nostálgico','virtuoso'],suggestedSituations:['picnic','naturaleza','tarde familiar'],artists:[
+    {id:'bill-monroe',name:'Bill Monroe',role:'core',shortDescription:'El padre del bluegrass.',suggestedSongs:[{title:'Blue Moon of Kentucky',note:'Bluegrass fundacional'},{title:'Uncle Pen',note:'Instrumental virtuoso'}]},
+    {id:'flatt-scruggs',name:'Flatt & Scruggs',role:'core',shortDescription:'El banjo de Earl Scruggs es único.',suggestedSongs:[{title:'Foggy Mountain Breakdown',note:'Bluegrass de Bonnie and Clyde'},{title:'Beverly Hillbillies Theme',note:'Conocida y virtuosa'}]},
+    {id:'alison-krauss',name:'Alison Krauss',role:'variation',shortDescription:'Bluegrass moderno con voz angelical.',suggestedSongs:[{title:'When You Say Nothing at All',note:'Romántica y delicada'},{title:'Steel Rails',note:'Bluegrass-pop perfecto'}]},
+    {id:'nickel-creek',name:'Nickel Creek',role:'wildcard',shortDescription:'Neo-bluegrass progresivo y alternativo.',suggestedSongs:[{title:'The Lighthouse\'s Tale',note:'Folk bluegrass emotivo'},{title:'Smoothie Song',note:'Virtuosismo divertido'}]},
+  ]},
+  /* LATINA */
+  {id:'reggae',name:'Reggae',parentFamily:'Reggae / Dub',description:'Ritmo en el contragolpe, bass profundo y mensaje espiritual. Jamaica.',originContext:'Jamaica, años 60',moodTags:['relajante','espiritual','positivo'],suggestedSituations:['playa','barbacoa','tardes tranquilas'],artists:[
+    {id:'bob-marley',name:'Bob Marley & The Wailers',role:'core',shortDescription:'El reggae personificado. Leyenda universal.',suggestedSongs:[{title:'No Woman No Cry',note:'Himno emocional'},{title:'Redemption Song',note:'Acústica y poderosa'},{title:'One Love',note:'Himno de unidad'}]},
+    {id:'peter-tosh',name:'Peter Tosh',role:'core',shortDescription:'El rebelde de The Wailers. Más político.',suggestedSongs:[{title:'Legalize It',note:'Manifiesto reggae'},{title:'Equal Rights',note:'Político y duro'}]},
+    {id:'toots',name:'Toots and the Maytals',role:'variation',shortDescription:'Los que inventaron la palabra reggae.',suggestedSongs:[{title:'Pressure Drop',note:'Clásico absoluto'},{title:'54-46 Was My Number',note:'Ska-reggae esencial'}]},
+    {id:'burning-spear',name:'Burning Spear',role:'wildcard',shortDescription:'Rastafari reggae espiritual y ceremonial.',suggestedSongs:[{title:'Marcus Garvey',note:'Roots reggae icónico'},{title:'Slavery Days',note:'Poderosa y espiritual'}]},
+    {id:'bunny-wailer',name:'Bunny Wailer',role:'variation',shortDescription:'El tercer Wailer. Rootsy y espiritual.',suggestedSongs:[{title:'Dreamland',note:'Reggae suave y bello'}]},
+  ]},
+  {id:'dub',name:'Dub',parentFamily:'Reggae / Dub',description:'Reggae deconstruido. Eco, reverb y espacio como instrumento.',originContext:'Jamaica, años 70',moodTags:['hipnótico','espacial','psicodélico'],suggestedSituations:['relajación profunda','antes de dormir'],artists:[
+    {id:'king-tubby',name:'King Tubby',role:'core',shortDescription:'El inventor del dub. El estudio como instrumento.',suggestedSongs:[{title:'King Tubby Meets Rockers Uptown',note:'Dub canónico'},{title:'Watergate Rock',note:'Dub maestro'}]},
+    {id:'lee-perry',name:'Lee "Scratch" Perry',role:'core',shortDescription:'El excéntrico genio del dub.',suggestedSongs:[{title:'Roast Fish Collie Weed & Cornbread',note:'Dub experimental único'},{title:'Super Ape',note:'Dub psicodélico'}]},
+    {id:'scientist',name:'Scientist',role:'variation',shortDescription:'Dub de los 80. Más oscuro y técnico.',suggestedSongs:[{title:'Rids the World of the Evil Curse',note:'Dub tenebroso'}]},
+  ]},
+  {id:'ska',name:'Ska',parentFamily:'Reggae / Dub',description:'El predecesor del reggae. Guitarra en contragolpe veloz, viento y alegría.',originContext:'Jamaica, años 50-60',moodTags:['alegre','energético','bailable'],suggestedSituations:['fiesta','verano','buen humor'],artists:[
+    {id:'specials',name:'The Specials',role:'core',shortDescription:'Ska revival de Coventry. 2-tone y mezcla racial.',suggestedSongs:[{title:'A Message to You Rudy',note:'Ska clásico moderno'},{title:'Too Much Too Young',note:'Urgente y divertida'},{title:'Ghost Town',note:'Oscura y poderosa'}]},
+    {id:'madness',name:'Madness',role:'core',shortDescription:'Ska pop. Los más accesibles del revival.',suggestedSongs:[{title:'Our House',note:'Ska pop perfecto'},{title:'One Step Beyond',note:'Energía incesante'}]},
+    {id:'desmond-dekker',name:'Desmond Dekker',role:'core',shortDescription:'Pionero jamaicano del ska y rocksteady.',suggestedSongs:[{title:'Israelites',note:'Clásico del proto-reggae'},{title:'007',note:'Ska jamaicano original'}]},
+    {id:'mighty-bees',name:'Mighty Mighty Bosstones',role:'wildcard',shortDescription:'Ska punk americano de los 90.',suggestedSongs:[{title:'The Impression That I Get',note:'El ska punk más conocido'}]},
+  ]},
+  {id:'dancehall',name:'Dancehall',parentFamily:'Reggae / Dub',description:'Reggae digital bailable. DJs, riddims y cultura jamaicana urbana.',originContext:'Jamaica, años 80',moodTags:['bailable','sensual','festivo'],suggestedSituations:['fiesta caribeña','verano','playa'],artists:[
+    {id:'beenie-man',name:'Beenie Man',role:'core',shortDescription:'El Rey del Dancehall.',suggestedSongs:[{title:'Who Am I (Sim Simma)',note:'Dancehall clásico'},{title:'Dude',note:'Bailable e irresistible'}]},
+    {id:'shabba',name:'Shabba Ranks',role:'core',shortDescription:'Dancehall de los 90. Voz única.',suggestedSongs:[{title:'Mr. Loverman',note:'Seductor dancehall'},{title:'Trailer Load a Girls',note:'Energía pura'}]},
+    {id:'sean-paul',name:'Sean Paul',role:'variation',shortDescription:'El que popularizó el dancehall globalmente.',suggestedSongs:[{title:'Temperature',note:'Hit global bailable'},{title:'Get Busy',note:'Infectious'}]},
+    {id:'vybz',name:'Vybz Kartel',role:'wildcard',shortDescription:'El más influyente del dancehall moderno.',suggestedSongs:[{title:'Fever',note:'Dancehall moderno'}]},
+  ]},
+  {id:'reggaeton',name:'Reggaetón',parentFamily:'Urbano Latino',description:'Dembow rhythm, perreo y urbano latino. Puerto Rico.',originContext:'Puerto Rico y Panamá, años 90',moodTags:['bailable','sensual','festivo'],suggestedSituations:['fiesta','verano','gym'],artists:[
+    {id:'daddy-yankee',name:'Daddy Yankee',role:'core',shortDescription:'El Big Boss. El que popularizó el reggaetón.',suggestedSongs:[{title:'Gasolina',note:'El track que lo cambió todo'},{title:'Con Calma',note:'Revival exitoso'},{title:'Rompe',note:'Perreo clásico'}]},
+    {id:'don-omar',name:'Don Omar',role:'core',shortDescription:'El Rey del Reggaetón.',suggestedSongs:[{title:'Danza Kuduro',note:'Viral global'},{title:'Taboo',note:'Romántico reggaetón'},{title:'Bandolero',note:'Colaboración con Tego'}]},
+    {id:'bad-bunny',name:'Bad Bunny',role:'core',shortDescription:'El artista más escuchado del mundo.',suggestedSongs:[{title:'Mía',note:'Reggaetón romántico'},{title:'DAKITI',note:'Trap reggaetón adictivo'},{title:'Tití Me Preguntó',note:'Festiva irresistible'}]},
+    {id:'j-balvin',name:'J Balvin',role:'core',shortDescription:'El más global del reggaetón.',suggestedSongs:[{title:'Mi Gente',note:'Bailable e irresistible'},{title:'Ay Vamos',note:'Urban pop'}]},
+    {id:'karol-g',name:'KAROL G',role:'variation',shortDescription:'La artista femenina más grande del urbano.',suggestedSongs:[{title:'BICHOTA',note:'Empoderamiento'},{title:'Tusa',note:'Perreo emocional'}]},
+    {id:'anuel',name:'Anuel AA',role:'wildcard',shortDescription:'Trap latino. Autenticidad y polémica.',suggestedSongs:[{title:'China',note:'Viral con múltiples artistas'},{title:'Relacion',note:'Romántica trap'}]},
+  ]},
+  {id:'salsa',name:'Salsa',parentFamily:'Música Latina',description:'Ritmos afrocubanos, jazz y soul latino. Nueva York y Puerto Rico.',originContext:'Nueva York / Puerto Rico, años 60-70',moodTags:['festivo','apasionado','energético'],suggestedSituations:['fiesta','bailar','celebración'],artists:[
+    {id:'hector-lavoe',name:'Héctor Lavoe',role:'core',shortDescription:'El Cantante de los Cantantes.',suggestedSongs:[{title:'El Cantante',note:'Autobiográfica y emotiva'},{title:'Aguanile',note:'Afrocubana y poderosa'},{title:'Periódico de Ayer',note:'Festiva y brillante'}]},
+    {id:'celia',name:'Celia Cruz',role:'core',shortDescription:'La Reina de la Salsa. Azúcar!',suggestedSongs:[{title:'La Vida Es Un Carnaval',note:'Himno festivo'},{title:'Quimbara',note:'Energía sabrosa'}]},
+    {id:'marc-anthony',name:'Marc Anthony',role:'core',shortDescription:'La voz más potente de la salsa moderna.',suggestedSongs:[{title:'Vivir Mi Vida',note:'Himno de optimismo'},{title:'Valió La Pena',note:'Romántica clásica'}]},
+    {id:'ruben',name:'Rubén Blades',role:'core',shortDescription:'Salsa narrativa y política.',suggestedSongs:[{title:'Pedro Navaja',note:'Narrativa perfecta'},{title:'Plástico',note:'Crítica social salsa'}]},
+    {id:'willie-colon',name:'Willie Colón',role:'variation',shortDescription:'Trombones y salsa brava.',suggestedSongs:[{title:'Calle Luna, Calle Sol',note:'Salsa urbana clásica'},{title:'El Gran Varón',note:'Polémica y emotiva'}]},
+    {id:'oscar-de-leon',name:'Oscar D\'León',role:'wildcard',shortDescription:'El Sonero del Mundo. Venezuela y la salsa.',suggestedSongs:[{title:'Llorarás',note:'Clásico inmortal'},{title:'Agárrate',note:'Ritmo irresistible'}]},
+  ]},
+  {id:'bachata',name:'Bachata',parentFamily:'Música Latina',description:'Guitarra, bolero y corazón roto. República Dominicana.',originContext:'República Dominicana, años 60',moodTags:['romántico','melancólico','sensual'],suggestedSituations:['cena romántica','bailar','desamor'],artists:[
+    {id:'juan-luis',name:'Juan Luis Guerra',role:'core',shortDescription:'La bachata poética y el merengue inteligente.',suggestedSongs:[{title:'Ojalá Que Llueva Café',note:'Poética y festiva'},{title:'La Bilirrubina',note:'Bachata pop brillante'},{title:'Burbujas de Amor',note:'Romántica y hermosa'}]},
+    {id:'romeo',name:'Romeo Santos',role:'core',shortDescription:'El Rey de la Bachata. Aventura y solo.',suggestedSongs:[{title:'Propuesta Indecente',note:'Sensual y bailable'},{title:'Eres Mía',note:'Romántica'}]},
+    {id:'prince-royce',name:'Prince Royce',role:'variation',shortDescription:'Bachata urbana de Nueva York.',suggestedSongs:[{title:'Stand By Me',note:'Cover en español perfecto'},{title:'Corazón Sin Cara',note:'Romántica pop'}]},
+    {id:'aventura',name:'Aventura',role:'wildcard',shortDescription:'Los que modernizaron la bachata. Romeo lideró.',suggestedSongs:[{title:'Obsesión',note:'El hit global de la bachata'},{title:'Cuando Volverás',note:'Romántica y melancólica'}]},
+  ]},
+  {id:'cumbia',name:'Cumbia',parentFamily:'Música Latina',description:'Ritmo colombiano de origen afroindígena. Alegría constante.',originContext:'Costa Caribe colombiana, siglos XVIII',moodTags:['alegre','festivo','bailable'],suggestedSituations:['fiesta','verano','familia'],artists:[
+    {id:'carlos-vives',name:'Carlos Vives',role:'core',shortDescription:'El que modernizó la cumbia.',suggestedSongs:[{title:'La Bicicleta',note:'Pop cumbia brillante'},{title:'Carito',note:'Nostálgica y festiva'}]},
+    {id:'toto',name:'Totó la Momposina',role:'core',shortDescription:'La cumbia más pura y tradicional.',suggestedSongs:[{title:'La Piragua',note:'Cumbia canónica'},{title:'El Pescador',note:'Tradición costera'}]},
+    {id:'kumbia',name:'Kumbia Kings',role:'wildcard',shortDescription:'Cumbia pop americano de AB Quintanilla.',suggestedSongs:[{title:'Boom',note:'Electrocumbia de los 2000'},{title:'Shhh! (Fuiste Mía)',note:'Cumbia pop romántica'}]},
+  ]},
+  {id:'tango',name:'Tango',parentFamily:'Música Latina',description:'Pasión, melancolía y abrazo. Buenos Aires y Montevideo.',originContext:'Río de la Plata, finales siglo XIX',moodTags:['apasionado','melancólico','sensual'],suggestedSituations:['baile','cena íntima','emociones intensas'],artists:[
+    {id:'gardel',name:'Carlos Gardel',role:'core',shortDescription:'El Zorzal Criollo. El tango personificado.',suggestedSongs:[{title:'Por Una Cabeza',note:'El tango más reconocido'},{title:'Mi Buenos Aires Querido',note:'Nostalgia porteña'},{title:'Volver',note:'Clásico ineludible'}]},
+    {id:'piazzolla',name:'Ástor Piazzolla',role:'core',shortDescription:'El renovador. Tango nuevo con jazz y clásica.',suggestedSongs:[{title:'Libertango',note:'Nuevo tango perfecto'},{title:'Adiós Nonino',note:'Emocionalmente devastadora'},{title:'Verano Porteño',note:'Las Cuatro Estaciones'}]},
+    {id:'pugliese',name:'Osvaldo Pugliese',role:'core',shortDescription:'Tango dramático y poderoso.',suggestedSongs:[{title:'La Yumba',note:'Tango de baile esencial'},{title:'Recuerdo',note:'Poderoso y melancólico'}]},
+    {id:'biagi',name:'Rodolfo Biagi',role:'wildcard',shortDescription:'Tango staccato y bailable. D\'Arienzo rival.',suggestedSongs:[{title:'Sus Ojos Se Cerraron',note:'Dramático tango vocal'}]},
+  ]},
+  {id:'bossa',name:'Bossa nova',parentFamily:'Música Latinoamericana',description:'Samba y jazz con suavidad. Brasil, años 50.',originContext:'Río de Janeiro, Brasil, años 50',moodTags:['suave','romántico','sofisticado'],suggestedSituations:['cena romántica','café','atardecer'],artists:[
+    {id:'jobim',name:'Antônio Carlos Jobim',role:'core',shortDescription:'El padre de la bossa nova.',suggestedSongs:[{title:'Garota de Ipanema',note:'La bossa nova para siempre'},{title:'Corcovado',note:'Íntima y perfecta'},{title:'Desafinado',note:'Irónica y musical'}]},
+    {id:'joao-gilberto',name:'João Gilberto',role:'core',shortDescription:'La guitarra y voz que definieron el estilo.',suggestedSongs:[{title:'Chega de Saudade',note:'El primer álbum de bossa nova'},{title:'Eu Sei Que Vou Te Amar',note:'Íntima'}]},
+    {id:'caetano',name:'Caetano Veloso',role:'wildcard',shortDescription:'Tropicalismo. Bossa nova política.',suggestedSongs:[{title:'Cucurrucucú Paloma',note:'Versión devastadora'},{title:'Sozinho',note:'Pop bossa sofisticado'}]},
+    {id:'astrud',name:'Astrud Gilberto',role:'variation',shortDescription:'La voz de Garota de Ipanema.',suggestedSongs:[{title:'The Girl from Ipanema',note:'Versión en inglés icónica'},{title:'So Nice (Summer Samba)',note:'Bossa pop'}]},
+  ]},
+  {id:'samba',name:'Samba',parentFamily:'Música Latinoamericana',description:'Ritmo festivo de Brasil. Carnaval, alegría y complejidad rítmica.',originContext:'Brasil, principios siglo XX',moodTags:['festivo','alegre','energético'],suggestedSituations:['fiesta','carnaval','verano'],artists:[
+    {id:'zeca',name:'Zeca Pagodinho',role:'core',shortDescription:'Pagode y samba moderno.',suggestedSongs:[{title:'Verdade',note:'Samba pop bello'},{title:'Ogum',note:'Samba religioso festivo'}]},
+    {id:'martinho',name:'Martinho da Vila',role:'core',shortDescription:'Samba enredo y samba canção.',suggestedSongs:[{title:'Canta, Canta, Minha Gente',note:'Himno de samba'},{title:'Casa de Bamba',note:'Samba lento hermoso'}]},
+    {id:'carmen-miranda',name:'Carmen Miranda',role:'wildcard',shortDescription:'La embajadora del samba al mundo.',suggestedSongs:[{title:'Chica Chica Boom Chic',note:'Irresistible y festiva'},{title:'Tico-Tico no Fubá',note:'Técnica y divertida'}]},
+  ]},
+  /* FLAMENCO Y MÚSICA ESPAÑOLA */
+  {id:'flamenco',name:'Flamenco',parentFamily:'Música Española',description:'Quejío, zapateado, palmas y duende. El arte total andaluz.',originContext:'Andalucía, España, siglo XIX',moodTags:['apasionado','melancólico','profundo'],suggestedSituations:['concierto íntimo','noche española','introspección'],artists:[
+    {id:'camaron',name:'Camarón de la Isla',role:'core',shortDescription:'El flamenco puro y moderno.',suggestedSongs:[{title:'La Leyenda del Tiempo',note:'Flamenco fusión moderno'},{title:'Nana del Caballo Grande',note:'Puro y emotivo'},{title:'Como el Agua',note:'Soleá definitiva'}]},
+    {id:'paco',name:'Paco de Lucía',role:'core',shortDescription:'El mejor guitarrista flamenco.',suggestedSongs:[{title:'Entre Dos Aguas',note:'Rumba flamenca accesible'},{title:'Zyryab',note:'Técnica guitarrística cumbre'},{title:'Almoraima',note:'Flamenco instrumental maestro'}]},
+    {id:'tomatito',name:'Tomatito',role:'core',shortDescription:'Heredero de Paco de Lucía.',suggestedSongs:[{title:'Garrotín',note:'Flamenco festivo'},{title:'Llanto de Luna',note:'Íntima y bella'}]},
+    {id:'estrella',name:'Estrella Morente',role:'variation',shortDescription:'La voz flamenca contemporánea más pura.',suggestedSongs:[{title:'Volver',note:'Versión de Almodóvar'},{title:'Mi Cante y un Poema',note:'Fusión literaria flamenca'}]},
+    {id:'rosalia',name:'Rosalía',role:'wildcard',shortDescription:'Flamenco experimental y pop. Generación nueva.',suggestedSongs:[{title:'Malamente',note:'Flamenco vanguardista'},{title:'BIZCOCHITO',note:'Pop flamenco urbano'},{title:'Con Altura',note:'Flamenco urbano global'}]},
+    {id:'lole-manuel',name:'Lole y Manuel',role:'variation',shortDescription:'Flamenco fusión con influencias árabes.',suggestedSongs:[{title:'Al Andalus',note:'Flamenco árabe bellísimo'},{title:'Nuevo Día',note:'Emotiva y hermosa'}]},
+  ]},
+  /* CLÁSICA */
+  {id:'clasica',name:'Música clásica',parentFamily:'Clásica / Académica',description:'La tradición de la música occidental culta, del barroco al romanticismo.',originContext:'Europa, siglos XVII-XIX',moodTags:['sublime','emotivo','intelectual'],suggestedSituations:['estudiar','concentración','introspección'],artists:[
+    {id:'beethoven',name:'Ludwig van Beethoven',role:'core',shortDescription:'El titán. Sinfonías que cambiaron todo.',suggestedSongs:[{title:'Sinfonía n.º 9',note:'El himno de la humanidad'},{title:'Claro de Luna',note:'Belleza pura de piano'},{title:'Sinfonía n.º 5',note:'El destino llamando'}]},
+    {id:'mozart',name:'Wolfgang Amadeus Mozart',role:'core',shortDescription:'El prodigio. Música perfecta y fluida.',suggestedSongs:[{title:'Réquiem en re menor',note:'Oscuro y transcendente'},{title:'Concierto para piano n.º 21',note:'Melodía inmortal'}]},
+    {id:'bach',name:'Johann Sebastian Bach',role:'core',shortDescription:'La arquitectura perfecta. Contrapunto sublime.',suggestedSongs:[{title:'Suite para cello nº 1',note:'Solo y perfecto'},{title:'El clave bien temperado',note:'Matemática musical'}]},
+    {id:'chopin',name:'Frédéric Chopin',role:'core',shortDescription:'Piano romántico. Emoción directa al teclado.',suggestedSongs:[{title:'Balada n.º 1 en sol menor',note:'Dramática y perfecta'},{title:'Nocturno Op. 9 nº 2',note:'Íntimo y bello'}]},
+    {id:'debussy',name:'Claude Debussy',role:'variation',shortDescription:'Impresionismo musical.',suggestedSongs:[{title:'Clair de Lune',note:'Belleza pura'},{title:'La Mer',note:'Orquestal impresionista'}]},
+    {id:'mahler',name:'Gustav Mahler',role:'wildcard',shortDescription:'Sinfonías monumentales.',suggestedSongs:[{title:'Sinfonía nº 5 - Adagietto',note:'Visconti y Venecia'},{title:'Sinfonía nº 9',note:'La despedida'}]},
+    {id:'schubert',name:'Franz Schubert',role:'variation',shortDescription:'El lied y la sinfonía romántica temprana.',suggestedSongs:[{title:'Ave María',note:'Versión inmortal'},{title:'La Truchita',note:'Quinteto clásico hermoso'}]},
+  ]},
+  /* WORLD MUSIC */
+  {id:'afrobeats',name:'Afrobeats',parentFamily:'Afro',description:'Pop africano contemporáneo. Nigeria, Ghana y la diáspora.',originContext:'Nigeria y Ghana, años 2000',moodTags:['alegre','festivo','bailable'],suggestedSituations:['fiesta','verano','buen ánimo'],artists:[
+    {id:'burna',name:'Burna Boy',role:'core',shortDescription:'African Giant. Afrobeats con soul y reggae.',suggestedSongs:[{title:'Ye',note:'Hit global melódico'},{title:'Last Last',note:'Emocional y bailable'},{title:'Location',note:'Afrobeats pop suave'}]},
+    {id:'wizkid',name:'Wizkid',role:'core',shortDescription:'El pionero del afrobeats moderno.',suggestedSongs:[{title:'Essence',note:'Feat. Tems, irresistible'},{title:'Come Closer',note:'Sensual'},{title:'Ginger',note:'Energético y bailable'}]},
+    {id:'davido',name:'Davido',role:'core',shortDescription:'El más comercial. Energía festiva constante.',suggestedSongs:[{title:'Fall',note:'Hit de Billboard'},{title:'Assurance',note:'Romántica'}]},
+    {id:'tems',name:'Tems',role:'variation',shortDescription:'Voz única. Afrobeats con R&B alternativo.',suggestedSongs:[{title:'Free Mind',note:'Atmosférica y emotiva'},{title:'Higher',note:'Suave y hermosa'}]},
+    {id:'ckay',name:'CKay',role:'wildcard',shortDescription:'Afrobeats electrónico. Love Nwantiti global.',suggestedSongs:[{title:'Love Nwantiti',note:'Viral global'},{title:'Emiliana',note:'Melodía irresistible'}]},
+  ]},
+  {id:'amapiano',name:'Amapiano',parentFamily:'Afro',description:'Log drum, piano jazz y baile sudafricano.',originContext:'Sudáfrica, años 2010',moodTags:['bailable','relajado','festivo'],suggestedSituations:['fiesta','brunch','verano'],artists:[
+    {id:'kabza',name:'Kabza De Small',role:'core',shortDescription:'El Rey del Amapiano.',suggestedSongs:[{title:'Sponono',note:'Con Wizkid, global'},{title:'Amapiano Love Affair',note:'Puro amapiano'}]},
+    {id:'dj-maphorisa',name:'DJ Maphorisa',role:'core',shortDescription:'Productor clave del amapiano.',suggestedSongs:[{title:'Izolo',note:'Amapiano hit'},{title:'Banyana',note:'Bailable y alegre'}]},
+    {id:'sun-el',name:'Sun-El Musician',role:'variation',shortDescription:'Afro house y amapiano emocional.',suggestedSongs:[{title:'Akanamali',note:'Emotiva y hermosa'}]},
+  ]},
+  {id:'chanson',name:'Chanson française',parentFamily:'Música Europea',description:'Canción francesa con texto literario. Piaf, Brel, Gainsbourg.',originContext:'Francia, siglos XIX-XX',moodTags:['melancólico','romántico','poético'],suggestedSituations:['cena parisina','vino','lectura'],artists:[
+    {id:'piaf',name:'Édith Piaf',role:'core',shortDescription:'La Vie en Rose. La chanson personificada.',suggestedSongs:[{title:'La Vie en Rose',note:'El icono de Francia'},{title:'Non, je ne regrette rien',note:'Himno de resiliencia'},{title:'La Foule',note:'Emotiva y rítmica'}]},
+    {id:'brel',name:'Jacques Brel',role:'core',shortDescription:'El dramático. Teatral y poético.',suggestedSongs:[{title:'Ne me quitte pas',note:'Devastadora y hermosa'},{title:'Amsterdam',note:'Épica teatral'},{title:'La Chanson des Vieux Amants',note:'Íntima y emotiva'}]},
+    {id:'gainsbourg',name:'Serge Gainsbourg',role:'core',shortDescription:'El provocador. Chanson, reggae, pop experimental.',suggestedSongs:[{title:'Je t\'aime... moi non plus',note:'La más polémica y conocida'},{title:'Melody Nelson',note:'Concept album único'}]},
+    {id:'barbara',name:'Barbara',role:'variation',shortDescription:'La Dame Noire. Chanson intimista y teatral.',suggestedSongs:[{title:'Dis, quand reviendras-tu?',note:'Íntima y preciosa'},{title:'Ma plus belle histoire d\'amour',note:'Emotiva'}]},
+  ]},
+  {id:'fado',name:'Fado',parentFamily:'Música Europea',description:'Saudade portuguesa. Voz, guitarra portuguesa y guitarra viola.',originContext:'Lisboa, Portugal, siglo XIX',moodTags:['melancólico','nostálgico','espiritual'],suggestedSituations:['noche reflexiva','cena íntima','solo'],artists:[
+    {id:'amalia',name:'Amália Rodrigues',role:'core',shortDescription:'La fundadora del fado moderno.',suggestedSongs:[{title:'Estranha Forma de Vida',note:'Fado canónico'},{title:'Uma Casa Portuguesa',note:'Bello y popular'},{title:'Solidão',note:'Saudade pura'}]},
+    {id:'mariza',name:'Mariza',role:'core',shortDescription:'El fado contemporáneo.',suggestedSongs:[{title:'Chuva',note:'Moderna y hermosa'},{title:'Transparente',note:'Íntima y emotiva'}]},
+    {id:'ana-moura',name:'Ana Moura',role:'variation',shortDescription:'Fado moderno con colaboraciones pop.',suggestedSongs:[{title:'Desfado',note:'Fado moderno'},{title:'Leva-me aos Fados',note:'Con los Stones incluso'}]},
+  ]},
+  {id:'bollywood',name:'Bollywood',parentFamily:'Música Asia / Oriente',description:'Pop indio cinematográfico. Mezcla de música clásica india, folk y pop.',originContext:'Mumbai, India, años 50',moodTags:['festivo','emotivo','visual'],suggestedSituations:['fiesta colorida','estado animado','cultura'],artists:[
+    {id:'ar-rahman',name:'A.R. Rahman',role:'core',shortDescription:'El Mozart de Madras.',suggestedSongs:[{title:'Jai Ho',note:'Slumdog Millionaire, global'},{title:'Dil Se Re',note:'Pasión y grandeza'},{title:'Chaiyya Chaiyya',note:'Energético y festivo'}]},
+    {id:'lata',name:'Lata Mangeshkar',role:'core',shortDescription:'La voz de India. 6 décadas de canciones.',suggestedSongs:[{title:'Lag Ja Gale',note:'Clásico emocional'},{title:'Tere Bina Zindagi',note:'Belleza vocal máxima'}]},
+    {id:'kishore',name:'Kishore Kumar',role:'variation',shortDescription:'El más querido. Voz versátil.',suggestedSongs:[{title:'Mere Sapno Ki Rani',note:'Alegre y romántica'}]},
+  ]},
+  {id:'corridos',name:'Corridos tumbados',parentFamily:'Música Mexicana',description:'Narcocorrido moderno con trap y regionalismo mexicano.',originContext:'México, años 2010',moodTags:['intenso','narrativo','festivo'],suggestedSituations:['fiesta mexicana','conducir','celebración'],artists:[
+    {id:'natanael',name:'Natanael Cano',role:'core',shortDescription:'El inventor de los corridos tumbados.',suggestedSongs:[{title:'El Drip',note:'Corridos tumbados fundacional'},{title:'Soy el Diablo',note:'Dark corrido trap'}]},
+    {id:'peso-pluma',name:'Peso Pluma',role:'core',shortDescription:'El más famoso del género. Global en 2023.',suggestedSongs:[{title:'Ella Baila Sola',note:'Corrido pop masivo'},{title:'BZRP Music Sessions #55',note:'Viral global'}]},
+    {id:'junior-h',name:'Junior H',role:'variation',shortDescription:'El más melancólico. Corridos románticos.',suggestedSongs:[{title:'El del Mercedes',note:'Corrido sad trap'},{title:'Dosis',note:'Romántico y triste'}]},
+    {id:'form-crooks',name:'Fuerza Regida',role:'wildcard',shortDescription:'Corridos tumbados con banda.',suggestedSongs:[{title:'Harley Quinn',note:'Corrido bélico moderno'},{title:'Radicamos en South Central',note:'Festivo'}]},
+  ]},
+  /* VAPORWAVE / VANGUARDIA */
+  {id:'vaporwave',name:'Vaporwave',parentFamily:'Electrónica',description:'Nostalgia corporativa de los 80-90 deformada. Estética internet y crítica capitalista.',originContext:'Internet, años 2010',moodTags:['nostálgico','onírico','extraño'],suggestedSituations:['trabajo creativo','nocturno','producción artística'],artists:[
+    {id:'macintosh-plus',name:'Macintosh Plus',role:'core',shortDescription:'Floral Shoppe. El álbum fundacional.',suggestedSongs:[{title:'リサフランク420',note:'Vaporwave canónico y viral'},{title:'Enjoy Yourself',note:'Dreamy y extraño'}]},
+    {id:'saint-pepsi',name:'Saint Pepsi',role:'core',shortDescription:'Vaporwave más funky y alegre.',suggestedSongs:[{title:'Enjoy Yourself',note:'Vaporwave funk bailable'},{title:'Nintendo Power',note:'Nostálgico retro'}]},
+    {id:'luxury-elite',name:'Luxury Elite',role:'variation',shortDescription:'Vaporwave mall music. 80s corporativo.',suggestedSongs:[{title:'Why',note:'Smooth vaporwave'},{title:'A.S.A.P.',note:'Soft vaporwave'}]},
+  ]},
+  {id:'gospel',name:'Gospel',parentFamily:'R&B / Soul',description:'La música de la fe. Voces potentes, emoción y comunidad.',originContext:'EE.UU., comunidades afroamericanas',moodTags:['espiritual','emotivo','poderoso'],suggestedSituations:['mañana dominical','motivación','emoción profunda'],artists:[
+    {id:'mahalia',name:'Mahalia Jackson',role:'core',shortDescription:'La reina del gospel.',suggestedSongs:[{title:'How I Got Over',note:'Gospel clásico sublime'},{title:'Move On Up a Little Higher',note:'Definitivo'}]},
+    {id:'kirk',name:'Kirk Franklin',role:'variation',shortDescription:'Gospel hip-hop moderno.',suggestedSongs:[{title:'Stomp',note:'Gospel funk irresistible'},{title:'Lean on Me',note:'Emotivo gospel pop'}]},
+    {id:'yolanda-adams',name:'Yolanda Adams',role:'wildcard',shortDescription:'Gospel contemporáneo con voz poderosa.',suggestedSongs:[{title:'Open My Heart',note:'Gospel pop brillante'}]},
+  ]},
+];
+
+/* ============================================================
+   STORAGE HELPERS
+   ============================================================ */
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const d=JSON.parse(raw);
+      if(d&&d.settings&&d.genres) return d;
+    }
+  }catch(e){console.warn('Error loading localStorage:',e);}
+  return null;
+}
+
+function saveData(data){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({...data,updatedAt:new Date().toISOString()}));
+  }catch(e){console.warn('Error saving localStorage:',e);}
+}
+
+function initData(){
+  return{
+    settings:{user1:'Jonathan',user2:'Lucy'},
+    genres:INITIAL_GENRES,
+    weeks:[],
+    activeWeekId:null,
+    completedGenreIds:[],
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString()
+  };
+}
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function genId(){return Math.random().toString(36).substr(2,9);}
+
+function calcArtistAvg(a){
+  const s1=parseFloat(a.scoreU1);
+  const s2=parseFloat(a.scoreU2);
+  const v=[];
+  if(!isNaN(s1)&&s1>=0)v.push(s1);
+  if(!isNaN(s2)&&s2>=0)v.push(s2);
+  if(!v.length)return null;
+  return v.reduce((a,b)=>a+b,0)/v.length;
+}
+
+/* ============================================================
+   SMALL COMPONENTS
+   ============================================================ */
+function Badge({type}){
+  const map={core:'badge-core',variation:'badge-variation',wildcard:'badge-wildcard',completed:'badge-completed',planned:'badge-planned',in_progress:'badge-inprogress'};
+  const labels={core:'Core',variation:'Variation',wildcard:'Wildcard',completed:'Completada',planned:'Planificada',in_progress:'En curso'};
+  return <span className={`badge ${map[type]||'badge-planned'}`}>{labels[type]||type}</span>;
+}
+
+function ScoreInput({value,onChange,label}){
+  return(
+    <div className="score-box">
+      <label>{label}</label>
+      <input type="number" min="0" max="10" step="0.5" value={value||''} onChange={e=>onChange(e.target.value)} placeholder="—"/>
+    </div>
+  );
+}
+
+function ConfirmModal({message,onConfirm,onCancel}){
+  return(
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:400}}>
+        <h2 style={{marginBottom:12}}>Confirmar</h2>
+        <p style={{marginBottom:16,color:'var(--muted)'}}>{message}</p>
+        <div className="row">
+          <button className="btn btn-danger" onClick={onConfirm}>Sí, eliminar</button>
+          <button className="btn" onClick={onCancel}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   GENRE EDIT MODAL
+   ============================================================ */
+function GenreEditModal({genre,isNew,onSave,onClose}){
+  const [f,setF]=useState({
+    ...genre,
+    moodTags:Array.isArray(genre.moodTags)?genre.moodTags.join(', '):(genre.moodTags||''),
+    suggestedSituations:Array.isArray(genre.suggestedSituations)?genre.suggestedSituations.join(', '):(genre.suggestedSituations||''),
+  });
+  const fi=k=>e=>setF(p=>({...p,[k]:e.target.value}));
+  return(
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <h2 style={{marginBottom:12}}>{isNew?'Nuevo género':'Editar género'}</h2>
+        <div className="col">
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Nombre</label><input value={f.name||''} onChange={fi('name')}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Familia musical</label><input value={f.parentFamily||''} onChange={fi('parentFamily')}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Descripción</label><textarea rows={2} value={f.description||''} onChange={fi('description')}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Contexto/origen</label><input value={f.originContext||''} onChange={fi('originContext')}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Mood tags (separados por coma)</label><input value={f.moodTags||''} onChange={fi('moodTags')}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Situaciones (separadas por coma)</label><input value={f.suggestedSituations||''} onChange={fi('suggestedSituations')}/></div>
+        </div>
+        <div className="row" style={{marginTop:14}}>
+          <button className="btn btn-primary" onClick={()=>onSave({...f,
+            moodTags:f.moodTags?f.moodTags.split(',').map(s=>s.trim()).filter(Boolean):[],
+            suggestedSituations:f.suggestedSituations?f.suggestedSituations.split(',').map(s=>s.trim()).filter(Boolean):[],
+            artists:f.artists||[]
+          })}>Guardar</button>
+          <button className="btn" onClick={onClose}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ARTIST EDIT MODAL
+   ============================================================ */
+function ArtistEditModal({genreId,artist,isNew,onSave,onClose}){
+  const [f,setF]=useState({name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:''},{title:'',note:''}],...artist});
+  const fi=k=>e=>setF(p=>({...p,[k]:e.target.value}));
+  const updSong=(i,k,v)=>setF(p=>({...p,suggestedSongs:p.suggestedSongs.map((s,j)=>j===i?{...s,[k]:v}:s)}));
+  const addSong=()=>setF(p=>({...p,suggestedSongs:[...p.suggestedSongs,{title:'',note:''}]}));
+  const delSong=i=>setF(p=>({...p,suggestedSongs:p.suggestedSongs.filter((_,j)=>j!==i)}));
+  return(
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <h2 style={{marginBottom:12}}>{isNew?'Nuevo artista':'Editar artista'}</h2>
+        <div className="col">
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Nombre</label><input value={f.name||''} onChange={fi('name')}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Rol</label>
+            <select value={f.role||'core'} onChange={fi('role')}>
+              <option value="core">Core</option>
+              <option value="variation">Variation</option>
+              <option value="wildcard">Wildcard</option>
+            </select>
+          </div>
+          <div><label style={{fontSize:12,color:'var(--muted)'}}>Descripción corta</label><input value={f.shortDescription||''} onChange={fi('shortDescription')}/></div>
+          <div>
+            <div className="row" style={{marginBottom:6}}>
+              <label style={{fontSize:12,color:'var(--muted)',flex:1}}>Canciones sugeridas</label>
+              <button className="btn btn-xs" onClick={addSong}>+ Añadir</button>
+            </div>
+            {(f.suggestedSongs||[]).map((s,i)=>(
+              <div key={i} className="row" style={{marginBottom:4}}>
+                <input placeholder="Título" value={s.title||''} onChange={e=>updSong(i,'title',e.target.value)} style={{flex:2}}/>
+                <input placeholder="Nota" value={s.note||''} onChange={e=>updSong(i,'note',e.target.value)} style={{flex:2}}/>
+                <button className="btn btn-xs btn-danger" onClick={()=>delSong(i)}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="row" style={{marginTop:14}}>
+          <button className="btn btn-primary" onClick={()=>onSave(genreId,{...f,suggestedSongs:(f.suggestedSongs||[]).filter(s=>s.title)})}>Guardar</button>
+          <button className="btn" onClick={onClose}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   WEEK DETAIL MODAL
+   ============================================================ */
+function WeekDetailModal({week,u1,u2,onClose}){
+  return(
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="row" style={{justifyContent:'space-between',marginBottom:12}}>
+          <h2>Semana {week.weekNum}: {week.genreName}</h2>
+          <button className="btn btn-sm" onClick={onClose}>Cerrar</button>
+        </div>
+        <p className="muted" style={{marginBottom:8}}>Inicio: {week.startDate} · <Badge type={week.status}/></p>
+        {week.rating&&Object.keys(week.rating).length>0&&(
+          <div className="card card-sm" style={{marginBottom:12}}>
+            <h3>Valoración del género</h3>
+            <div className="grid3" style={{marginTop:8}}>
+              {week.rating.scoreU1&&<div className="metric"><div className="metric-label">{u1}</div><div className="metric-value">{parseFloat(week.rating.scoreU1).toFixed(1)}</div></div>}
+              {week.rating.scoreU2&&<div className="metric"><div className="metric-label">{u2}</div><div className="metric-value">{parseFloat(week.rating.scoreU2).toFixed(1)}</div></div>}
+            </div>
+            {week.rating.favSongU1&&<p style={{fontSize:12,marginTop:8}}>🎵 {u1}: {week.rating.favSongU1}</p>}
+            {week.rating.favSongU2&&<p style={{fontSize:12}}>🎵 {u2}: {week.rating.favSongU2}</p>}
+            {week.rating.comment&&<p style={{marginTop:8,fontSize:13,borderTop:'0.5px solid var(--border)',paddingTop:8}}>{week.rating.comment}</p>}
+          </div>
+        )}
+        <div className="section-title">Artistas</div>
+        {(week.artists||[]).map(a=>{
+          const avg=calcArtistAvg(a);
+          return(
+            <div key={a.id} style={{padding:'8px 0',borderBottom:'0.5px solid var(--border)'}}>
+              <div className="row" style={{justifyContent:'space-between'}}>
+                <span style={{fontWeight:500}}>{a.name}</span>
+                <div className="row" style={{gap:6}}>
+                  {avg!==null&&<span style={{fontWeight:500,color:'var(--c2)'}}>{avg.toFixed(1)}</span>}
+                  <Badge type={a.role}/>
+                  {a.listened&&<Badge type="completed"/>}
+                </div>
+              </div>
+              {(a.scoreU1||a.scoreU2)&&<div className="row" style={{marginTop:3,gap:12,fontSize:12,color:'var(--muted)'}}>
+                {a.scoreU1&&<span>{u1}: {a.scoreU1}</span>}
+                {a.scoreU2&&<span>{u2}: {a.scoreU2}</span>}
+                {a.commentU1&&<span style={{fontStyle:'italic'}}>"{a.commentU1}"</span>}
+              </div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artistRankings,genres,completedGenreIds,onGenerate,onGoSemana,onManualSelect}){
+  const avgU1=useMemo(()=>{
+    const v=completedWeeks.filter(w=>!isNaN(parseFloat(w.rating?.scoreU1))).map(w=>parseFloat(w.rating.scoreU1));
+    return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;
+  },[completedWeeks]);
+  const avgU2=useMemo(()=>{
+    const v=completedWeeks.filter(w=>!isNaN(parseFloat(w.rating?.scoreU2))).map(w=>parseFloat(w.rating.scoreU2));
+    return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;
+  },[completedWeeks]);
+  const famCount={};completedWeeks.forEach(w=>{famCount[w.genreFamily]=(famCount[w.genreFamily]||0)+1;});
+  const topFam=Object.entries(famCount).sort((a,b)=>b[1]-a[1])[0];
+
+  return(
+    <div>
+      <div className="row" style={{justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:8}}>
+        <div>
+          <h1>Dashboard</h1>
+          <p className="muted">Vuestro laboratorio musical juntos 🎵</p>
+        </div>
+        <div className="row">
+          {!activeWeek&&<button className="btn btn-primary" onClick={onGenerate}>🎲 Nueva semana aleatoria</button>}
+          {!activeWeek&&<button className="btn" onClick={onManualSelect}>Elegir género</button>}
+          {activeWeek&&<button className="btn btn-primary" onClick={onGoSemana}>Ver semana activa →</button>}
+        </div>
+      </div>
+
+      <div className="grid4" style={{marginBottom:16}}>
+        <div className="metric"><div className="metric-label">Semanas completadas</div><div className="metric-value">{completedWeeks.length}</div></div>
+        <div className="metric"><div className="metric-label">Géneros escuchados</div><div className="metric-value">{(completedGenreIds||[]).length}</div></div>
+        <div className="metric"><div className="metric-label">Géneros pendientes</div><div className="metric-value">{genres.length-(completedGenreIds||[]).length}</div></div>
+        <div className="metric"><div className="metric-label">Familia favorita</div><div className="metric-value" style={{fontSize:13}}>{topFam?topFam[0]:'—'}</div></div>
+        <div className="metric"><div className="metric-label">Media {u1}</div><div className="metric-value">{avgU1!==null?avgU1.toFixed(1):'—'}</div></div>
+        <div className="metric"><div className="metric-label">Media {u2}</div><div className="metric-value">{avgU2!==null?avgU2.toFixed(1):'—'}</div></div>
+        <div className="metric"><div className="metric-label">Diferencia media</div><div className="metric-value">{(avgU1!==null&&avgU2!==null)?Math.abs(avgU1-avgU2).toFixed(1):'—'}</div></div>
+        <div className="metric"><div className="metric-label">Biblioteca total</div><div className="metric-value">{genres.length}</div></div>
+      </div>
+
+      {activeWeek&&(
+        <div className="card" style={{borderLeft:'3px solid var(--c1)',marginBottom:16}}>
+          <div className="row" style={{justifyContent:'space-between'}}>
+            <div>
+              <div style={{fontWeight:500}}>Semana activa: {activeWeek.genreName}</div>
+              <div className="muted" style={{fontSize:12}}>Desde {activeWeek.startDate} · {activeWeek.genreFamily}</div>
+            </div>
+            <button className="btn btn-sm btn-primary" onClick={onGoSemana}>Abrir →</button>
+          </div>
+        </div>
+      )}
+
+      {completedWeeks.length===0&&!activeWeek&&(
+        <div className="empty-state">
+          <div className="icon">🎸</div>
+          <div style={{fontWeight:500,marginBottom:6}}>¡Empezad vuestra aventura musical!</div>
+          <p className="muted">Generaed vuestra primera semana para descubrir un nuevo género juntos.</p>
+        </div>
+      )}
+
+      {genreRankings.length>0&&(
+        <div className="grid2">
+          <div className="card">
+            <h2 style={{marginBottom:10}}>🏆 Top géneros</h2>
+            {genreRankings.slice(0,5).map((g,i)=>(
+              <div key={g.weekId} className="rank-item">
+                <div className="rank-num">{i+1}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:500,fontSize:13}}>{g.name}</div>
+                  <div className="muted" style={{fontSize:11}}>{g.family}</div>
+                </div>
+                {g.avg!==null&&<span style={{fontWeight:500,color:'var(--c2)'}}>{g.avg.toFixed(1)}</span>}
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <h2 style={{marginBottom:10}}>⭐ Top artistas</h2>
+            {artistRankings.slice(0,5).map((a,i)=>(
+              <div key={i} className="rank-item">
+                <div className="rank-num">{i+1}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:500,fontSize:13}}>{a.name}</div>
+                  <div className="muted" style={{fontSize:11}}>{a.genreName}</div>
+                </div>
+                <span style={{fontWeight:500,color:'var(--c2)'}}>{a.avg.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {completedWeeks.length>0&&(
+        <div className="card" style={{marginTop:0}}>
+          <h2 style={{marginBottom:10}}>📅 Últimas semanas</h2>
+          {[...completedWeeks].reverse().slice(0,4).map(w=>{
+            const r=w.rating||{};
+            const s1=parseFloat(r.scoreU1);const s2=parseFloat(r.scoreU2);
+            const avg=!isNaN(s1)&&!isNaN(s2)?(s1+s2)/2:(!isNaN(s1)?s1:(!isNaN(s2)?s2:null));
+            return(
+              <div key={w.id} className="row" style={{padding:'6px 0',borderBottom:'0.5px solid var(--border)',gap:8}}>
+                <div style={{width:24,height:24,borderRadius:6,background:'var(--c3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:500,color:'var(--c2)',flexShrink:0}}>{w.weekNum}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:500,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{w.genreName}</div>
+                  <div className="muted" style={{fontSize:11}}>{w.startDate}</div>
+                </div>
+                {avg!==null&&<span style={{fontWeight:500,color:'var(--c2)',flexShrink:0}}>{avg.toFixed(1)}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleSong,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating}){
+  const [selGenre,setSelGenre]=useState('');
+  const genreObj=activeWeek?genres.find(g=>g.id===activeWeek.genreId):null;
+
+  if(manualGenreSelect){
+    const done=completedGenreIds||[];
+    const available=genres.filter(g=>!done.includes(g.id));
+    const played=genres.filter(g=>done.includes(g.id));
+    return(
+      <div>
+        <div className="row" style={{marginBottom:16}}>
+          <button className="btn btn-sm" onClick={()=>setManualGenreSelect(false)}>← Volver</button>
+          <h1>Elegir género manualmente</h1>
+        </div>
+        <div className="card">
+          <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:6}}>Selecciona un género</label>
+          <select value={selGenre} onChange={e=>setSelGenre(e.target.value)} style={{marginBottom:10}}>
+            <option value="">— Selecciona —</option>
+            {available.length>0&&<optgroup label={`Disponibles (${available.length})`}>
+              {available.map(g=><option key={g.id} value={g.id}>{g.name} · {g.parentFamily}</option>)}
+            </optgroup>}
+            {played.length>0&&<optgroup label={`Ya escuchados (${played.length})`}>
+              {played.map(g=><option key={g.id} value={g.id}>{g.name} (repetición)</option>)}
+            </optgroup>}
+          </select>
+          <button className="btn btn-primary" disabled={!selGenre} onClick={()=>{onGenreSelect(selGenre);setManualGenreSelect(false);}}>Generar semana con este género</button>
+        </div>
+      </div>
+    );
+  }
+
+  if(weekCloseMode&&activeWeek){
+    const arts=activeWeek.artists;
+    const u1Top=[...arts].filter(a=>a.scoreU1!=='').sort((a,b)=>parseFloat(b.scoreU1)-parseFloat(a.scoreU1)).slice(0,3);
+    const u2Top=[...arts].filter(a=>a.scoreU2!=='').sort((a,b)=>parseFloat(b.scoreU2)-parseFloat(a.scoreU2)).slice(0,3);
+    const both=arts.filter(a=>a.scoreU1!==''&&a.scoreU2!=='');
+    const divisive=both.length?[...both].sort((a,b)=>Math.abs(parseFloat(b.scoreU1)-parseFloat(b.scoreU2))-Math.abs(parseFloat(a.scoreU1)-parseFloat(a.scoreU2)))[0]:null;
+    const consensual=both.filter(a=>calcArtistAvg(a)>=7).sort((a,b)=>Math.abs(parseFloat(a.scoreU1)-parseFloat(a.scoreU2))-Math.abs(parseFloat(b.scoreU1)-parseFloat(b.scoreU2)))[0]||null;
+    const topJoint=[...arts].filter(a=>calcArtistAvg(a)!==null).sort((a,b)=>calcArtistAvg(b)-calcArtistAvg(a)).slice(0,3);
+
+    return(
+      <div>
+        <div className="row" style={{marginBottom:16}}>
+          <button className="btn btn-sm" onClick={()=>setWeekCloseMode(false)}>← Volver</button>
+          <h1>Cerrar semana: {activeWeek.genreName}</h1>
+        </div>
+
+        {(topJoint.length>0||divisive||consensual)&&(
+          <div className="card" style={{marginBottom:12,background:'#f0effc',border:'0.5px solid #d0cef0'}}>
+            <h2 style={{marginBottom:10}}>📊 Ranking semanal automático</h2>
+            <div className="grid2" style={{marginBottom:10}}>
+              {u1Top.length>0&&<div>
+                <div className="muted" style={{fontSize:11,marginBottom:4}}>Top 3 {u1}</div>
+                {u1Top.map((a,i)=><div key={a.id} style={{fontSize:12,marginBottom:2}}>{i+1}. {a.name} <span style={{color:'var(--c2)',fontWeight:500}}>({a.scoreU1})</span></div>)}
+              </div>}
+              {u2Top.length>0&&<div>
+                <div className="muted" style={{fontSize:11,marginBottom:4}}>Top 3 {u2}</div>
+                {u2Top.map((a,i)=><div key={a.id} style={{fontSize:12,marginBottom:2}}>{i+1}. {a.name} <span style={{color:'var(--success)',fontWeight:500}}>({a.scoreU2})</span></div>)}
+              </div>}
+            </div>
+            {topJoint.length>0&&<p style={{fontSize:12,marginBottom:4}}><span className="muted">Top conjunto:</span> {topJoint.map(a=>`${a.name} (${calcArtistAvg(a).toFixed(1)})`).join(' · ')}</p>}
+            {divisive&&<p style={{fontSize:12,marginBottom:2}}><span className="muted">Más divisivo:</span> {divisive.name} — {u1}: {divisive.scoreU1} / {u2}: {divisive.scoreU2} (Δ{Math.abs(parseFloat(divisive.scoreU1)-parseFloat(divisive.scoreU2)).toFixed(1)})</p>}
+            {consensual&&<p style={{fontSize:12}}><span className="muted">Más consensuado (≥7):</span> {consensual.name} ({calcArtistAvg(consensual).toFixed(1)})</p>}
+          </div>
+        )}
+
+        <div className="card">
+          <h2 style={{marginBottom:12}}>Valoración del género completo</h2>
+          <div className="grid2" style={{marginBottom:10}}>
+            <ScoreInput label={`Nota ${u1} (0-10)`} value={weekRating.scoreU1||''} onChange={v=>setWeekRating(p=>({...p,scoreU1:v}))}/>
+            <ScoreInput label={`Nota ${u2} (0-10)`} value={weekRating.scoreU2||''} onChange={v=>setWeekRating(p=>({...p,scoreU2:v}))}/>
+          </div>
+          <div className="grid2" style={{marginBottom:10}}>
+            <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u1}</label><input value={weekRating.favSongU1||''} onChange={e=>setWeekRating(p=>({...p,favSongU1:e.target.value}))} placeholder="Título..."/></div>
+            <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u2}</label><input value={weekRating.favSongU2||''} onChange={e=>setWeekRating(p=>({...p,favSongU2:e.target.value}))} placeholder="Título..."/></div>
+          </div>
+          <div style={{marginBottom:10}}>
+            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo escucharíamos de nuevo?</label>
+            <select value={weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgain:e.target.value}))}>
+              <option value="">—</option>
+              <option value="si">Sí, definitivamente</option>
+              <option value="tal_vez">Tal vez</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div style={{marginBottom:10}}>
+            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué os ha sorprendido?</label>
+            <textarea rows={2} value={weekRating.surprise||''} onChange={e=>setWeekRating(p=>({...p,surprise:e.target.value}))} placeholder="Lo más inesperado..."/>
+          </div>
+          <div style={{marginBottom:10}}>
+            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué os ha costado?</label>
+            <textarea rows={2} value={weekRating.hard||''} onChange={e=>setWeekRating(p=>({...p,hard:e.target.value}))} placeholder="Lo más difícil de escuchar..."/>
+          </div>
+          <div style={{marginBottom:14}}>
+            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario conjunto</label>
+            <textarea rows={3} value={weekRating.comment||''} onChange={e=>setWeekRating(p=>({...p,comment:e.target.value}))} placeholder="Reflexiones, recuerdos, lo que os lleváis de esta semana..."/>
+          </div>
+          <button className="btn btn-primary" onClick={onConfirmClose}>✅ Cerrar semana y guardar</button>
+        </div>
+      </div>
+    );
+  }
+
+  if(!activeWeek){
+    return(
+      <div className="empty-state">
+        <div className="icon">🎵</div>
+        <div style={{fontWeight:500,marginBottom:8}}>Sin semana activa</div>
+        <p className="muted" style={{marginBottom:16}}>¿Preparados para descubrir un nuevo género esta semana?</p>
+        <div className="row" style={{justifyContent:'center'}}>
+          <button className="btn btn-primary" onClick={onGenerate}>🎲 Semana aleatoria</button>
+          <button className="btn" onClick={onManualSelect}>Elegir género</button>
+        </div>
+      </div>
+    );
+  }
+
+  const listened=activeWeek.artists.filter(a=>a.listened).length;
+  const total=activeWeek.artists.length;
+
+  return(
+    <div>
+      <div className="row" style={{justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:12}}>
+        <div>
+          <div className="genre-family">{activeWeek.genreFamily}</div>
+          <h1>{activeWeek.genreName}</h1>
+          <p className="muted">Semana {activeWeek.weekNum} · Desde {activeWeek.startDate}</p>
+        </div>
+        <button className="btn btn-primary" onClick={onCloseWeek}>Cerrar semana →</button>
+      </div>
+
+      {genreObj&&(
+        <div className="card" style={{marginBottom:12}}>
+          <p style={{fontSize:13,marginBottom:8}}>{genreObj.description}</p>
+          <p className="muted" style={{fontSize:12,marginBottom:8}}>📍 {genreObj.originContext}</p>
+          <div style={{marginBottom:6}}>
+            {(genreObj.moodTags||[]).map(t=><span key={t} className="tag">#{t}</span>)}
+          </div>
+          {(genreObj.suggestedSituations||[]).length>0&&(
+            <div>
+              <span className="muted" style={{fontSize:11}}>Ideal para: </span>
+              {(genreObj.suggestedSituations||[]).map(s=><span key={s} className="tag">{s}</span>)}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="row" style={{marginBottom:12,gap:12}}>
+        <div style={{flex:1}}>
+          <div className="muted" style={{fontSize:11,marginBottom:3}}>Escuchados: {listened}/{total}</div>
+          <div className="progress-bar"><div className="progress-fill" style={{width:`${total?listened/total*100:0}%`}}/></div>
+        </div>
+        <span className="muted" style={{fontSize:12,whiteSpace:'nowrap'}}>{total?Math.round(listened/total*100):0}%</span>
+      </div>
+
+      {activeWeek.artists.map(artist=>{
+        const avg=calcArtistAvg(artist);
+        const isExp=expandedArtist===artist.id;
+        return(
+          <div key={artist.id} className={`artist-card ${artist.listened?'listened':''}`}>
+            <div className="row" style={{justifyContent:'space-between',marginBottom:8}}>
+              <div className="row" style={{gap:8,flex:1,minWidth:0}}>
+                <div className={`check-circle ${artist.listened?'checked':''}`}
+                  onClick={()=>onUpdateArtist(activeWeek.id,artist.id,'listened',!artist.listened)}>
+                  {artist.listened&&'✓'}
+                </div>
+                <div style={{minWidth:0}}>
+                  <div className="row" style={{flexWrap:'wrap',gap:4}}>
+                    <span style={{fontWeight:500}}>{artist.name}</span>
+                    <Badge type={artist.role}/>
+                    {artist.favU1&&<span style={{fontSize:11,color:'var(--c2)'}}>★{u1}</span>}
+                    {artist.favU2&&<span style={{fontSize:11,color:'var(--success)'}}>★{u2}</span>}
+                    {avg!==null&&<span style={{fontSize:13,fontWeight:500,color:'var(--c2)'}}>{avg.toFixed(1)}</span>}
+                  </div>
+                  <div className="muted" style={{fontSize:11}}>{artist.shortDescription}</div>
+                </div>
+              </div>
+              <button className="btn btn-sm" onClick={()=>setExpandedArtist(isExp?null:artist.id)} style={{flexShrink:0}}>
+                {isExp?'▲ Cerrar':'▼ Valorar'}
+              </button>
+            </div>
+
+            <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:4}}>
+              {(artist.listenedSongs||[]).map((s,i)=>(
+                <div key={i} className={`song-chip ${s.listened?'heard':''}`}
+                  onClick={()=>onToggleSong(activeWeek.id,artist.id,i)}
+                  title={s.note}>
+                  <span style={{width:12,height:12,borderRadius:2,background:s.listened?'var(--success)':'transparent',border:`1.5px solid ${s.listened?'var(--success)':'var(--muted)'}`,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{s.listened&&'✓'}</span>
+                  {s.title}
+                </div>
+              ))}
+            </div>
+
+            {isExp&&(
+              <div style={{marginTop:10,borderTop:'0.5px solid var(--border)',paddingTop:12}}>
+                <div className="grid2" style={{marginBottom:10}}>
+                  <ScoreInput label={u1} value={artist.scoreU1} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU1',v)}/>
+                  <ScoreInput label={u2} value={artist.scoreU2} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU2',v)}/>
+                </div>
+                <div className="grid2" style={{marginBottom:10}}>
+                  <div>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
+                    <textarea rows={2} style={{fontSize:12}} value={artist.commentU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU1',e.target.value)} placeholder="¿Qué te parece?"/>
+                  </div>
+                  <div>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
+                    <textarea rows={2} style={{fontSize:12}} value={artist.commentU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU2',e.target.value)} placeholder="¿Qué te parece?"/>
+                  </div>
+                </div>
+                <div className="row" style={{marginBottom:10,gap:16,flexWrap:'wrap'}}>
+                  <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
+                    <input type="checkbox" checked={!!artist.favU1} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU1',e.target.checked)} style={{width:'auto'}}/>
+                    ⭐ Favorito {u1}
+                  </label>
+                  <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
+                    <input type="checkbox" checked={!!artist.favU2} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU2',e.target.checked)} style={{width:'auto'}}/>
+                    ⭐ Favorito {u2}
+                  </label>
+                  <div className="row" style={{gap:6}}>
+                    <label style={{fontSize:12,color:'var(--text-sub)'}}>Replay:</label>
+                    <select value={artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replay',e.target.value)} style={{width:'auto',fontSize:12,padding:'4px 8px'}}>
+                      <option value="">—</option>
+                      <option value="si">Sí</option>
+                      <option value="tal_vez">Tal vez</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="row" style={{justifyContent:'space-between',gap:8,paddingTop:10,borderTop:'1px solid var(--border)'}}>
+                  <span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>✓ Guardado automáticamente</span>
+                  <div className="row" style={{gap:6}}>
+                    {(artist.scoreU1||artist.scoreU2||artist.commentU1||artist.commentU2||artist.favU1||artist.favU2||artist.replay)&&(
+                      <button className="btn btn-sm btn-danger" onClick={()=>onClearRating(activeWeek.id,artist.id)}>🗑 Borrar valoración</button>
+                    )}
+                    <button className="btn btn-sm btn-primary" onClick={()=>setExpandedArtist(null)}>Cerrar</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
+  const [rt,setRt]=useState('genres');
+  if(!completedWeeks.length) return<div className="empty-state"><div className="icon">🏆</div><div style={{fontWeight:500}}>Sin rankings todavía</div><p className="muted">Completad vuestra primera semana para ver los rankings.</p></div>;
+
+  const artU1=[...artistRankings].filter(a=>a.scoreU1!==null).sort((a,b)=>b.scoreU1-a.scoreU1);
+  const artU2=[...artistRankings].filter(a=>a.scoreU2!==null).sort((a,b)=>b.scoreU2-a.scoreU2);
+  const divisiveGenres=[...genreRankings].filter(g=>!isNaN(g.scoreU1)&&!isNaN(g.scoreU2)).sort((a,b)=>Math.abs(b.scoreU1-b.scoreU2)-Math.abs(a.scoreU1-a.scoreU2));
+  const famMap={};completedWeeks.forEach(w=>{const f=w.genreFamily||'';if(!famMap[f])famMap[f]={sum:0,n:0};const r=w.rating||{};[parseFloat(r.scoreU1),parseFloat(r.scoreU2)].forEach(s=>{if(!isNaN(s)){famMap[f].sum+=s;famMap[f].n++;}});});
+  const famRank=Object.entries(famMap).filter(([,v])=>v.n>0).sort((a,b)=>(b[1].sum/b[1].n)-(a[1].sum/a[1].n));
+
+  return(
+    <div>
+      <h1 style={{marginBottom:10}}>Rankings</h1>
+      <div className="sub-tabs">
+        {[['genres','🎵 Géneros'],['artists','🎤 Artistas'],['families','🗂 Familias'],['divisive','⚡ Divisivos']].map(([id,l])=>(
+          <button key={id} className={`sub-tab ${rt===id?'active':''}`} onClick={()=>setRt(id)}>{l}</button>
+        ))}
+      </div>
+
+      {rt==='genres'&&(
+        <div className="card">
+          <h2 style={{marginBottom:10}}>Géneros por nota media</h2>
+          {genreRankings.length===0&&<p className="muted">Completad semanas con valoraciones para ver rankings.</p>}
+          {genreRankings.map((g,i)=>(
+            <div key={g.weekId} className="rank-item">
+              <div className="rank-num">{i+1}</div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:500,fontSize:13}}>{g.name}</div>
+                <div className="muted" style={{fontSize:11}}>{g.family} · Semana {g.weekNum}</div>
+              </div>
+              <div style={{textAlign:'right',fontSize:12}}>
+                {!isNaN(g.scoreU1)&&<div style={{color:'var(--c2)'}}>{u1}: {g.scoreU1.toFixed(1)}</div>}
+                {!isNaN(g.scoreU2)&&<div style={{color:'var(--success)'}}>{u2}: {g.scoreU2.toFixed(1)}</div>}
+                {g.avg!==null&&<div style={{fontWeight:500,fontSize:14}}>Ø {g.avg.toFixed(1)}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {rt==='artists'&&(
+        <div className="grid2">
+          <div className="card">
+            <h2 style={{marginBottom:10}}>Top {u1}</h2>
+            {artU1.slice(0,12).map((a,i)=>(
+              <div key={i} className="rank-item">
+                <div className="rank-num">{i+1}</div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500}}>{a.name}</div><div className="muted" style={{fontSize:11}}>{a.genreName}</div></div>
+                <span style={{fontWeight:500,color:'var(--c2)'}}>{a.scoreU1.toFixed(1)}</span>
+              </div>
+            ))}
+            {!artU1.length&&<p className="muted">Sin valoraciones de {u1} todavía.</p>}
+          </div>
+          <div className="card">
+            <h2 style={{marginBottom:10}}>Top {u2}</h2>
+            {artU2.slice(0,12).map((a,i)=>(
+              <div key={i} className="rank-item">
+                <div className="rank-num">{i+1}</div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500}}>{a.name}</div><div className="muted" style={{fontSize:11}}>{a.genreName}</div></div>
+                <span style={{fontWeight:500,color:'var(--success)'}}>{a.scoreU2.toFixed(1)}</span>
+              </div>
+            ))}
+            {!artU2.length&&<p className="muted">Sin valoraciones de {u2} todavía.</p>}
+          </div>
+          <div className="card">
+            <h2 style={{marginBottom:10}}>Top conjunto</h2>
+            {artistRankings.slice(0,12).map((a,i)=>(
+              <div key={i} className="rank-item">
+                <div className="rank-num">{i+1}</div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500}}>{a.name}</div><div className="muted" style={{fontSize:11}}>{a.genreName}</div></div>
+                <span style={{fontWeight:500,color:'var(--c2)'}}>{a.avg.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {rt==='families'&&(
+        <div className="card">
+          <h2 style={{marginBottom:10}}>Familias por nota media</h2>
+          {famRank.map(([name,v],i)=>(
+            <div key={name} className="rank-item">
+              <div className="rank-num">{i+1}</div>
+              <div style={{flex:1}}><div style={{fontWeight:500,fontSize:13}}>{name}</div></div>
+              <span style={{fontWeight:500,color:'var(--c2)'}}>{(v.sum/v.n).toFixed(1)}</span>
+            </div>
+          ))}
+          {!famRank.length&&<p className="muted">Necesitáis valoraciones de géneros para ver esto.</p>}
+        </div>
+      )}
+
+      {rt==='divisive'&&(
+        <div className="card">
+          <h2 style={{marginBottom:4}}>Géneros más divisivos</h2>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>Mayor diferencia entre {u1} y {u2}</p>
+          {divisiveGenres.map((g,i)=>(
+            <div key={g.weekId} className="rank-item">
+              <div className="rank-num">{i+1}</div>
+              <div style={{flex:1}}><div style={{fontWeight:500,fontSize:13}}>{g.name}</div></div>
+              <div style={{textAlign:'right',fontSize:12}}>
+                <div>{u1}: {g.scoreU1.toFixed(1)}</div>
+                <div>{u2}: {g.scoreU2.toFixed(1)}</div>
+                <div style={{fontWeight:500,color:'var(--danger)'}}>Δ {Math.abs(g.scoreU1-g.scoreU2).toFixed(1)}</div>
+              </div>
+            </div>
+          ))}
+          {!divisiveGenres.length&&<p className="muted">Necesitáis que ambos valoréis géneros para ver esto.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistorialTab({weeks,onDelete,onView,u1,u2}){
+  const sorted=[...weeks].sort((a,b)=>b.weekNum-a.weekNum);
+  if(!weeks.length) return<div className="empty-state"><div className="icon">📅</div><div style={{fontWeight:500}}>Sin historial todavía</div><p className="muted">Aquí apareceran todas vuestras semanas musicales.</p></div>;
+  return(
+    <div>
+      <h1 style={{marginBottom:12}}>Historial</h1>
+      {sorted.map(w=>{
+        const r=w.rating||{};
+        const s1=parseFloat(r.scoreU1);const s2=parseFloat(r.scoreU2);
+        const avg=!isNaN(s1)&&!isNaN(s2)?(s1+s2)/2:(!isNaN(s1)?s1:(!isNaN(s2)?s2:null));
+        const listenedCount=(w.artists||[]).filter(a=>a.listened).length;
+        return(
+          <div key={w.id} className="history-row">
+            <div style={{width:28,height:28,background:'var(--c3)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:500,fontSize:12,color:'var(--c2)',flexShrink:0}}>{w.weekNum}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:500,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{w.genreName}</div>
+              <div className="muted" style={{fontSize:11}}>{w.startDate} · {w.genreFamily} · {listenedCount}/{(w.artists||[]).length} escuchados</div>
+            </div>
+            <Badge type={w.status}/>
+            {avg!==null&&<span style={{fontWeight:500,color:'var(--c2)',minWidth:30,textAlign:'right'}}>{avg.toFixed(1)}</span>}
+            <div className="row" style={{gap:4,flexShrink:0}}>
+              <button className="btn btn-sm" onClick={()=>onView(w)}>Ver</button>
+              <button className="btn btn-sm btn-danger" onClick={()=>onDelete(w.id)}>✕</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BibliotecaTab({genres,filteredGenres,genreSearch,setGenreSearch,genreFilter,setGenreFilter,families,completedGenreIds,onEditGenre,onDeleteGenre,onAddGenre,onEditArtist,onDeleteArtist,onAddArtist}){
+  const [expanded,setExpanded]=useState(null);
+  return(
+    <div>
+      <div className="row" style={{justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:12}}>
+        <h1>Biblioteca ({genres.length} géneros)</h1>
+        <button className="btn btn-primary" onClick={onAddGenre}>+ Nuevo género</button>
+      </div>
+      <div className="row" style={{marginBottom:12,gap:8}}>
+        <input style={{flex:2,minWidth:120}} placeholder="🔍 Buscar género..." value={genreSearch} onChange={e=>setGenreSearch(e.target.value)}/>
+        <select style={{flex:1,width:'auto',minWidth:120}} value={genreFilter} onChange={e=>setGenreFilter(e.target.value)}>
+          <option value="">Todas las familias</option>
+          {families.map(f=><option key={f} value={f}>{f}</option>)}
+        </select>
+      </div>
+      <p className="muted" style={{marginBottom:8,fontSize:12}}>{filteredGenres.length} resultados</p>
+      {filteredGenres.map(genre=>(
+        <div key={genre.id} className="card card-sm" style={{marginBottom:8}}>
+          <div className="row" style={{justifyContent:'space-between'}}>
+            <div style={{flex:1,cursor:'pointer',minWidth:0}} onClick={()=>setExpanded(expanded===genre.id?null:genre.id)}>
+              <div className="row" style={{gap:6,flexWrap:'wrap'}}>
+                <div style={{fontWeight:500,fontSize:13}}>{genre.name}</div>
+                {(completedGenreIds||[]).includes(genre.id)&&<Badge type="completed"/>}
+              </div>
+              <div className="muted" style={{fontSize:11}}>{genre.parentFamily} · {genre.artists?.length||0} artistas</div>
+            </div>
+            <div className="row" style={{gap:4,flexShrink:0}}>
+              <button className="btn btn-sm" onClick={()=>onEditGenre(genre)}>Editar</button>
+              <button className="btn btn-sm btn-danger" onClick={()=>onDeleteGenre(genre.id)}>✕</button>
+            </div>
+          </div>
+          {expanded===genre.id&&(
+            <div style={{marginTop:10,borderTop:'0.5px solid var(--border)',paddingTop:10}}>
+              <p style={{fontSize:12,color:'var(--muted)',marginBottom:6}}>{genre.description}</p>
+              <div style={{marginBottom:8}}>
+                {(genre.moodTags||[]).map(t=><span key={t} className="tag">#{t}</span>)}
+              </div>
+              <div className="row" style={{justifyContent:'space-between',marginBottom:8}}>
+                <div className="muted" style={{fontSize:11}}>Artistas ({genre.artists?.length||0})</div>
+                <button className="btn btn-xs" onClick={()=>onAddArtist(genre)}>+ Añadir artista</button>
+              </div>
+              {(genre.artists||[]).map(a=>(
+                <div key={a.id} style={{padding:'6px 0',borderBottom:'0.5px solid var(--border)'}}>
+                  <div className="row" style={{justifyContent:'space-between'}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="row" style={{gap:4,flexWrap:'wrap'}}>
+                        <span style={{fontSize:12,fontWeight:500}}>{a.name}</span>
+                        <Badge type={a.role}/>
+                      </div>
+                      <div className="muted" style={{fontSize:11}}>{a.shortDescription}</div>
+                      <div style={{fontSize:11,color:'var(--muted)'}}>
+                        {(a.suggestedSongs||[]).map((s,i)=><span key={i} style={{marginRight:8}}>🎵 {s.title}</span>)}
+                      </div>
+                    </div>
+                    <div className="row" style={{gap:4,flexShrink:0}}>
+                      <button className="btn btn-xs" onClick={()=>onEditArtist(genre,a)}>Editar</button>
+                      <button className="btn btn-xs btn-danger" onClick={()=>onDeleteArtist(genre.id,a.id)}>✕</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset}){
+  const [form,setForm]=useState({...settings});
+  useEffect(()=>setForm({...settings}),[settings]);
+  return(
+    <div>
+      <h1 style={{marginBottom:16}}>Ajustes</h1>
+      <div className="card" style={{marginBottom:12}}>
+        <h2 style={{marginBottom:12}}>Nombres de usuario</h2>
+        <div className="grid2" style={{marginBottom:12}}>
+          <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:4}}>Usuario 1</label><input value={form.user1||''} onChange={e=>setForm(p=>({...p,user1:e.target.value}))}/></div>
+          <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:4}}>Usuario 2</label><input value={form.user2||''} onChange={e=>setForm(p=>({...p,user2:e.target.value}))}/></div>
+        </div>
+        <button className="btn btn-primary" onClick={()=>onSaveSettings(form)}>Guardar nombres</button>
+      </div>
+
+      <div className="card" style={{marginBottom:12}}>
+        <h2 style={{marginBottom:6}}>Backup y datos</h2>
+        <p className="muted" style={{fontSize:12,marginBottom:12}}>
+          Los datos se guardan automáticamente en localStorage del navegador.<br/>
+          Exporta un backup JSON para no perder nada si limpias el navegador.
+        </p>
+        <div className="row">
+          <button className="btn" onClick={onExport}>⬇ Exportar backup JSON</button>
+          <label className="btn" style={{cursor:'pointer'}}>
+            ⬆ Importar backup
+            <input type="file" accept=".json" style={{display:'none'}} onChange={onImport}/>
+          </label>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 style={{marginBottom:6,color:'var(--danger)'}}>⚠ Zona de peligro</h2>
+        <p className="muted" style={{fontSize:12,marginBottom:12}}>El reset eliminará TODOS los datos: semanas, valoraciones e historial. La biblioteca volverá a su estado inicial.</p>
+        <button className="btn btn-danger" onClick={onReset}>Reset total (doble confirmación)</button>
+      </div>
+    </div>
+  );
+}
+
+
+function CloudStatusPill({status}){
+  const labels={checking:'Verificando',loading:'Cargando nube',saving:'Guardando',saved:'Nube OK',error:'Error nube',offline:'Sin sesión'};
+  const icon={checking:'🔐',loading:'☁️',saving:'☁️',saved:'☁️',error:'⚠️',offline:'🔒'};
+  return <span className={`sync-pill sync-${status||'checking'}`}>{icon[status]||'☁️'} {labels[status]||status}</span>;
+}
+
+function AuthGate({mode,message,onLogin,onSignOut}){
+  const isError=mode==='error'||mode==='firebase_error';
+  return(
+    <div className="auth-screen">
+      <div className="auth-card">
+        <div className="auth-icon">🎵</div>
+        <div className="auth-title">Music Discovery Lab</div>
+        <div className="auth-copy">
+          Acceso privado. Inicia sesión con Google para cargar la biblioteca, semanas, valoraciones, rankings e historial compartido.
+        </div>
+        <div className="auth-warning">
+          Seguridad: la app no recibe ni almacena vuestra contraseña. El inicio de sesión ocurre directamente con Google/Firebase Auth.
+        </div>
+        {message&&<div className={`auth-warning`} style={isError?{borderColor:'rgba(241,94,108,.45)',color:'#ff9aa5',background:'rgba(241,94,108,.12)'}:{}}>{message}</div>}
+        {mode==='signed_out'&&<button className="btn btn-primary" onClick={onLogin} style={{width:'100%',justifyContent:'center'}}>Entrar con Google</button>}
+        {(mode==='checking'||mode==='loading')&&<div className="muted">Verificando sesión segura…</div>}
+        {isError&&<div className="row" style={{justifyContent:'center'}}><button className="btn btn-primary" onClick={onLogin}>Reintentar login</button>{onSignOut&&<button className="btn" onClick={onSignOut}>Salir</button>}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ROOT APP
+   ============================================================ */
+function App(){
+  const [data,setData]=useState(null);
+  const [authUser,setAuthUser]=useState(null);
+  const [authMode,setAuthMode]=useState('checking');
+  const [firebaseApi,setFirebaseApi]=useState(null);
+  const [syncStatus,setSyncStatus]=useState('checking');
+  const [syncMessage,setSyncMessage]=useState('Inicializando seguridad...');
+  const applyingRemoteRef=useRef(false);
+  const saveTimerRef=useRef(null);
+  const unsubscribeDocRef=useRef(null);
+  const [tab,setTab]=useState('dashboard');
+  const [confirm,setConfirm]=useState(null);
+  const [genreSearch,setGenreSearch]=useState('');
+  const [genreFilter,setGenreFilter]=useState('');
+  const [expandedArtist,setExpandedArtist]=useState(null);
+  const [weekCloseMode,setWeekCloseMode]=useState(false);
+  const [weekRating,setWeekRating]=useState({});
+  const [editingGenre,setEditingGenre]=useState(null);
+  const [newGenreForm,setNewGenreForm]=useState(null);
+  const [editingArtist,setEditingArtist]=useState(null);
+  const [newArtistForm,setNewArtistForm]=useState(null);
+  const [manualGenreSelect,setManualGenreSelect]=useState(false);
+  const [viewWeek,setViewWeek]=useState(null);
+
+  useEffect(()=>{
+    let unsubAuth=null;
+    let cancelled=false;
+    window.firebaseReady.then(api=>{
+      if(cancelled)return;
+      setFirebaseApi(api);
+      unsubAuth=api.onAuthStateChanged(api.auth,user=>{
+        if(unsubscribeDocRef.current){unsubscribeDocRef.current();unsubscribeDocRef.current=null;}
+        if(!user){
+          setAuthUser(null);setAuthMode('signed_out');setData(null);setSyncStatus('offline');setSyncMessage('Inicia sesión para acceder.');
+          return;
+        }
+        setAuthUser(user);setAuthMode('loading');setSyncStatus('loading');setSyncMessage('Verificando acceso y cargando nube...');
+        const ref=api.doc(api.db,CLOUD_COLLECTION,CLOUD_DOCUMENT);
+        unsubscribeDocRef.current=api.onSnapshot(ref,async snap=>{
+          try{
+            if(!snap.exists()){
+              const seed=loadData()||initData();
+              applyingRemoteRef.current=true;
+              setData(seed);saveData(seed);
+              setAuthMode('signed_in');setSyncStatus('saving');setSyncMessage('Inicializando documento seguro en la nube...');
+              await api.setDoc(ref,{...seed,updatedAt:new Date().toISOString(),cloudUpdatedAt:api.serverTimestamp()},{merge:false});
+              setTimeout(()=>{applyingRemoteRef.current=false;},1200);
+              setSyncStatus('saved');setSyncMessage('Nube inicializada.');
+              return;
+            }
+            const cloud=snap.data();
+            if(!cloud||!cloud.settings||!cloud.genres)throw new Error('El documento de Firestore no tiene el formato esperado.');
+            const clean={...cloud};delete clean.cloudUpdatedAt;
+            applyingRemoteRef.current=true;
+            setData(clean);saveData(clean);
+            setAuthMode('signed_in');setSyncStatus('saved');setSyncMessage('Sincronizado en la nube.');
+            setTimeout(()=>{applyingRemoteRef.current=false;},1200);
+          }catch(e){
+            console.error(e);setAuthMode('error');setSyncStatus('error');setSyncMessage(e.message||'Error cargando Firestore.');
+          }
+        },err=>{
+          console.error('Firestore access error',err);
+          setData(null);setAuthMode('error');setSyncStatus('error');
+          setSyncMessage(err.code==='permission-denied'?'Acceso denegado. Revisa que este Google esté autorizado en las reglas de Firestore.':(err.message||'Error de Firestore.'));
+        });
+      });
+    }).catch(err=>{
+      console.error('Firebase ready error',err);setAuthMode('firebase_error');setSyncStatus('error');setSyncMessage(err.message||'Firebase no pudo inicializarse.');
+    });
+    return()=>{cancelled=true;if(unsubAuth)unsubAuth();if(unsubscribeDocRef.current)unsubscribeDocRef.current();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);};
+  },[]);
+
+  useEffect(()=>{
+    if(!data)return;
+    saveData(data);
+    if(!authUser||!firebaseApi||applyingRemoteRef.current)return;
+    if(saveTimerRef.current)clearTimeout(saveTimerRef.current);
+    setSyncStatus('saving');setSyncMessage('Guardando cambios en la nube...');
+    saveTimerRef.current=setTimeout(async()=>{
+      try{
+        const ref=firebaseApi.doc(firebaseApi.db,CLOUD_COLLECTION,CLOUD_DOCUMENT);
+        await firebaseApi.setDoc(ref,{...data,updatedAt:new Date().toISOString(),cloudUpdatedAt:firebaseApi.serverTimestamp()},{merge:false});
+        setSyncStatus('saved');setSyncMessage('Guardado en la nube.');
+      }catch(e){
+        console.error('Cloud save error',e);setSyncStatus('error');setSyncMessage(e.message||'No se pudo guardar en Firestore.');
+      }
+    },450);
+  },[data,authUser,firebaseApi]);
+
+  async function signIn(){
+    const api=firebaseApi||await window.firebaseReady;
+    setFirebaseApi(api);
+    try{await api.signInWithPopup(api.auth,api.provider);}
+    catch(e){console.warn('Popup login failed, using redirect',e);await api.signInWithRedirect(api.auth,api.provider);}
+  }
+  async function signOutNow(){
+    const api=firebaseApi||await window.firebaseReady;
+    await api.signOut(api.auth);
+  }
+
+  if(authMode==='checking')return <AuthGate mode="checking" message="Comprobando sesión persistente..." onLogin={signIn}/>;
+  if(authMode==='signed_out')return <AuthGate mode="signed_out" message="Solo Jonathan y Lucy pueden acceder. La sesión queda iniciada en este navegador." onLogin={signIn}/>;
+  if((authMode==='error'||authMode==='firebase_error')&&!data)return <AuthGate mode="error" message={syncMessage} onLogin={signIn} onSignOut={signOutNow}/>;
+  if(!data)return <AuthGate mode="loading" message={syncMessage} onLogin={signIn}/>;
+
+  const {settings,genres,weeks,activeWeekId,completedGenreIds}=data;
+  const u1=settings.user1||'Jonathan';
+  const u2=settings.user2||'Lucy';
+
+  const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
+
+  const activeWeek=useMemo(()=>weeks.find(w=>w.id===activeWeekId),[weeks,activeWeekId]);
+  const completedWeeks=useMemo(()=>weeks.filter(w=>w.status==='completed'),[weeks]);
+  const families=useMemo(()=>[...new Set(genres.map(g=>g.parentFamily))].sort(),[genres]);
+
+  const filteredGenres=useMemo(()=>genres.filter(g=>{
+    const ms=!genreSearch||g.name.toLowerCase().includes(genreSearch.toLowerCase())||g.parentFamily.toLowerCase().includes(genreSearch.toLowerCase());
+    const mf=!genreFilter||g.parentFamily===genreFilter;
+    return ms&&mf;
+  }),[genres,genreSearch,genreFilter]);
+
+  const genreRankings=useMemo(()=>completedWeeks.map(w=>{
+    const r=w.rating||{};
+    const s1=parseFloat(r.scoreU1);const s2=parseFloat(r.scoreU2);
+    const scores=[[s1],[s2]].filter(([s])=>!isNaN(s)).map(([s])=>s);
+    const avg=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null;
+    return{weekId:w.id,genreId:w.genreId,name:w.genreName,family:w.genreFamily,scoreU1:s1,scoreU2:s2,avg,weekNum:w.weekNum};
+  }).filter(g=>g.avg!==null).sort((a,b)=>b.avg-a.avg),[completedWeeks]);
+
+  const artistRankings=useMemo(()=>{
+    const all=[];
+    completedWeeks.forEach(w=>(w.artists||[]).forEach(a=>{
+      const avg=calcArtistAvg(a);
+      if(avg!==null) all.push({name:a.name,genreName:w.genreName,scoreU1:isNaN(parseFloat(a.scoreU1))?null:parseFloat(a.scoreU1),scoreU2:isNaN(parseFloat(a.scoreU2))?null:parseFloat(a.scoreU2),avg});
+    }));
+    return all.sort((a,b)=>b.avg-a.avg);
+  },[completedWeeks]);
+
+  function generateWeek(genreId){
+    const genre=genres.find(g=>g.id===genreId);
+    if(!genre)return;
+    const weekNum=weeks.length+1;
+    const artists=[...genre.artists]
+      .sort((a,b)=>({core:0,variation:1,wildcard:2}[a.role]||2)-({core:0,variation:1,wildcard:2}[b.role]||2))
+      .slice(0,10)
+      .map(a=>({
+        ...a,
+        listened:false,scoreU1:'',scoreU2:'',
+        commentU1:'',commentU2:'',
+        mood:'',replay:'',
+        favU1:false,favU2:false,
+        listenedSongs:(a.suggestedSongs||[]).map(s=>({...s,listened:false}))
+      }));
+    const week={id:genId(),weekNum,startDate:new Date().toISOString().split('T')[0],genreId,genreName:genre.name,genreFamily:genre.parentFamily,status:'in_progress',artists,rating:{}};
+    update(prev=>({...prev,weeks:[...prev.weeks,week],activeWeekId:week.id}));
+    setTab('semana');
+  }
+
+  function randomGenre(){
+    const used=completedGenreIds||[];
+    let available=genres.filter(g=>!used.includes(g.id));
+    if(!available.length){
+      if(!window.confirm('Ya habéis escuchado todos los géneros. ¿Reiniciar ciclo?'))return;
+      update(prev=>({...prev,completedGenreIds:[]}));
+      available=[...genres];
+    }
+    generateWeek(available[Math.floor(Math.random()*available.length)].id);
+  }
+
+  function updateArtist(weekId,artId,field,value){
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,[field]:value}:a)}:w)}));
+  }
+
+  function toggleSong(weekId,artId,songIdx){
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,listenedSongs:a.listenedSongs.map((s,i)=>i===songIdx?{...s,listened:!s.listened}:s)}:a)}:w)}));
+  }
+
+  function closeWeek(){
+    update(prev=>({
+      ...prev,
+      weeks:prev.weeks.map(w=>w.id===activeWeek.id?{...w,status:'completed',rating:weekRating}:w),
+      activeWeekId:null,
+      completedGenreIds:[...(prev.completedGenreIds||[]),activeWeek.genreId]
+    }));
+    setWeekCloseMode(false);setWeekRating({});setTab('dashboard');
+  }
+
+  function deleteWeek(id){
+    update(prev=>{
+      const w=prev.weeks.find(x=>x.id===id);
+      return{...prev,weeks:prev.weeks.filter(x=>x.id!==id),activeWeekId:prev.activeWeekId===id?null:prev.activeWeekId,completedGenreIds:w&&w.status==='completed'?prev.completedGenreIds.filter(g=>g!==w.genreId):prev.completedGenreIds};
+    });
+    setConfirm(null);
+  }
+
+  function clearArtistRatingNow(weekId,artId){
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,scoreU1:'',scoreU2:'',commentU1:'',commentU2:'',favU1:false,favU2:false,replay:''}:a)}:w)}));
+    setConfirm(null);
+  }
+
+  function wipeAllNow(){
+    const fresh=initData();setData(fresh);saveData(fresh);
+    setConfirm(null);
+  }
+
+  function exportData(){
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='musiclab_backup.json';a.click();URL.revokeObjectURL(url);
+  }
+
+  function importData(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        if(d&&d.settings&&d.genres){setData(d);alert('✅ Backup importado correctamente.');}
+        else alert('❌ Archivo inválido.');
+      }catch{alert('❌ Error al parsear el archivo.');}
+    };
+    reader.readAsText(file);
+    e.target.value='';
+  }
+
+  function resetAll(){
+    setConfirm({type:'wipe'});
+  }
+
+  return(
+    <div className="app">
+      <div className="app-header">
+        <div className="app-logo">🎵</div>
+        <div>
+          <div style={{fontWeight:500,fontSize:17,color:'var(--c2)'}}>Music Discovery Lab</div>
+          <div className="muted" style={{fontSize:12}}>{u1} & {u2} · {completedWeeks.length} semanas · {genres.length} géneros</div>
+          <div className="secure-session">🔐 Sesión segura con Google · persistencia activada</div>
+        </div>
+        <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
+          <CloudStatusPill status={syncStatus}/>
+          {activeWeek&&<Badge type="in_progress"/>}
+          <button className="btn btn-xs" onClick={signOutNow}>Salir</button>
+        </div>
+      </div>
+
+      <nav className="nav">
+        {[
+          ['dashboard','🏠 Dashboard'],
+          ['semana','🎧 Semana activa'],
+          ['rankings','🏆 Rankings'],
+          ['historial','📅 Historial'],
+          ['biblioteca','📚 Biblioteca'],
+          ['ajustes','⚙ Ajustes'],
+        ].map(([id,label])=>(
+          <button key={id} className={`nav-btn ${tab===id?'active':''}`} onClick={()=>setTab(id)}>
+            {label}
+            {id==='semana'&&activeWeek&&<span style={{marginLeft:5,width:7,height:7,borderRadius:'50%',background:'var(--c1)',display:'inline-block',verticalAlign:'middle'}}/>}
+          </button>
+        ))}
+      </nav>
+
+      <div>
+        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
+        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})}/>}
+        {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
+        {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
+        {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:''},{title:'',note:''}]}})}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll}/>}
+      </div>
+
+      {/* MODALS */}
+      {confirm&&confirm.type==='week'&&<ConfirmModal message="¿Eliminar esta semana? Esta acción no se puede deshacer." onConfirm={()=>deleteWeek(confirm.id)} onCancel={()=>setConfirm(null)}/>}
+      {confirm&&confirm.type==='genre'&&<ConfirmModal message="¿Eliminar este género de la biblioteca?" onConfirm={()=>{update(prev=>({...prev,genres:prev.genres.filter(g=>g.id!==confirm.id)}));setConfirm(null);}} onCancel={()=>setConfirm(null)}/>}
+      {confirm&&confirm.type==='artist'&&<ConfirmModal message="¿Eliminar este artista del género?" onConfirm={()=>{update(prev=>({...prev,genres:prev.genres.map(g=>g.id===confirm.gId?{...g,artists:g.artists.filter(a=>a.id!==confirm.aId)}:g)}));setConfirm(null);}} onCancel={()=>setConfirm(null)}/>}
+      {confirm&&confirm.type==='rating'&&<ConfirmModal message="¿Seguro que quieres eliminar la valoración de este artista? Notas, comentarios y favoritos se borrarán." onConfirm={()=>clearArtistRatingNow(confirm.wId,confirm.aId)} onCancel={()=>setConfirm(null)}/>}
+      {confirm&&confirm.type==='wipe'&&<ConfirmModal message="¿Seguro que quieres borrar TODOS los datos? Se eliminarán semanas, valoraciones, historial y la biblioteca volverá a su estado inicial. Esta acción es irreversible." onConfirm={wipeAllNow} onCancel={()=>setConfirm(null)}/>}
+      {editingGenre&&<GenreEditModal genre={editingGenre} onSave={g=>{update(prev=>({...prev,genres:prev.genres.map(x=>x.id===g.id?g:x)}));setEditingGenre(null);}} onClose={()=>setEditingGenre(null)}/>}
+      {newGenreForm&&<GenreEditModal genre={newGenreForm} isNew onSave={g=>{update(prev=>({...prev,genres:[...prev.genres,{...g,id:genId(),artists:[]}]}));setNewGenreForm(null);}} onClose={()=>setNewGenreForm(null)}/>}
+      {editingArtist&&<ArtistEditModal genreId={editingArtist.genreId} artist={editingArtist.artist} onSave={(gId,a)=>{update(prev=>({...prev,genres:prev.genres.map(g=>g.id===gId?{...g,artists:g.artists.map(x=>x.id===a.id?a:x)}:g)}));setEditingArtist(null);}} onClose={()=>setEditingArtist(null)}/>}
+      {newArtistForm&&<ArtistEditModal genreId={newArtistForm.genreId} artist={newArtistForm.artist} isNew onSave={(gId,a)=>{update(prev=>({...prev,genres:prev.genres.map(g=>g.id===gId?{...g,artists:[...g.artists,{...a,id:genId()}]}:g)}));setNewArtistForm(null);}} onClose={()=>setNewArtistForm(null)}/>}
+      {viewWeek&&<WeekDetailModal week={viewWeek} u1={u1} u2={u2} onClose={()=>setViewWeek(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(App),document.getElementById('root'));
+</script>
+</body>
+</html>
