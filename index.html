@@ -1866,17 +1866,35 @@ const ACHIEVEMENT_DEFS=[
   {id:'challenge10',label:'Mentalista musical',icon:'🔮',desc:'Acierta 10 retos de adivinanza.',test:s=>s.challengeWins>=10},
   {id:'challenger5',label:'Acepta retos',icon:'⚔️',desc:'Completa 5 retos recibidos.',test:s=>s.completedChallenges>=5},
   {id:'challenger15',label:'Gladiador sonoro',icon:'🛡️',desc:'Completa 15 retos recibidos.',test:s=>s.completedChallenges>=15},
-  {id:'level5',label:'Mascota evolucionada',icon:'🐾',desc:'Alcanza el nivel 5.',test:s=>s.level>=5},
   {id:'level10',label:'Leyenda del Lab',icon:'🌟',desc:'Alcanza el nivel 10.',test:s=>s.level>=10},
 ];
-function getAvatarForStats(stats,userKey){
-  const earned=(stats&&stats.badges?stats.badges.length:0);
-  const level=(stats&&stats.level)||1;
-  if(level>=10||earned>=18)return userKey==='u1'?'🦁':'🦄';
-  if(level>=7||earned>=14)return userKey==='u1'?'🐺':'🦊';
-  if(level>=5||earned>=10)return userKey==='u1'?'🦉':'🐱';
-  if(level>=3||earned>=5)return userKey==='u1'?'🐶':'🐰';
-  return userKey==='u1'?'🐣':'🐥';
+const MASCOT_EVOLUTIONS=[
+  {min:1,max:2,icon:'🥚',name:'Huevo ignorante'},
+  {min:3,max:4,icon:'🐣',name:'Pollito curioso'},
+  {min:5,max:6,icon:'🐤',name:'Pollito explorador'},
+  {min:7,max:8,icon:'🐧',name:'Pingüino selector'},
+  {min:9,max:10,icon:'🦊',name:'Zorro curioso'},
+  {min:11,max:12,icon:'🐱',name:'Gato indie'},
+  {min:13,max:14,icon:'🐺',name:'Lobo crítico'},
+  {min:15,max:16,icon:'🦁',name:'León dominante'},
+  {min:17,max:18,icon:'🦉',name:'Búho sabio'},
+  {min:19,max:20,icon:'🦅',name:'Águila analítica'},
+  {min:21,max:22,icon:'🐘',name:'Elefante archivista'},
+  {min:23,max:24,icon:'🐙',name:'Pulpo experimental'},
+  {min:25,max:26,icon:'🦈',name:'Tiburón selector'},
+  {min:27,max:28,icon:'🐍',name:'Serpiente refinada'},
+  {min:29,max:30,icon:'🐉',name:'Dragón emergente'},
+  {min:31,max:32,icon:'🐉🔥',name:'Dragón curador'},
+  {min:33,max:34,icon:'🐲',name:'Dragón legendario'},
+  {min:35,max:999,icon:'🐲👑',name:'Dragón absoluto'},
+];
+function getMascotForLevel(level){
+  const safeLevel=Math.max(1,Number(level)||1);
+  return MASCOT_EVOLUTIONS.find(m=>safeLevel>=m.min&&safeLevel<=m.max)||MASCOT_EVOLUTIONS[0];
+}
+function getNextMascotForLevel(level){
+  const safeLevel=Math.max(1,Number(level)||1);
+  return MASCOT_EVOLUTIONS.find(m=>m.min>safeLevel)||null;
 }
 function getUserGamificationStats(weeks,challenges,userKey){
   const allWeeks=(weeks||[]);
@@ -1908,13 +1926,16 @@ function getUserGamificationStats(weeks,challenges,userKey){
   const needed=150;
   const base={xp,level,next,current,needed,songs,fullWeeks,favs,tests,avgTest,completedChallenges,challengeWins,genresCompleted,artistsCompleted};
   const badges=ACHIEVEMENT_DEFS.filter(b=>{try{return b.test(base);}catch(e){return false;}}).map(({test,...b})=>b);
-  return {...base,badges,avatar:getAvatarForStats({...base,badges},userKey)};
+  const mascot=getMascotForLevel(level);
+  const nextMascot=getNextMascotForLevel(level);
+  return {...base,badges,mascot,nextMascot,avatar:mascot.icon,avatarName:mascot.name};
 }
 function XpUserCard({name,stats,userKey}){
   const pct=Math.min(100,Math.round((stats.current/stats.needed)*100));
   const locked=ACHIEVEMENT_DEFS.filter(b=>!stats.badges.some(x=>x.id===b.id)).map(({test,...b})=>b);
   return <div className="xp-card">
     <div className="row" style={{justifyContent:'space-between',marginBottom:8}}><span className={`user-chip ${userKey}`}>{name}</span><strong>{stats.avatar||'🎵'} Nivel {stats.level}</strong></div>
+    <div className="muted" style={{fontSize:12,marginBottom:6}}>{stats.avatarName||'Mascota musical'}{stats.nextMascot?` · Próxima evolución: ${stats.nextMascot.icon} ${stats.nextMascot.name} en nivel ${stats.nextMascot.min}`:''}</div>
     <div className="muted" style={{fontSize:12,marginBottom:6}}>{stats.xp} XP · {stats.current}/{stats.needed} hasta el siguiente nivel</div>
     <div className="progress-bar" style={{marginBottom:10}}><div className="progress-fill" style={{width:`${pct}%`}}/></div>
     <div className="grid3" style={{marginBottom:10}}>
@@ -1950,9 +1971,9 @@ function ProfileTab({weeks,challenges,u1,u2,currentUserKey}){
       <div style={{flex:1,minWidth:220}}>
         <div className={`user-chip ${profileUser}`} style={{marginBottom:8}}>{names[profileUser]}</div>
         <div className="profile-level">Nivel {stats.level}</div>
-        <div className="profile-mini">{stats.xp} XP · {stats.badges.length}/{ACHIEVEMENT_DEFS.length} insignias desbloqueadas</div>
+        <div className="profile-mini">{stats.avatarName||'Mascota musical'} · {stats.xp} XP · {stats.badges.length}/{ACHIEVEMENT_DEFS.length} insignias desbloqueadas</div>
         <div className="progress-large" style={{marginTop:10,maxWidth:460}}><div className="progress-large-fill" style={{width:`${pct}%`}}/></div>
-        <div className="profile-mini">{stats.current}/{stats.needed} XP hasta el siguiente nivel{nextBadge?` · Próxima insignia: ${nextBadge.icon} ${nextBadge.label}`:''}</div>
+        <div className="profile-mini">{stats.current}/{stats.needed} XP hasta el siguiente nivel{stats.nextMascot?` · Próxima evolución: ${stats.nextMascot.icon} ${stats.nextMascot.name} en nivel ${stats.nextMascot.min}`:''}{nextBadge?` · Próxima insignia: ${nextBadge.icon} ${nextBadge.label}`:''}</div>
       </div>
     </div>
     <div className="grid4" style={{marginBottom:16}}>
