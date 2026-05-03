@@ -20,6 +20,8 @@ body{font-family:'Circular','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',
   --border:#2a2a2a;--card-bg:#181818;--surface:#121212;
   --gradient:linear-gradient(180deg,#1f1f1f 0%,#121212 100%);
   --danger:#f15e6c;--warning:#ffa42b;
+  --c1:var(--green);--c2:var(--green);--c3:rgba(29,185,84,.15);--c4:var(--green-dark);
+  --success:var(--green);--muted:var(--text-sub);
 }
 .app{max-width:1280px;margin:0 auto;padding:16px;background:var(--gradient);min-height:100vh}
 /* NAV */
@@ -104,10 +106,9 @@ textarea{resize:vertical}
 .song-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:500px;font-size:12px;cursor:pointer;transition:all .2s;border:1px solid var(--border);background:var(--bg-elev2);color:var(--text-sub);user-select:none;font-weight:500}
 .song-chip:hover{background:var(--bg-elev3);color:var(--text);border-color:var(--text-sub)}
 .song-chip.heard{background:rgba(29,185,84,.15);border-color:var(--green);color:var(--green)}
-.spotify-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:1px solid rgba(29,185,84,.45);background:rgba(29,185,84,.12);color:var(--green);font-size:13px;font-weight:800;cursor:pointer;transition:all .2s;flex-shrink:0;text-decoration:none}
-.spotify-btn:hover{background:var(--green);color:#000;border-color:var(--green);transform:scale(1.06)}
+.spotify-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:1px solid rgba(29,185,84,.45);background:rgba(29,185,84,.12);color:var(--green);font-size:11px;font-weight:800;cursor:pointer;transition:all .2s;flex-shrink:0;text-decoration:none}
+.spotify-btn:hover{background:var(--green);color:#000;border-color:var(--green);transform:scale(1.05)}
 .spotify-btn:active{transform:scale(.96)}
-.song-line{display:inline-flex;align-items:center;gap:5px;margin:2px 4px 2px 0}
 /* HISTORY ROW */
 .history-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:6px;background:var(--bg-elev2);margin-bottom:6px;flex-wrap:wrap;transition:background .2s}
 .history-row:hover{background:var(--bg-elev3)}
@@ -128,6 +129,20 @@ textarea{resize:vertical}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:6px;border:3px solid var(--bg)}
 ::-webkit-scrollbar-thumb:hover{background:#4a4a4a}
+
+/* AUTH / CLOUD SYNC */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at top,#1f1f1f 0%,#000 70%)}
+.auth-card{max-width:460px;width:100%;background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:28px;text-align:center;box-shadow:0 20px 80px rgba(0,0,0,.45)}
+.auth-icon{width:72px;height:72px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:34px;color:#000}
+.auth-title{font-size:28px;font-weight:900;margin-bottom:8px;letter-spacing:-.8px}
+.auth-copy{color:var(--text-sub);font-size:14px;line-height:1.55;margin-bottom:18px}
+.auth-warning{background:rgba(255,164,43,.12);border:1px solid rgba(255,164,43,.35);color:#ffd08a;border-radius:10px;padding:12px;font-size:12px;text-align:left;margin:14px 0}
+.sync-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.sync-saved{background:rgba(29,185,84,.16);color:var(--green)}
+.sync-saving,.sync-loading,.sync-checking{background:rgba(70,131,255,.18);color:#8db8ff}
+.sync-error{background:rgba(241,94,108,.18);color:#ff8793}
+.secure-session{font-size:11px;color:var(--text-sub);margin-top:2px}
+
 </style>
 </head>
 <body>
@@ -139,9 +154,58 @@ window.addEventListener('error',function(e){
 });
 </script>
 
+
+<script>
+window.firebaseReady = new Promise(function(resolve,reject){
+  window.__resolveFirebase = resolve;
+  window.__rejectFirebase = reject;
+});
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDb2CBZONsx_MkZFsVTdRZQf_-ojNYlNjw",
+  authDomain: "music-discovery-lab-jonathan.firebaseapp.com",
+  projectId: "music-discovery-lab-jonathan",
+  storageBucket: "music-discovery-lab-jonathan.firebasestorage.app",
+  messagingSenderId: "269677896387",
+  appId: "1:269677896387:web:0035968c3827b785e23876"
+};
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  await setPersistence(auth, browserLocalPersistence);
+  getRedirectResult(auth).catch(function(e){ console.warn("Redirect auth result error", e); });
+  window.__resolveFirebase({
+    app, db, auth, provider,
+    doc, getDoc, setDoc, onSnapshot, serverTimestamp,
+    signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut
+  });
+} catch (e) {
+  console.error("Firebase init error", e);
+  window.__rejectFirebase(e);
+}
+</script>
+
 <script type="text/babel">
 const {useState,useEffect,useCallback,useMemo,useRef}=React;
 const STORAGE_KEY='musicDiscoveryLab_v1';
+const CLOUD_COLLECTION='musicDiscoveryLab';
+const CLOUD_DOCUMENT='main';
+const ALLOWED_EMAILS=['jonathancohenav@gmail.com','lucymayoneill5@gmail.com'];
+function getUserKeyFromEmail(email){
+  const e=(email||'').toLowerCase();
+  if(e==='jonathancohenav@gmail.com')return 'u1';
+  if(e==='lucymayoneill5@gmail.com')return 'u2';
+  return null;
+}
 
 /* ============================================================
    DATA: INITIAL GENRES (100+)
@@ -651,6 +715,30 @@ function calcArtistAvg(a){
   if(!v.length)return null;
   return v.reduce((a,b)=>a+b,0)/v.length;
 }
+function hasArtistUserEval(a,user){
+  const suf=user==='u1'?'U1':'U2';
+  return !!(a['score'+suf]||a['comment'+suf]||a['fav'+suf]||a['replay'+suf]||a['mood'+suf]||a['situations'+suf]);
+}
+function replayLabel(v){
+  return {si:'Sí',tal_vez:'Tal vez',no:'No'}[v]||'';
+}
+function buildSpotifySearchUrl(artistName,songTitle){
+  const query=[artistName,songTitle].filter(Boolean).join(' ').trim();
+  return `https://open.spotify.com/search/${encodeURIComponent(query||'')}`;
+}
+function getSpotifyUrl(artistName,song){
+  const direct=(song&&song.spotifyUrl||'').trim();
+  if(direct)return direct;
+  return buildSpotifySearchUrl(artistName,(song&&song.title)||'');
+}
+function openSpotifyForSong(artistName,song,event){
+  if(event){event.preventDefault();event.stopPropagation();}
+  const url=getSpotifyUrl(artistName,song);
+  if(!url)return;
+  /* Same-tab navigation avoids the annoying about:blank tab on iOS/Chrome.
+     Spotify universal links normally hand off to the Spotify app when installed. */
+  window.location.assign(url);
+}
 
 /* ============================================================
    SMALL COMPONENTS
@@ -720,24 +808,6 @@ function GenreEditModal({genre,isNew,onSave,onClose}){
   );
 }
 
-
-function buildSpotifySearchUrl(artistName,songTitle){
-  const query=[artistName,songTitle].filter(Boolean).join(' ').trim();
-  return `https://open.spotify.com/search/${encodeURIComponent(query||'')}`;
-}
-function getSpotifyUrl(artistName,song){
-  const direct=(song&&song.spotifyUrl||'').trim();
-  if(direct)return direct;
-  return buildSpotifySearchUrl(artistName,(song&&song.title)||'');
-}
-function openSpotifyForSong(artistName,song,event){
-  if(event){event.preventDefault();event.stopPropagation();}
-  const url=getSpotifyUrl(artistName,song);
-  if(!url)return;
-  const opened=window.open(url,'_blank');
-  if(!opened){ window.location.href=url; }
-}
-
 /* ============================================================
    ARTIST EDIT MODAL
    ============================================================ */
@@ -767,10 +837,10 @@ function ArtistEditModal({genreId,artist,isNew,onSave,onClose}){
               <button className="btn btn-xs" onClick={addSong}>+ Añadir</button>
             </div>
             {(f.suggestedSongs||[]).map((s,i)=>(
-              <div key={i} className="col" style={{marginBottom:8,padding:8,border:'1px solid var(--border)',borderRadius:8,background:'var(--bg-elev2)'}}>
+              <div key={i} className="col" style={{marginBottom:8,padding:8,border:'1px solid var(--border)',borderRadius:6}}>
                 <div className="row">
-                  <input placeholder="Título" value={s.title||''} onChange={e=>updSong(i,'title',e.target.value)} style={{flex:2,minWidth:140}}/>
-                  <input placeholder="Nota" value={s.note||''} onChange={e=>updSong(i,'note',e.target.value)} style={{flex:2,minWidth:140}}/>
+                  <input placeholder="Título" value={s.title||''} onChange={e=>updSong(i,'title',e.target.value)} style={{flex:2}}/>
+                  <input placeholder="Nota" value={s.note||''} onChange={e=>updSong(i,'note',e.target.value)} style={{flex:2}}/>
                   <button className="btn btn-xs btn-danger" onClick={()=>delSong(i)}>✕</button>
                 </div>
                 <input placeholder="URL de Spotify opcional (si se deja vacío, abrirá búsqueda automática)" value={s.spotifyUrl||''} onChange={e=>updSong(i,'spotifyUrl',e.target.value)} />
@@ -806,8 +876,28 @@ function WeekDetailModal({week,u1,u2,onClose}){
               {week.rating.scoreU1&&<div className="metric"><div className="metric-label">{u1}</div><div className="metric-value">{parseFloat(week.rating.scoreU1).toFixed(1)}</div></div>}
               {week.rating.scoreU2&&<div className="metric"><div className="metric-label">{u2}</div><div className="metric-value">{parseFloat(week.rating.scoreU2).toFixed(1)}</div></div>}
             </div>
-            {week.rating.favSongU1&&<p style={{fontSize:12,marginTop:8}}>🎵 {u1}: {week.rating.favSongU1}</p>}
-            {week.rating.favSongU2&&<p style={{fontSize:12}}>🎵 {u2}: {week.rating.favSongU2}</p>}
+            <div className="grid2" style={{marginTop:10}}>
+              <div style={{fontSize:12}}>
+                <div style={{fontWeight:700,marginBottom:4}}>{u1}</div>
+                {week.rating.favSongU1&&<p>🎵 Canción: {week.rating.favSongU1}</p>}
+                {week.rating.favArtistU1&&<p>⭐ Artista: {week.rating.favArtistU1}</p>}
+                {week.rating.listenAgainU1&&<p>🔁 Volvería: {replayLabel(week.rating.listenAgainU1)}</p>}
+                {week.rating.situationsU1&&<p>📍 Situaciones: {week.rating.situationsU1}</p>}
+                {week.rating.surpriseU1&&<p>✨ Sorpresa: {week.rating.surpriseU1}</p>}
+                {week.rating.hardU1&&<p>🧱 Costó: {week.rating.hardU1}</p>}
+                {week.rating.commentU1&&<p style={{fontStyle:'italic'}}>"{week.rating.commentU1}"</p>}
+              </div>
+              <div style={{fontSize:12}}>
+                <div style={{fontWeight:700,marginBottom:4}}>{u2}</div>
+                {week.rating.favSongU2&&<p>🎵 Canción: {week.rating.favSongU2}</p>}
+                {week.rating.favArtistU2&&<p>⭐ Artista: {week.rating.favArtistU2}</p>}
+                {week.rating.listenAgainU2&&<p>🔁 Volvería: {replayLabel(week.rating.listenAgainU2)}</p>}
+                {week.rating.situationsU2&&<p>📍 Situaciones: {week.rating.situationsU2}</p>}
+                {week.rating.surpriseU2&&<p>✨ Sorpresa: {week.rating.surpriseU2}</p>}
+                {week.rating.hardU2&&<p>🧱 Costó: {week.rating.hardU2}</p>}
+                {week.rating.commentU2&&<p style={{fontStyle:'italic'}}>"{week.rating.commentU2}"</p>}
+              </div>
+            </div>
             {week.rating.comment&&<p style={{marginTop:8,fontSize:13,borderTop:'0.5px solid var(--border)',paddingTop:8}}>{week.rating.comment}</p>}
           </div>
         )}
@@ -824,10 +914,11 @@ function WeekDetailModal({week,u1,u2,onClose}){
                   {a.listened&&<Badge type="completed"/>}
                 </div>
               </div>
-              {(a.scoreU1||a.scoreU2)&&<div className="row" style={{marginTop:3,gap:12,fontSize:12,color:'var(--muted)'}}>
-                {a.scoreU1&&<span>{u1}: {a.scoreU1}</span>}
-                {a.scoreU2&&<span>{u2}: {a.scoreU2}</span>}
+              {(a.scoreU1||a.scoreU2||a.replayU1||a.replayU2)&&<div className="row" style={{marginTop:3,gap:12,fontSize:12,color:'var(--muted)'}}>
+                {a.scoreU1&&<span>{u1}: {a.scoreU1}{a.replayU1?` · Replay: ${replayLabel(a.replayU1)}`:''}</span>}
+                {a.scoreU2&&<span>{u2}: {a.scoreU2}{a.replayU2?` · Replay: ${replayLabel(a.replayU2)}`:''}</span>}
                 {a.commentU1&&<span style={{fontStyle:'italic'}}>"{a.commentU1}"</span>}
+                {a.commentU2&&<span style={{fontStyle:'italic'}}>"{a.commentU2}"</span>}
               </div>}
             </div>
           );
@@ -1020,34 +1111,53 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
 
         <div className="card">
           <h2 style={{marginBottom:12}}>Valoración del género completo</h2>
-          <div className="grid2" style={{marginBottom:10}}>
-            <ScoreInput label={`Nota ${u1} (0-10)`} value={weekRating.scoreU1||''} onChange={v=>setWeekRating(p=>({...p,scoreU1:v}))}/>
-            <ScoreInput label={`Nota ${u2} (0-10)`} value={weekRating.scoreU2||''} onChange={v=>setWeekRating(p=>({...p,scoreU2:v}))}/>
-          </div>
-          <div className="grid2" style={{marginBottom:10}}>
-            <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u1}</label><input value={weekRating.favSongU1||''} onChange={e=>setWeekRating(p=>({...p,favSongU1:e.target.value}))} placeholder="Título..."/></div>
-            <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u2}</label><input value={weekRating.favSongU2||''} onChange={e=>setWeekRating(p=>({...p,favSongU2:e.target.value}))} placeholder="Título..."/></div>
-          </div>
-          <div style={{marginBottom:10}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo escucharíamos de nuevo?</label>
-            <select value={weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgain:e.target.value}))}>
-              <option value="">—</option>
-              <option value="si">Sí, definitivamente</option>
-              <option value="tal_vez">Tal vez</option>
-              <option value="no">No</option>
-            </select>
-          </div>
-          <div style={{marginBottom:10}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué os ha sorprendido?</label>
-            <textarea rows={2} value={weekRating.surprise||''} onChange={e=>setWeekRating(p=>({...p,surprise:e.target.value}))} placeholder="Lo más inesperado..."/>
-          </div>
-          <div style={{marginBottom:10}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué os ha costado?</label>
-            <textarea rows={2} value={weekRating.hard||''} onChange={e=>setWeekRating(p=>({...p,hard:e.target.value}))} placeholder="Lo más difícil de escuchar..."/>
+          <div className="grid2" style={{marginBottom:12}}>
+            <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+              <h3>Evaluación {u1}</h3>
+              <ScoreInput label={`Nota ${u1} (0-10)`} value={weekRating.scoreU1||''} onChange={v=>setWeekRating(p=>({...p,scoreU1:v}))}/>
+              <div style={{height:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Volverías a escuchar este género?</label>
+              <select value={weekRating.listenAgainU1||weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgainU1:e.target.value}))} style={{marginBottom:8}}>
+                <option value="">—</option><option value="si">Sí, definitivamente</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
+              </select>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u1}</label>
+              <input value={weekRating.favSongU1||''} onChange={e=>setWeekRating(p=>({...p,favSongU1:e.target.value}))} placeholder="Título..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Artista favorito {u1}</label>
+              <input value={weekRating.favArtistU1||''} onChange={e=>setWeekRating(p=>({...p,favArtistU1:e.target.value}))} placeholder="Artista..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+              <input value={weekRating.situationsU1||''} onChange={e=>setWeekRating(p=>({...p,situationsU1:e.target.value}))} placeholder="viaje, fiesta, concentración..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te sorprendió?</label>
+              <textarea rows={2} value={weekRating.surpriseU1||weekRating.surprise||''} onChange={e=>setWeekRating(p=>({...p,surpriseU1:e.target.value}))} placeholder="Lo más inesperado..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te costó?</label>
+              <textarea rows={2} value={weekRating.hardU1||weekRating.hard||''} onChange={e=>setWeekRating(p=>({...p,hardU1:e.target.value}))} placeholder="Lo más difícil de escuchar..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
+              <textarea rows={3} value={weekRating.commentU1||''} onChange={e=>setWeekRating(p=>({...p,commentU1:e.target.value}))} placeholder="Reflexión personal..."/>
+            </div>
+            <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+              <h3>Evaluación {u2}</h3>
+              <ScoreInput label={`Nota ${u2} (0-10)`} value={weekRating.scoreU2||''} onChange={v=>setWeekRating(p=>({...p,scoreU2:v}))}/>
+              <div style={{height:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Volverías a escuchar este género?</label>
+              <select value={weekRating.listenAgainU2||weekRating.listenAgain||''} onChange={e=>setWeekRating(p=>({...p,listenAgainU2:e.target.value}))} style={{marginBottom:8}}>
+                <option value="">—</option><option value="si">Sí, definitivamente</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
+              </select>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción favorita {u2}</label>
+              <input value={weekRating.favSongU2||''} onChange={e=>setWeekRating(p=>({...p,favSongU2:e.target.value}))} placeholder="Título..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Artista favorito {u2}</label>
+              <input value={weekRating.favArtistU2||''} onChange={e=>setWeekRating(p=>({...p,favArtistU2:e.target.value}))} placeholder="Artista..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+              <input value={weekRating.situationsU2||''} onChange={e=>setWeekRating(p=>({...p,situationsU2:e.target.value}))} placeholder="viaje, fiesta, concentración..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te sorprendió?</label>
+              <textarea rows={2} value={weekRating.surpriseU2||''} onChange={e=>setWeekRating(p=>({...p,surpriseU2:e.target.value}))} placeholder="Lo más inesperado..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Qué te costó?</label>
+              <textarea rows={2} value={weekRating.hardU2||''} onChange={e=>setWeekRating(p=>({...p,hardU2:e.target.value}))} placeholder="Lo más difícil de escuchar..." style={{marginBottom:8}}/>
+              <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
+              <textarea rows={3} value={weekRating.commentU2||''} onChange={e=>setWeekRating(p=>({...p,commentU2:e.target.value}))} placeholder="Reflexión personal..."/>
+            </div>
           </div>
           <div style={{marginBottom:14}}>
-            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario conjunto</label>
-            <textarea rows={3} value={weekRating.comment||''} onChange={e=>setWeekRating(p=>({...p,comment:e.target.value}))} placeholder="Reflexiones, recuerdos, lo que os lleváis de esta semana..."/>
+            <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario conjunto opcional</label>
+            <textarea rows={3} value={weekRating.comment||''} onChange={e=>setWeekRating(p=>({...p,comment:e.target.value}))} placeholder="Conclusión conjunta si coincidís en algo..."/>
           </div>
           <button className="btn btn-primary" onClick={onConfirmClose}>✅ Cerrar semana y guardar</button>
         </div>
@@ -1136,13 +1246,11 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
 
             <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:4}}>
               {(artist.listenedSongs||[]).map((s,i)=>(
-                <div key={i} className="song-line">
-                  <div className={`song-chip ${s.listened?'heard':''}`}
-                    onClick={()=>onToggleSong(activeWeek.id,artist.id,i)}
-                    title={s.note}>
-                    <span style={{width:12,height:12,borderRadius:2,background:s.listened?'var(--success)':'transparent',border:`1.5px solid ${s.listened?'var(--success)':'var(--muted)'}`,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{s.listened&&'✓'}</span>
-                    {s.title}
-                  </div>
+                <div key={i} className={`song-chip ${s.listened?'heard':''}`}
+                  onClick={()=>onToggleSong(activeWeek.id,artist.id,i)}
+                  title={s.note}>
+                  <span style={{width:12,height:12,borderRadius:2,background:s.listened?'var(--success)':'transparent',border:`1.5px solid ${s.listened?'var(--success)':'var(--muted)'}`,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{s.listened&&'✓'}</span>
+                  <span>{s.title}</span>
                   <button className="spotify-btn" type="button" title={`Abrir en Spotify: ${artist.name} - ${s.title}`} aria-label={`Abrir en Spotify ${artist.name} ${s.title}`} onClick={e=>openSpotifyForSong(artist.name,s,e)}>▶</button>
                 </div>
               ))}
@@ -1151,42 +1259,47 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
             {isExp&&(
               <div style={{marginTop:10,borderTop:'0.5px solid var(--border)',paddingTop:12}}>
                 <div className="grid2" style={{marginBottom:10}}>
-                  <ScoreInput label={u1} value={artist.scoreU1} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU1',v)}/>
-                  <ScoreInput label={u2} value={artist.scoreU2} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU2',v)}/>
-                </div>
-                <div className="grid2" style={{marginBottom:10}}>
-                  <div>
-                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
-                    <textarea rows={2} style={{fontSize:12}} value={artist.commentU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU1',e.target.value)} placeholder="¿Qué te parece?"/>
-                  </div>
-                  <div>
-                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
-                    <textarea rows={2} style={{fontSize:12}} value={artist.commentU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU2',e.target.value)} placeholder="¿Qué te parece?"/>
-                  </div>
-                </div>
-                <div className="row" style={{marginBottom:10,gap:16,flexWrap:'wrap'}}>
-                  <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
-                    <input type="checkbox" checked={!!artist.favU1} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU1',e.target.checked)} style={{width:'auto'}}/>
-                    ⭐ Favorito {u1}
-                  </label>
-                  <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
-                    <input type="checkbox" checked={!!artist.favU2} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU2',e.target.checked)} style={{width:'auto'}}/>
-                    ⭐ Favorito {u2}
-                  </label>
-                  <div className="row" style={{gap:6}}>
-                    <label style={{fontSize:12,color:'var(--text-sub)'}}>Replay:</label>
-                    <select value={artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replay',e.target.value)} style={{width:'auto',fontSize:12,padding:'4px 8px'}}>
-                      <option value="">—</option>
-                      <option value="si">Sí</option>
-                      <option value="tal_vez">Tal vez</option>
-                      <option value="no">No</option>
+                  <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+                    <h3 style={{marginBottom:10}}>Evaluación {u1}</h3>
+                    <ScoreInput label={`Nota ${u1}`} value={artist.scoreU1} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU1',v)}/>
+                    <div style={{height:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo volverías a escuchar?</label>
+                    <select value={artist.replayU1||artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replayU1',e.target.value)} style={{fontSize:12,marginBottom:8}}>
+                      <option value="">—</option><option value="si">Sí</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
                     </select>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Mood / sensación {u1}</label>
+                    <input value={artist.moodU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'moodU1',e.target.value)} placeholder="energía, nostalgia, calma..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+                    <input value={artist.situationsU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'situationsU1',e.target.value)} placeholder="gym, conducir, cena..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u1}</label>
+                    <textarea rows={2} style={{fontSize:12,marginBottom:8}} value={artist.commentU1||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU1',e.target.value)} placeholder="¿Qué te parece?"/>
+                    <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
+                      <input type="checkbox" checked={!!artist.favU1} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU1',e.target.checked)} style={{width:'auto'}}/> ⭐ Favorito {u1}
+                    </label>
+                  </div>
+                  <div className="card card-sm" style={{background:'var(--bg-elev2)'}}>
+                    <h3 style={{marginBottom:10}}>Evaluación {u2}</h3>
+                    <ScoreInput label={`Nota ${u2}`} value={artist.scoreU2} onChange={v=>onUpdateArtist(activeWeek.id,artist.id,'scoreU2',v)}/>
+                    <div style={{height:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿Lo volverías a escuchar?</label>
+                    <select value={artist.replayU2||artist.replay||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'replayU2',e.target.value)} style={{fontSize:12,marginBottom:8}}>
+                      <option value="">—</option><option value="si">Sí</option><option value="tal_vez">Tal vez</option><option value="no">No</option>
+                    </select>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Mood / sensación {u2}</label>
+                    <input value={artist.moodU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'moodU2',e.target.value)} placeholder="energía, nostalgia, calma..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>¿En qué situación lo pondrías?</label>
+                    <input value={artist.situationsU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'situationsU2',e.target.value)} placeholder="gym, conducir, cena..." style={{fontSize:12,marginBottom:8}}/>
+                    <label style={{fontSize:11,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario {u2}</label>
+                    <textarea rows={2} style={{fontSize:12,marginBottom:8}} value={artist.commentU2||''} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'commentU2',e.target.value)} placeholder="¿Qué te parece?"/>
+                    <label style={{display:'flex',alignItems:'center',gap:5,fontSize:12,cursor:'pointer'}}>
+                      <input type="checkbox" checked={!!artist.favU2} onChange={e=>onUpdateArtist(activeWeek.id,artist.id,'favU2',e.target.checked)} style={{width:'auto'}}/> ⭐ Favorito {u2}
+                    </label>
                   </div>
                 </div>
                 <div className="row" style={{justifyContent:'space-between',gap:8,paddingTop:10,borderTop:'1px solid var(--border)'}}>
                   <span style={{fontSize:11,color:'var(--green)',fontWeight:600}}>✓ Guardado automáticamente</span>
                   <div className="row" style={{gap:6}}>
-                    {(artist.scoreU1||artist.scoreU2||artist.commentU1||artist.commentU2||artist.favU1||artist.favU2||artist.replay)&&(
+                    {(hasArtistUserEval(artist,'u1')||hasArtistUserEval(artist,'u2'))&&(
                       <button className="btn btn-sm btn-danger" onClick={()=>onClearRating(activeWeek.id,artist.id)}>🗑 Borrar valoración</button>
                     )}
                     <button className="btn btn-sm btn-primary" onClick={()=>setExpandedArtist(null)}>Cerrar</button>
@@ -1395,13 +1508,8 @@ function BibliotecaTab({genres,filteredGenres,genreSearch,setGenreSearch,genreFi
                         <Badge type={a.role}/>
                       </div>
                       <div className="muted" style={{fontSize:11}}>{a.shortDescription}</div>
-                      <div style={{fontSize:11,color:'var(--muted)',display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
-                        {(a.suggestedSongs||[]).map((s,i)=>(
-                          <span key={i} className="song-line" style={{marginRight:4}}>
-                            <span>🎵 {s.title}</span>
-                            <button className="spotify-btn" type="button" title={`Abrir en Spotify: ${a.name} - ${s.title}`} aria-label={`Abrir en Spotify ${a.name} ${s.title}`} onClick={e=>openSpotifyForSong(a.name,s,e)}>▶</button>
-                          </span>
-                        ))}
+                      <div style={{fontSize:11,color:'var(--muted)'}}>
+                        {(a.suggestedSongs||[]).map((s,i)=><span key={i} style={{marginRight:8,display:'inline-flex',alignItems:'center',gap:4}}>🎵 {s.title}<button className="spotify-btn" type="button" title={`Abrir en Spotify: ${a.name} - ${s.title}`} aria-label={`Abrir en Spotify ${a.name} ${s.title}`} onClick={e=>openSpotifyForSong(a.name,s,e)}>▶</button></span>)}
                       </div>
                     </div>
                     <div className="row" style={{gap:4,flexShrink:0}}>
@@ -1458,14 +1566,48 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset}){
   );
 }
 
+
+function CloudStatusPill({status}){
+  const labels={checking:'Verificando',loading:'Cargando nube',saving:'Guardando',saved:'Nube OK',error:'Error nube',offline:'Sin sesión'};
+  const icon={checking:'🔐',loading:'☁️',saving:'☁️',saved:'☁️',error:'⚠️',offline:'🔒'};
+  return <span className={`sync-pill sync-${status||'checking'}`}>{icon[status]||'☁️'} {labels[status]||status}</span>;
+}
+
+function AuthGate({mode,message,onLogin,onSignOut}){
+  const isError=mode==='error'||mode==='firebase_error';
+  return(
+    <div className="auth-screen">
+      <div className="auth-card">
+        <div className="auth-icon">🎵</div>
+        <div className="auth-title">Music Discovery Lab</div>
+        <div className="auth-copy">
+          Acceso privado. Inicia sesión con Google para cargar la biblioteca, semanas, valoraciones, rankings e historial compartido.
+        </div>
+        <div className="auth-warning">
+          Seguridad: la app no recibe ni almacena vuestra contraseña. El inicio de sesión ocurre directamente con Google/Firebase Auth.
+        </div>
+        {message&&<div className={`auth-warning`} style={isError?{borderColor:'rgba(241,94,108,.45)',color:'#ff9aa5',background:'rgba(241,94,108,.12)'}:{}}>{message}</div>}
+        {mode==='signed_out'&&<button className="btn btn-primary" onClick={onLogin} style={{width:'100%',justifyContent:'center'}}>Entrar con Google</button>}
+        {(mode==='checking'||mode==='loading')&&<div className="muted">Verificando sesión segura…</div>}
+        {isError&&<div className="row" style={{justifyContent:'center'}}><button className="btn btn-primary" onClick={onLogin}>Reintentar login</button>{onSignOut&&<button className="btn" onClick={onSignOut}>Salir</button>}</div>}
+      </div>
+    </div>
+  );
+}
+
 /* ============================================================
    ROOT APP
    ============================================================ */
 function App(){
-  const [data,setData]=useState(()=>{
-    const saved=loadData();
-    return saved||initData();
-  });
+  const [data,setData]=useState(null);
+  const [authUser,setAuthUser]=useState(null);
+  const [authMode,setAuthMode]=useState('checking');
+  const [firebaseApi,setFirebaseApi]=useState(null);
+  const [syncStatus,setSyncStatus]=useState('checking');
+  const [syncMessage,setSyncMessage]=useState('Inicializando seguridad...');
+  const applyingRemoteRef=useRef(false);
+  const saveTimerRef=useRef(null);
+  const unsubscribeDocRef=useRef(null);
   const [tab,setTab]=useState('dashboard');
   const [confirm,setConfirm]=useState(null);
   const [genreSearch,setGenreSearch]=useState('');
@@ -1480,12 +1622,104 @@ function App(){
   const [manualGenreSelect,setManualGenreSelect]=useState(false);
   const [viewWeek,setViewWeek]=useState(null);
 
-  const {settings,genres,weeks,activeWeekId,completedGenreIds}=data;
+  useEffect(()=>{
+    let unsubAuth=null;
+    let cancelled=false;
+    window.firebaseReady.then(api=>{
+      if(cancelled)return;
+      setFirebaseApi(api);
+      unsubAuth=api.onAuthStateChanged(api.auth,user=>{
+        if(unsubscribeDocRef.current){unsubscribeDocRef.current();unsubscribeDocRef.current=null;}
+        if(!user){
+          setAuthUser(null);setAuthMode('signed_out');setData(null);setSyncStatus('offline');setSyncMessage('Inicia sesión para acceder.');
+          return;
+        }
+        const email=(user.email||'').toLowerCase();
+        if(!ALLOWED_EMAILS.includes(email)){
+          setAuthUser(null);setData(null);setAuthMode('error');setSyncStatus('error');
+          setSyncMessage('Cuenta no autorizada. Usa el correo de Jonathan o el de Lucy.');
+          api.signOut(api.auth);
+          return;
+        }
+        setAuthUser(user);setAuthMode('loading');setSyncStatus('loading');setSyncMessage('Verificando acceso y cargando nube...');
+        const ref=api.doc(api.db,CLOUD_COLLECTION,CLOUD_DOCUMENT);
+        unsubscribeDocRef.current=api.onSnapshot(ref,async snap=>{
+          try{
+            if(!snap.exists()){
+              const seed=loadData()||initData();
+              applyingRemoteRef.current=true;
+              setData(seed);saveData(seed);
+              setAuthMode('signed_in');setSyncStatus('saving');setSyncMessage('Inicializando documento seguro en la nube...');
+              await api.setDoc(ref,{...seed,updatedAt:new Date().toISOString(),cloudUpdatedAt:api.serverTimestamp()},{merge:false});
+              setTimeout(()=>{applyingRemoteRef.current=false;},1200);
+              setSyncStatus('saved');setSyncMessage('Nube inicializada.');
+              return;
+            }
+            const cloud=snap.data();
+            if(!cloud||!cloud.settings||!cloud.genres)throw new Error('El documento de Firestore no tiene el formato esperado.');
+            const clean={...cloud};delete clean.cloudUpdatedAt;
+            applyingRemoteRef.current=true;
+            setData(clean);saveData(clean);
+            setAuthMode('signed_in');setSyncStatus('saved');setSyncMessage('Sincronizado en la nube.');
+            setTimeout(()=>{applyingRemoteRef.current=false;},1200);
+          }catch(e){
+            console.error(e);setAuthMode('error');setSyncStatus('error');setSyncMessage(e.message||'Error cargando Firestore.');
+          }
+        },err=>{
+          console.error('Firestore access error',err);
+          setData(null);setAuthMode('error');setSyncStatus('error');
+          setSyncMessage(err.code==='permission-denied'?'Acceso denegado. Revisa que este Google esté autorizado en las reglas de Firestore.':(err.message||'Error de Firestore.'));
+        });
+      });
+    }).catch(err=>{
+      console.error('Firebase ready error',err);setAuthMode('firebase_error');setSyncStatus('error');setSyncMessage(err.message||'Firebase no pudo inicializarse.');
+    });
+    return()=>{cancelled=true;if(unsubAuth)unsubAuth();if(unsubscribeDocRef.current)unsubscribeDocRef.current();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);};
+  },[]);
+
+  useEffect(()=>{
+    if(!data)return;
+    saveData(data);
+    if(!authUser||!firebaseApi||applyingRemoteRef.current)return;
+    if(saveTimerRef.current)clearTimeout(saveTimerRef.current);
+    setSyncStatus('saving');setSyncMessage('Guardando cambios en la nube...');
+    saveTimerRef.current=setTimeout(async()=>{
+      try{
+        const ref=firebaseApi.doc(firebaseApi.db,CLOUD_COLLECTION,CLOUD_DOCUMENT);
+        await firebaseApi.setDoc(ref,{...data,updatedAt:new Date().toISOString(),cloudUpdatedAt:firebaseApi.serverTimestamp()},{merge:false});
+        setSyncStatus('saved');setSyncMessage('Guardado en la nube.');
+      }catch(e){
+        console.error('Cloud save error',e);setSyncStatus('error');setSyncMessage(e.message||'No se pudo guardar en Firestore.');
+      }
+    },450);
+  },[data,authUser,firebaseApi]);
+
+  async function signIn(){
+    const api=firebaseApi||await window.firebaseReady;
+    setFirebaseApi(api);
+    setSyncStatus('loading');setSyncMessage('Abriendo inicio de sesión con Google...');
+    try{
+      await api.signInWithPopup(api.auth,api.provider);
+    }catch(e){
+      console.error('Google login error',e);
+      setAuthMode('error');setSyncStatus('error');
+      let msg='No se pudo iniciar sesión con Google.';
+      if(e.code==='auth/unauthorized-domain')msg='Dominio no autorizado en Firebase Auth. Añade jonathancohenav-bit.github.io en Authentication > Settings > Authorized domains.';
+      if(e.code==='auth/popup-blocked')msg='El navegador bloqueó la ventana de Google. Permite popups para esta web o prueba Safari/Chrome directamente, no desde apps internas.';
+      if(e.code==='auth/popup-closed-by-user')msg='Se cerró la ventana de Google antes de completar el inicio de sesión.';
+      if(e.message)msg+=' Detalle: '+e.message;
+      setSyncMessage(msg);
+    }
+  }
+  async function signOutNow(){
+    const api=firebaseApi||await window.firebaseReady;
+    await api.signOut(api.auth);
+  }
+
+  const safeData=data||{settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[]};
+  const {settings,genres,weeks,activeWeekId,completedGenreIds}=safeData;
   const u1=settings.user1||'Jonathan';
   const u2=settings.user2||'Lucy';
-
-  // Save on every data change
-  useEffect(()=>{saveData(data);},[data]);
 
   const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
 
@@ -1516,6 +1750,11 @@ function App(){
     return all.sort((a,b)=>b.avg-a.avg);
   },[completedWeeks]);
 
+  if(authMode==='checking')return <AuthGate mode="checking" message="Comprobando sesión persistente..." onLogin={signIn}/>;
+  if(authMode==='signed_out')return <AuthGate mode="signed_out" message="Solo Jonathan y Lucy pueden acceder. La sesión queda iniciada en este navegador." onLogin={signIn}/>;
+  if((authMode==='error'||authMode==='firebase_error')&&!data)return <AuthGate mode="error" message={syncMessage} onLogin={signIn} onSignOut={signOutNow}/>;
+  if(!data)return <AuthGate mode="loading" message={syncMessage} onLogin={signIn}/>;
+
   function generateWeek(genreId){
     const genre=genres.find(g=>g.id===genreId);
     if(!genre)return;
@@ -1527,7 +1766,8 @@ function App(){
         ...a,
         listened:false,scoreU1:'',scoreU2:'',
         commentU1:'',commentU2:'',
-        mood:'',replay:'',
+        moodU1:'',moodU2:'',situationsU1:'',situationsU2:'',
+        replayU1:'',replayU2:'',
         favU1:false,favU2:false,
         listenedSongs:(a.suggestedSongs||[]).map(s=>({...s,listened:false}))
       }));
@@ -1574,7 +1814,7 @@ function App(){
   }
 
   function clearArtistRatingNow(weekId,artId){
-    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,scoreU1:'',scoreU2:'',commentU1:'',commentU2:'',favU1:false,favU2:false,replay:''}:a)}:w)}));
+    update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>a.id===artId?{...a,scoreU1:'',scoreU2:'',commentU1:'',commentU2:'',favU1:false,favU2:false,replay:'',replayU1:'',replayU2:'',moodU1:'',moodU2:'',situationsU1:'',situationsU2:''}:a)}:w)}));
     setConfirm(null);
   }
 
@@ -1614,8 +1854,13 @@ function App(){
         <div>
           <div style={{fontWeight:500,fontSize:17,color:'var(--c2)'}}>Music Discovery Lab</div>
           <div className="muted" style={{fontSize:12}}>{u1} & {u2} · {completedWeeks.length} semanas · {genres.length} géneros</div>
+          <div className="secure-session">🔐 Sesión segura con Google · persistencia activada</div>
         </div>
-        {activeWeek&&<div style={{marginLeft:'auto'}}><Badge type="in_progress"/></div>}
+        <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
+          <CloudStatusPill status={syncStatus}/>
+          {activeWeek&&<Badge type="in_progress"/>}
+          <button className="btn btn-xs" onClick={signOutNow}>Salir</button>
+        </div>
       </div>
 
       <nav className="nav">
