@@ -199,17 +199,23 @@ textarea{resize:vertical}
 .xp-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:12px;padding:14px}
 .badge-earned{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:rgba(29,185,84,.12);border:1px solid rgba(29,185,84,.28);color:var(--green);font-size:11px;font-weight:800;margin:2px}
 .badge-locked{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:var(--bg-elev3);border:1px solid var(--border);color:var(--text-muted);font-size:11px;font-weight:800;margin:2px}
-.profile-hero{background:linear-gradient(135deg,rgba(29,185,84,.16),rgba(70,131,255,.10));border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px}
-.profile-avatar{width:82px;height:82px;border-radius:24px;background:var(--bg-elev3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
-.profile-tab-btn{border:1px solid var(--border);background:var(--bg-elev2);color:var(--text-sub);border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer}
-.profile-tab-btn.active{background:var(--text);color:#000;border-color:var(--text)}
-.badge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
-.badge-card{background:var(--bg-elev2);border:1px solid rgba(29,185,84,.25);border-radius:12px;padding:12px}
-.badge-card.locked{border-color:var(--border);opacity:.58}
-.badge-card-icon{font-size:24px;margin-bottom:6px}
-.badge-card-title{font-weight:900;margin-bottom:3px}
-.badge-card-desc{font-size:12px;color:var(--text-sub);line-height:1.35}
 
+
+/* PROFILE / GAMIFICATION */
+.profile-hero{background:linear-gradient(135deg,rgba(29,185,84,.14),rgba(70,131,255,.10));border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px}
+.profile-avatar{width:82px;height:82px;border-radius:24px;background:var(--bg-elev3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 10px 40px rgba(0,0,0,.25);flex-shrink:0}
+.profile-tab-btn{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-elev2);color:var(--text-sub);font-weight:800;cursor:pointer}
+.profile-tab-btn.active{background:var(--text);color:#000;border-color:var(--text)}
+.xp-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.badge-card{background:var(--bg-elev2);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:112px}
+.badge-card.locked{opacity:.55}
+.badge-card-icon{font-size:28px;margin-bottom:8px}
+.badge-card-title{font-size:13px;font-weight:900;margin-bottom:4px}
+.badge-card-desc{font-size:11px;color:var(--text-sub);line-height:1.35}
+.badge-earned,.badge-locked{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;margin:2px;border:1px solid var(--border)}
+.badge-earned{background:rgba(29,185,84,.13);color:var(--green);border-color:rgba(29,185,84,.25)}
+.badge-locked{background:var(--bg-elev3);color:var(--text-sub)}
 
 </style>
 </head>
@@ -1838,6 +1844,58 @@ function buildCloseWeekInsightsSnapshot(week,u1Name,u2Name){
     quizWinner:x.quizWinner
   };
 }
+function getUserGamificationStats(weeks,challenges,userKey){
+  const completedWeeks=(weeks||[]).filter(w=>w.status==='completed');
+  let songs=0,fullWeeks=0,favs=0,tests=0,testScore=0,challengeWins=0,completedChallenges=0;
+  completedWeeks.forEach(w=>{
+    const p=getWeekUserProgress(w,userKey); songs+=p.heardSongs; favs+=p.favoriteSongs; if(p.pct>=100)fullWeeks++;
+    const q=w.learningQuiz&&w.learningQuiz[userKey]; if(q&&typeof q.score!=='undefined'){tests++;testScore+=Number(q.score)||0;}
+  });
+  (challenges||[]).forEach(c=>{
+    if(c.status==='completed'&&c.to===userKey){completedChallenges++;
+      if(c.guessMode==='score'&&c.senderScore!==''&&c.response&&c.response.guessScore!==''){
+        if(Math.abs(Number(c.senderScore)-Number(c.response.guessScore))<=1)challengeWins++;
+      } else if(c.guessMode==='qualitative'&&c.senderQualitative&&c.response&&c.response.guessQualitative===c.senderQualitative){challengeWins++;}
+    }
+  });
+  const xp=songs*2+fullWeeks*50+tests*15+completedChallenges*20+challengeWins*20+favs*5;
+  const level=Math.max(1,Math.floor(xp/150)+1);
+  const next=level*150;
+  const current=Math.max(0,xp-(level-1)*150);
+  const needed=150;
+  const badges=[];
+  if(songs>=25)badges.push({id:'listener25',label:'Oyente 25',icon:'🎧'});
+  if(songs>=100)badges.push({id:'listener100',label:'Maratón 100',icon:'🔥'});
+  if(fullWeeks>=1)badges.push({id:'complete1',label:'Completista',icon:'✅'});
+  if(fullWeeks>=5)badges.push({id:'complete5',label:'Constante',icon:'📈'});
+  if(tests>=5)badges.push({id:'tests5',label:'Alumno aplicado',icon:'🧠'});
+  if(challengeWins>=3)badges.push({id:'challenge3',label:'Adivino musical',icon:'🎯'});
+  if(favs>=10)badges.push({id:'fav10',label:'Cazador de joyas',icon:'⭐'});
+  return {xp,level,next,current,needed,songs,fullWeeks,favs,tests,avgTest:tests?testScore/tests:null,completedChallenges,challengeWins,badges};
+}
+function XpUserCard({name,stats,userKey}){
+  const pct=Math.min(100,Math.round((stats.current/stats.needed)*100));
+  const locked=[
+    {id:'listener25',label:'Oyente 25',icon:'🎧'},{id:'listener100',label:'Maratón 100',icon:'🔥'},{id:'complete1',label:'Completista',icon:'✅'},
+    {id:'complete5',label:'Constante',icon:'📈'},{id:'tests5',label:'Alumno aplicado',icon:'🧠'},{id:'challenge3',label:'Adivino musical',icon:'🎯'},{id:'fav10',label:'Cazador de joyas',icon:'⭐'}
+  ].filter(b=>!stats.badges.some(x=>x.id===b.id));
+  return <div className="xp-card">
+    <div className="row" style={{justifyContent:'space-between',marginBottom:8}}><span className={`user-chip ${userKey}`}>{name}</span><strong>Nivel {stats.level}</strong></div>
+    <div className="muted" style={{fontSize:12,marginBottom:6}}>{stats.xp} XP · {stats.current}/{stats.needed} hasta el siguiente nivel</div>
+    <div className="progress-bar" style={{marginBottom:10}}><div className="progress-fill" style={{width:`${pct}%`}}/></div>
+    <div className="grid3" style={{marginBottom:10}}>
+      <div className="metric card-sm"><div className="metric-label">Canciones</div><div className="metric-value">{stats.songs}</div></div>
+      <div className="metric card-sm"><div className="metric-label">Semanas 100%</div><div className="metric-value">{stats.fullWeeks}</div></div>
+      <div className="metric card-sm"><div className="metric-label">Retos</div><div className="metric-value">{stats.completedChallenges}</div></div>
+    </div>
+    <div>{stats.badges.map(b=><span key={b.id} className="badge-earned">{b.icon} {b.label}</span>)}{!stats.badges.length&&<span className="muted" style={{fontSize:12}}>Sin insignias todavía.</span>}</div>
+    {!!locked.length&&<div style={{marginTop:6}}>{locked.slice(0,3).map(b=><span key={b.id} className="badge-locked">🔒 {b.label}</span>)}</div>}
+  </div>;
+}
+
+/* ============================================================
+   PROFILE / GAMIFICATION
+   ============================================================ */
 const BADGE_CATALOG=[
   {id:'listener25',label:'Oyente 25',icon:'🎧',desc:'Escuchar 25 canciones.',check:s=>s.songs>=25},
   {id:'listener100',label:'Maratón 100',icon:'🔥',desc:'Escuchar 100 canciones.',check:s=>s.songs>=100},
@@ -1862,42 +1920,50 @@ const BADGE_CATALOG=[
   {id:'high10',label:'Entusiasta',icon:'🚀',desc:'Dar 10 notas de 8 o más.',check:s=>s.highRatings>=10},
   {id:'hard5',label:'Crítico duro',icon:'🧊',desc:'Dar 5 notas de 4 o menos.',check:s=>s.lowRatings>=5}
 ];
+
 function getUserGamificationStats(weeks,challenges,userKey){
   const completedWeeks=(weeks||[]).filter(w=>w.status==='completed');
   let songs=0,fullWeeks=0,favs=0,tests=0,testScore=0,challengeWins=0,completedChallenges=0,sentChallenges=0,genresCompleted=0,wildcardSongs=0,artistRatings=0,highRatings=0,lowRatings=0;
   const userSuffix=userKey==='u1'?'U1':'U2';
   const genreSet=new Set();
   completedWeeks.forEach(w=>{
-    const p=getWeekUserProgress(w,userKey); songs+=p.heardSongs; favs+=p.favoriteSongs; if(p.pct>=100)fullWeeks++;
-    if(w.genreId)genreSet.add(w.genreId);
+    const p=getWeekUserProgress(w,userKey);
+    songs+=p.heardSongs;
+    favs+=p.favoriteSongs;
+    if(p.pct>=100)fullWeeks++;
+    if(w.genreId&&p.pct>=100)genreSet.add(w.genreId);
     (w.artists||[]).forEach(a=>{
-      const sc=parseFloat(a[`score${userSuffix}`]);
+      const sc=parseFloat(a['score'+userSuffix]);
       if(!isNaN(sc)){artistRatings++; if(sc>=8)highRatings++; if(sc<=4)lowRatings++;}
       if(a.role==='wildcard'){
-        (a.listenedSongs||[]).forEach(s=>{ if(isSongHeardBy(s,userKey)) wildcardSongs++; });
+        (a.listenedSongs||[]).forEach(song=>{ if(isSongHeardBy(song,userKey)) wildcardSongs++; });
       }
     });
-    const q=w.learningQuiz&&w.learningQuiz[userKey]; if(q&&typeof q.score!=='undefined'){tests++;testScore+=Number(q.score)||0;}
+    const q=w.learningQuiz&&w.learningQuiz[userKey];
+    if(q&&typeof q.score!=='undefined'){tests++;testScore+=Number(q.score)||0;}
   });
   genresCompleted=genreSet.size;
   (challenges||[]).forEach(c=>{
     if(c.from===userKey)sentChallenges++;
-    if(c.status==='completed'&&c.to===userKey){completedChallenges++;
+    if(c.status==='completed'&&c.to===userKey){
+      completedChallenges++;
       if(c.guessMode==='score'&&c.senderScore!==''&&c.response&&c.response.guessScore!==''){
         if(Math.abs(Number(c.senderScore)-Number(c.response.guessScore))<=1)challengeWins++;
-      } else if(c.guessMode==='qualitative'&&c.senderQualitative&&c.response&&c.response.guessQualitative===c.senderQualitative){challengeWins++;}
+      }else if(c.guessMode==='qualitative'&&c.senderQualitative&&c.response&&c.response.guessQualitative===c.senderQualitative){
+        challengeWins++;
+      }
     }
   });
   const avgTest=tests?testScore/tests:null;
   const xp=songs*2+fullWeeks*50+tests*15+completedChallenges*20+challengeWins*20+favs*5+genresCompleted*6+wildcardSongs*3+artistRatings*2;
   const level=Math.max(1,Math.floor(xp/150)+1);
-  const next=level*150;
   const current=Math.max(0,xp-(level-1)*150);
   const needed=150;
-  const base={xp,level,next,current,needed,songs,fullWeeks,favs,tests,avgTest,completedChallenges,challengeWins,sentChallenges,genresCompleted,wildcardSongs,artistRatings,highRatings,lowRatings};
-  const badges=BADGE_CATALOG.filter(b=>b.check(base)).map(({check,...b})=>b);
+  const base={xp,level,current,needed,songs,fullWeeks,favs,tests,avgTest,completedChallenges,challengeWins,sentChallenges,genresCompleted,wildcardSongs,artistRatings,highRatings,lowRatings};
+  const badges=BADGE_CATALOG.filter(b=>b.check(base)).map(b=>({id:b.id,label:b.label,icon:b.icon,desc:b.desc}));
   return {...base,badges};
 }
+
 function getProfileAvatar(stats){
   if(stats.level>=15||stats.badges.length>=18)return {animal:'🐉',title:'Dragón melómano'};
   if(stats.level>=10||stats.badges.length>=14)return {animal:'🦁',title:'León del catálogo'};
@@ -1906,27 +1972,9 @@ function getProfileAvatar(stats){
   if(stats.level>=3||stats.badges.length>=3)return {animal:'🐱',title:'Gato selector'};
   return {animal:'🐣',title:'Polluelo musical'};
 }
-function XpUserCard({name,stats,userKey}){
-  const pct=Math.min(100,Math.round((stats.current/stats.needed)*100));
-  const locked=BADGE_CATALOG.filter(b=>!stats.badges.some(x=>x.id===b.id));
-  const avatar=getProfileAvatar(stats);
-  return <div className="xp-card">
-    <div className="row" style={{justifyContent:'space-between',marginBottom:8}}><span className={`user-chip ${userKey}`}>{name}</span><strong>Nivel {stats.level}</strong></div>
-    <div className="row" style={{gap:10,marginBottom:8}}><div style={{fontSize:32}}>{avatar.animal}</div><div><div style={{fontWeight:900}}>{avatar.title}</div><div className="muted" style={{fontSize:12}}>{stats.badges.length}/{BADGE_CATALOG.length} insignias</div></div></div>
-    <div className="muted" style={{fontSize:12,marginBottom:6}}>{stats.xp} XP · {stats.current}/{stats.needed} hasta el siguiente nivel</div>
-    <div className="progress-bar" style={{marginBottom:10}}><div className="progress-fill" style={{width:`${pct}%`}}/></div>
-    <div className="grid3" style={{marginBottom:10}}>
-      <div className="metric card-sm"><div className="metric-label">Canciones</div><div className="metric-value">{stats.songs}</div></div>
-      <div className="metric card-sm"><div className="metric-label">Géneros</div><div className="metric-value">{stats.genresCompleted}</div></div>
-      <div className="metric card-sm"><div className="metric-label">Retos</div><div className="metric-value">{stats.completedChallenges}</div></div>
-    </div>
-    <div>{stats.badges.slice(0,8).map(b=><span key={b.id} className="badge-earned">{b.icon} {b.label}</span>)}{!stats.badges.length&&<span className="muted" style={{fontSize:12}}>Sin insignias todavía.</span>}</div>
-    {!!locked.length&&<div style={{marginTop:6}}>{locked.slice(0,3).map(b=><span key={b.id} className="badge-locked">🔒 {b.label}</span>)}</div>}
-  </div>;
-}
+
 function ProfileTab({weeks,challenges,u1,u2,currentUserKey}){
-  const defaultUser=currentUserKey||'u1';
-  const [selected,setSelected]=useState(defaultUser);
+  const [selected,setSelected]=useState(currentUserKey||'u1');
   const statsU1=useMemo(()=>getUserGamificationStats(weeks,challenges,'u1'),[weeks,challenges]);
   const statsU2=useMemo(()=>getUserGamificationStats(weeks,challenges,'u2'),[weeks,challenges]);
   const stats=selected==='u1'?statsU1:statsU2;
@@ -1971,7 +2019,6 @@ function ProfileTab({weeks,challenges,u1,u2,currentUserKey}){
     </div>
   </div>;
 }
-
 
 /* ============================================================
    SMALL COMPONENTS
@@ -3617,7 +3664,7 @@ function App(){
       </nav>
 
       <div>
-        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} challenges={challenges} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
+        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
         {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
         {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz}/>}
         {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
