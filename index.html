@@ -1214,6 +1214,56 @@ Object.assign(CURATED_LEARNING_BY_GENRE, {
   }
 });
 
+/* ============================================================
+   TANDA 2 QA FIX: generic/weak genre quizzes
+   - Surgical override only: replaces quiz content for the 6 quality-affected genres.
+   - Does not touch artists, songs, Auth, Firestore, Spotify, rankings or UI logic.
+   ============================================================ */
+Object.assign(CURATED_LEARNING_BY_GENRE, {
+  'garage-rock': {
+    quiz: [
+      {question: '¿Qué rasgo sonoro separa mejor al garage rock del rock clásico más pulido?', options: ['Grabación cruda, riffs simples y energía directa de banda', 'Arreglos orquestales complejos y producción sinfónica', 'Improvisación modal larga con solos de saxo', 'Bajos 808 y hi-hats en tresillos'], correct: 'Grabación cruda, riffs simples y energía directa de banda', explanation: 'El garage rock suele sonar áspero, inmediato y poco pulido, con riffs sencillos y actitud de directo.'},
+      {question: '¿Qué escena ayuda a entender el origen del garage rock de los 60?', options: ['Bandas juveniles de EE. UU. y Reino Unido influenciadas por R&B y rock and roll', 'Clubs techno de Detroit con cajas de ritmo', 'Escuelas clásicas de composición europea', 'Estudios de K-pop con coreografía sincronizada'], correct: 'Bandas juveniles de EE. UU. y Reino Unido influenciadas por R&B y rock and roll', explanation: 'Muchas bandas garage de los 60 eran grupos jóvenes que tocaban versiones o canciones propias con medios limitados y mucha energía.'},
+      {question: '¿Qué artista encaja mejor como referencia garage rock?', options: ['The Sonics', 'Miles Davis', 'Kraftwerk', 'Umm Kulthum'], correct: 'The Sonics', explanation: 'The Sonics son una referencia fundamental del garage rock por su sonido crudo, agresivo y proto-punk.'}
+    ]
+  },
+  'emo': {
+    quiz: [
+      {question: '¿Qué diferencia al emo del punk más directo?', options: ['Mayor énfasis en vulnerabilidad emocional, dinámica y letras confesionales', 'Ausencia total de guitarras', 'Uso obligatorio de metales de big band', 'Improvisación instrumental sin voz'], correct: 'Mayor énfasis en vulnerabilidad emocional, dinámica y letras confesionales', explanation: 'El emo nace del hardcore/post-hardcore, pero desplaza el foco hacia intensidad emocional, introspección y cambios dinámicos.'},
+      {question: '¿Qué escena fue clave en el origen del emo temprano?', options: ['Washington D. C. y el emotional hardcore de los 80', 'Ibiza house de los 90', 'Lagos afrobeat de los 70', 'Viena clásica del siglo XVIII'], correct: 'Washington D. C. y el emotional hardcore de los 80', explanation: 'El emo temprano se asocia a la escena hardcore de Washington D. C., con bandas como Rites of Spring.'},
+      {question: '¿Qué rasgo aparece mucho en el emo Midwest?', options: ['Guitarras limpias o entrelazadas, melodía melancólica y tensión contenida', 'Blast beats y growls constantes', 'Dembow fijo y autotune tropical', 'Canto lírico con orquesta'], correct: 'Guitarras limpias o entrelazadas, melodía melancólica y tensión contenida', explanation: 'El Midwest emo suele reconocerse por guitarras expresivas, líneas entrelazadas, melodía nostálgica y emoción menos teatral.'}
+    ]
+  },
+  'math-rock': {
+    quiz: [
+      {question: '¿Qué característica rítmica es típica del math rock?', options: ['Compases irregulares, acentos desplazados y patrones angulares', 'Dembow constante de reggaetón', 'Swing tradicional de big band', 'Pulso disco de cuatro al suelo sin variación'], correct: 'Compases irregulares, acentos desplazados y patrones angulares', explanation: 'El math rock juega con métricas inusuales, cortes, síncopas y estructuras que parecen calculadas o quebradas.'},
+      {question: '¿Qué papel suelen tener las guitarras en math rock?', options: ['Líneas entrelazadas, riffs precisos y a veces tapping', 'Rasgueo flamenco tradicional únicamente', 'Power chords simples sin cambios', 'Acompañamiento invisible detrás de metales'], correct: 'Líneas entrelazadas, riffs precisos y a veces tapping', explanation: 'Las guitarras del math rock suelen ser técnicas, limpias o angulares, con patrones muy precisos.'},
+      {question: '¿Qué banda ayuda a entender el math rock instrumental y técnico?', options: ['Don Caballero', 'ABBA', 'Bob Marley', 'Aretha Franklin'], correct: 'Don Caballero', explanation: 'Don Caballero es una referencia central del math rock por su complejidad rítmica e instrumental.'}
+    ]
+  },
+  'death-metal': {
+    quiz: [
+      {question: '¿Qué rasgo vocal distingue habitualmente al death metal?', options: ['Growls guturales y voz extrema', 'Falsete disco brillante', 'Canto coral gospel', 'Susurro ambient sin ataque'], correct: 'Growls guturales y voz extrema', explanation: 'El death metal suele utilizar voces guturales y agresivas que refuerzan su intensidad sonora.'},
+      {question: '¿Qué elementos instrumentales son frecuentes en death metal?', options: ['Riffs pesados/técnicos, blast beats y afinaciones graves', 'Guitarras acústicas bossa nova', 'Sintetizadores vaporwave ralentizados', 'Acordeón norteño como base principal'], correct: 'Riffs pesados/técnicos, blast beats y afinaciones graves', explanation: 'El death metal combina agresividad, velocidad, riffs densos o técnicos y baterías extremas.'},
+      {question: '¿Qué lo separa mejor del thrash metal clásico?', options: ['Más brutalidad, voces guturales y temática extrema', 'Menos distorsión y más pop melódico', 'Ausencia de batería', 'Uso principal de palmas y castañuelas'], correct: 'Más brutalidad, voces guturales y temática extrema', explanation: 'Aunque comparte raíces con el thrash, el death metal suele ser más extremo en voz, densidad, técnica y oscuridad temática.'}
+    ]
+  },
+  'uk-garage': {
+    quiz: [
+      {question: '¿Qué patrón rítmico ayuda a reconocer el UK Garage?', options: ['Shuffle y 2-step con percusión sincopada', 'Blast beat de metal extremo', 'Compás de sevillanas', 'Balada rock de batería recta'], correct: 'Shuffle y 2-step con percusión sincopada', explanation: 'El UK Garage se reconoce por su swing, patrones rotos y sensación bailable más elástica que el house recto.'},
+      {question: '¿Qué elementos son habituales en el sonido UK Garage?', options: ['Bajos marcados, vocal chops y grooves de club británico', 'Gaitas y arpas celtas', 'Growls y riffs death metal', 'Orquesta sinfónica sin percusión'], correct: 'Bajos marcados, vocal chops y grooves de club británico', explanation: 'El UK Garage combina bajo potente, fragmentos vocales, swing y producción orientada al club.'},
+      {question: '¿Qué relación histórica tiene con otros sonidos británicos?', options: ['Influyó en 2-step, grime, dubstep y bass music británica', 'Es el origen directo de la copla', 'Deriva exclusivamente del jazz modal', 'Nace como forma de zarzuela electrónica'], correct: 'Influyó en 2-step, grime, dubstep y bass music británica', explanation: 'El UK Garage fue una base clave para varias escenas británicas posteriores, especialmente 2-step, grime y dubstep temprano.'}
+    ]
+  },
+  'hardcore-punk': {
+    quiz: [
+      {question: '¿Qué diferencia al hardcore punk del punk rock clásico?', options: ['Más velocidad, agresividad, canciones cortas y enfoque directo', 'Más arreglos orquestales y solos largos de jazz', 'Más producción pop pulida y coreografía', 'Más electrónica ambient sin batería'], correct: 'Más velocidad, agresividad, canciones cortas y enfoque directo', explanation: 'El hardcore acelera y endurece el punk, con canciones breves, tensión física y actitud urgente.'},
+      {question: '¿Qué contexto cultural está muy ligado al hardcore punk?', options: ['Escenas DIY, conciertos pequeños, fanzines y ética comunitaria', 'Grandes teatros de ópera exclusivamente', 'Academias de música clásica cortesana', 'Plataformas de idol pop coreografiado'], correct: 'Escenas DIY, conciertos pequeños, fanzines y ética comunitaria', explanation: 'El hardcore punk se entiende por su cultura DIY, redes locales, sellos independientes y espacios autogestionados.'},
+      {question: '¿Qué banda es una referencia central del hardcore punk estadounidense?', options: ['Minor Threat', 'Daft Punk', 'Buena Vista Social Club', 'Fairuz'], correct: 'Minor Threat', explanation: 'Minor Threat es clave para entender el hardcore de Washington D. C., su intensidad y su ética straight edge.'}
+    ]
+  }
+});
+
 
 /* ============================================================
    DATA: INITIAL GENRES (100+)
