@@ -217,6 +217,23 @@ textarea{resize:vertical}
 .profile-tab-btn.active.u1{background:rgba(29,185,84,.18);border-color:var(--green);color:var(--green)}
 .profile-tab-btn.active.u2{background:rgba(70,131,255,.18);border-color:#8db8ff;color:#8db8ff}
 
+/* XP / LEVEL TOAST ANIMATIONS */
+@keyframes mascotPulseGlow{
+  0%{transform:scale(.86);filter:drop-shadow(0 0 0 rgba(255,255,255,0));opacity:.65}
+  45%{transform:scale(1.18);filter:drop-shadow(0 0 24px rgba(255,255,255,.95));opacity:1}
+  100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(255,255,255,.55));opacity:1}
+}
+@keyframes mascotSparkleFloat{
+  0%{transform:translateY(0) scale(.9);opacity:.55}
+  50%{transform:translateY(-8px) scale(1.08);opacity:1}
+  100%{transform:translateY(0) scale(.9);opacity:.7}
+}
+@keyframes levelToastPop{
+  0%{transform:translate(-50%,-50%) scale(.86);opacity:0}
+  12%{transform:translate(-50%,-50%) scale(1.04);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:1}
+}
+
 </style>
 </head>
 <body>
@@ -11358,34 +11375,52 @@ function App(){
   const [manualGenreSelect,setManualGenreSelect]=useState(false);
   const [viewWeek,setViewWeek]=useState(null);
   const [xpToast,setXpToast]=useState(null);
+  const [levelToast,setLevelToast]=useState(null);
   const xpToastTimerRef=useRef(null);
+  const levelToastTimerRef=useRef(null);
   const showXpToast=useCallback((amount,label)=>{
+    const xpAmount=Number(amount)||0;
+    if(xpAmount<=0)return;
     if(xpToastTimerRef.current)clearTimeout(xpToastTimerRef.current);
-    setXpToast({amount:Number(amount)||0,label:label||'XP ganado'});
-    xpToastTimerRef.current=setTimeout(()=>setXpToast(null),2500);
+    setXpToast({id:Date.now()+Math.random(),amount:xpAmount,label:label||'XP ganado'});
+    xpToastTimerRef.current=setTimeout(()=>setXpToast(null),2600);
+  },[]);
+  const showLevelToast=useCallback((level,mascot,previousMascot=null)=>{
+    if(levelToastTimerRef.current)clearTimeout(levelToastTimerRef.current);
+    const nextMascot=mascot||getMascotForLevel(level);
+    const prevMascot=previousMascot||null;
+    const isEvolution=!!(prevMascot&&nextMascot&&(prevMascot.icon!==nextMascot.icon||prevMascot.name!==nextMascot.name));
+    setLevelToast({level:Number(level)||1,mascot:nextMascot,previousMascot:prevMascot,isEvolution});
+    levelToastTimerRef.current=setTimeout(()=>setLevelToast(null),isEvolution?4300:3200);
   },[]);
   const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
 
   const awardXp=useCallback((userKey,type,amount,label,refId,meta={})=>{
     const value=Number(amount)||0;
     if(!userKey||!type||!refId||value<=0)return;
-    let delta=0;
-    update(prev=>{
-      const events=Array.isArray(prev.xpEvents)?prev.xpEvents:[];
-      const idx=events.findIndex(e=>e&&e.userKey===userKey&&e.refId===refId);
-      if(idx>=0){
-        const current=Number(events[idx].amount)||0;
-        if(value<=current)return prev;
-        delta=value-current;
-        const next=[...events];
-        next[idx]={...next[idx],amount:value,label:label||events[idx].label,type,meta:{...(events[idx].meta||{}),...meta},updatedAt:new Date().toISOString()};
-        return {...prev,xpEvents:next};
-      }
-      delta=value;
-      return {...prev,xpEvents:[...events,{id:genId(),userKey,type,amount:value,label:label||'XP ganado',refId,meta,createdAt:new Date().toISOString()}]};
-    });
-    if(delta>0)showXpToast(delta,label||'XP ganado');
-  },[showXpToast,update]);
+    const currentData=data||{};
+    const events=Array.isArray(currentData.xpEvents)?currentData.xpEvents:[];
+    const idx=events.findIndex(e=>e&&e.userKey===userKey&&e.refId===refId);
+    const currentAmount=idx>=0?(Number(events[idx].amount)||0):0;
+    if(value<=currentAmount)return;
+    const delta=value-currentAmount;
+    const beforeStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],userKey,currentData.genres||[],events);
+    let nextEvents;
+    if(idx>=0){
+      nextEvents=[...events];
+      nextEvents[idx]={...nextEvents[idx],amount:value,label:label||nextEvents[idx].label,type,meta:{...(nextEvents[idx].meta||{}),...meta},updatedAt:new Date().toISOString()};
+    }else{
+      nextEvents=[...events,{id:genId(),userKey,type,amount:value,label:label||'XP ganado',refId,meta,createdAt:new Date().toISOString()}];
+    }
+    const afterStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],userKey,currentData.genres||[],nextEvents);
+    update(prev=>({...prev,xpEvents:nextEvents}));
+    // El award de XP solo se ejecuta como consecuencia de una acción local del usuario en esta sesión.
+    // Firestore sincroniza xpEvents, pero el listener no llama a awardXp ni dispara toasts.
+    showXpToast(delta,label||'XP ganado');
+    if(afterStats.level>beforeStats.level){
+      showLevelToast(afterStats.level,afterStats.mascot,beforeStats.mascot);
+    }
+  },[data,authUser,showXpToast,showLevelToast,update]);
 
   useEffect(()=>{
     let unsubAuth=null;
@@ -11448,7 +11483,7 @@ function App(){
     }).catch(err=>{
       console.error('Firebase ready error',err);setAuthMode('firebase_error');setSyncStatus('error');setSyncMessage(err.message||'Firebase no pudo inicializarse.');
     });
-    return()=>{cancelled=true;if(unsubAuth)unsubAuth();if(unsubscribeDocRef.current)unsubscribeDocRef.current();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);if(xpToastTimerRef.current)clearTimeout(xpToastTimerRef.current);};
+    return()=>{cancelled=true;if(unsubAuth)unsubAuth();if(unsubscribeDocRef.current)unsubscribeDocRef.current();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);if(xpToastTimerRef.current)clearTimeout(xpToastTimerRef.current);if(levelToastTimerRef.current)clearTimeout(levelToastTimerRef.current);};
   },[]);
 
   useEffect(()=>{
@@ -11633,12 +11668,20 @@ function App(){
   }
 
   function closeWeek(){
+    const currentData=data||{};
+    const beforeStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],currentUserKey,currentData.genres||[],currentData.xpEvents||[]);
+    const nextWeeks=(currentData.weeks||[]).map(w=>w.id===activeWeek.id?{...w,status:'completed',rating:weekRating,insights:buildCloseWeekInsightsSnapshot(activeWeek,currentData.settings?.user1||'Jonathan',currentData.settings?.user2||'Lucy')}:w);
+    const nextCompletedGenreIds=[...(currentData.completedGenreIds||[]),activeWeek.genreId];
+    const afterStats=getUserGamificationStats(nextWeeks,currentData.challenges||[],currentUserKey,currentData.genres||[],currentData.xpEvents||[]);
+    const xpDelta=Math.max(0,(Number(afterStats.xp)||0)-(Number(beforeStats.xp)||0));
     update(prev=>({
       ...prev,
       weeks:prev.weeks.map(w=>w.id===activeWeek.id?{...w,status:'completed',rating:weekRating,insights:buildCloseWeekInsightsSnapshot(activeWeek,prev.settings?.user1||'Jonathan',prev.settings?.user2||'Lucy')}:w),
       activeWeekId:null,
       completedGenreIds:[...(prev.completedGenreIds||[]),activeWeek.genreId]
     }));
+    if(xpDelta>0)showXpToast(xpDelta,'Cierre de semana');
+    if(afterStats.level>beforeStats.level)showLevelToast(afterStats.level,afterStats.mascot,beforeStats.mascot);
     setWeekCloseMode(false);setWeekRating({});setTab('dashboard');
   }
 
@@ -11735,7 +11778,24 @@ function App(){
         {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade}/>}
       </div>
 
-      {xpToast&&<div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'12px 20px',borderRadius:999,fontWeight:900,zIndex:9999,boxShadow:'0 12px 36px rgba(0,0,0,.45)',textAlign:'center'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
+      {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:24,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.98)',color:'#000',padding:'13px 22px',borderRadius:999,fontWeight:900,zIndex:2147483647,boxShadow:'0 14px 42px rgba(0,0,0,.55)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.35)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
+      {levelToast&&<div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',animation:'levelToastPop .28s ease-out',background:levelToast.isEvolution?'linear-gradient(135deg,rgba(29,185,84,.98),rgba(255,164,43,.97),rgba(186,113,255,.92))':'linear-gradient(135deg,rgba(29,185,84,.98),rgba(255,164,43,.95))',color:'#000',padding:levelToast.isEvolution?'24px 30px':'22px 28px',borderRadius:24,fontWeight:900,zIndex:2147483647,boxShadow:'0 24px 90px rgba(0,0,0,.62)',pointerEvents:'none',textAlign:'center',minWidth:levelToast.isEvolution?320:260,border:'1px solid rgba(255,255,255,.42)'}}>
+        {levelToast.isEvolution?<>
+          <div style={{fontSize:13,textTransform:'uppercase',letterSpacing:'1.2px',opacity:.78,marginBottom:10}}>✨ Evolución musical</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:14,marginBottom:10}}>
+            <div style={{fontSize:46,lineHeight:1,opacity:.72,animation:'mascotSparkleFloat 1.15s ease-in-out infinite'}}>{levelToast.previousMascot?.icon||'🎵'}</div>
+            <div style={{fontSize:26,lineHeight:1}}>➜</div>
+            <div style={{fontSize:58,lineHeight:1,animation:'mascotPulseGlow 1.05s ease-out both'}}>{levelToast.mascot?.icon||'🎵'}</div>
+          </div>
+          <div style={{fontSize:22,letterSpacing:'-.5px'}}>¡Tu mascota ha evolucionado!</div>
+          <div style={{fontSize:13,marginTop:7,opacity:.84}}>{levelToast.previousMascot?.name||'Mascota anterior'} → {levelToast.mascot?.name||'Nueva mascota'}</div>
+          <div style={{fontSize:12,marginTop:6,opacity:.72}}>Nivel {levelToast.level} desbloqueado</div>
+        </>:<>
+          <div style={{fontSize:42,lineHeight:1,marginBottom:8}}>🎉 {levelToast.mascot?.icon||'🎵'}</div>
+          <div style={{fontSize:22,letterSpacing:'-.5px'}}>¡Nivel {levelToast.level} desbloqueado!</div>
+          <div style={{fontSize:13,marginTop:6,opacity:.82}}>{levelToast.mascot?.name||'Nueva evolución musical'}</div>
+        </>}
+      </div>}
 
       {/* MODALS */}
       {confirm&&confirm.type==='week'&&<ConfirmModal message="¿Eliminar esta semana? Esta acción no se puede deshacer." onConfirm={()=>deleteWeek(confirm.id)} onCancel={()=>setConfirm(null)}/>}
