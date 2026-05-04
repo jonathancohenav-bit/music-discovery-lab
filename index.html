@@ -1197,6 +1197,673 @@ const CURATED_LEARNING_BY_GENRE={
 /* ============================================================
    DATA: INITIAL GENRES (100+)
    ============================================================ */
+
+/* ============================================================
+   TANDA 3.2: Critical Aprende corrections (non-destructive overrides)
+   - Updates only learning/quiz content for audited high-priority genres.
+   - Does not touch artists, songs, Auth, Firestore, Spotify or app logic.
+   ============================================================ */
+Object.assign(CURATED_LEARNING_BY_GENRE, {
+  "mariachi": {
+    "birthplace": "Se consolida en el occidente de México, especialmente Jalisco y regiones vecinas, a partir de tradiciones rurales que fueron profesionalizándose hasta convertirse en símbolo musical nacional mexicano.",
+    "era": "Raíces del siglo XIX y consolidación urbana/nacional durante el siglo XX.",
+    "whatDefinesIt": "El mariachi combina conjunto de cuerdas y metales, canto potente, repertorio ranchero, sones, jarabes y boleros, y una función social muy marcada en celebraciones, serenatas y ceremonias.",
+    "howToRecognizeIt": [
+      "Trompetas, violines, guitarrón y vihuela/guitarra creando un sonido brillante y expansivo.",
+      "Voces proyectadas, a menudo con dramatismo, orgullo, amor, despecho o celebración.",
+      "Alternancia entre pasajes instrumentales, respuestas del conjunto y melodías muy cantables."
+    ],
+    "curiousFact": "El traje de charro y la imagen del mariachi se hicieron globales en gran parte gracias al cine mexicano de la Época de Oro.",
+    "keyListening": "Empieza por Mariachi Vargas para el canon, luego escucha a José Alfredo Jiménez para la canción ranchera y Vicente Fernández para la interpretación vocal popular.",
+    "quiz": [
+      {
+        "question": "¿Qué instrumentación ayuda a reconocer rápidamente el mariachi?",
+        "options": [
+          "Trompetas, violines, guitarrón y vihuela",
+          "Sintetizadores ambient sin pulso",
+          "Tabla y sitar exclusivamente",
+          "Cowbells de drift phonk"
+        ],
+        "correct": "Trompetas, violines, guitarrón y vihuela",
+        "explanation": "La combinación de cuerdas graves, vihuela, violines y trompetas es una seña central del mariachi."
+      },
+      {
+        "question": "¿Qué función social se asocia mucho al mariachi?",
+        "options": [
+          "Serenatas, fiestas, ceremonias y celebración pública",
+          "Música de club minimal techno",
+          "Música litúrgica medieval exclusivamente",
+          "Bandas sonoras de ciencia ficción únicamente"
+        ],
+        "correct": "Serenatas, fiestas, ceremonias y celebración pública",
+        "explanation": "El mariachi está muy ligado a celebraciones familiares, patrióticas, románticas y comunitarias."
+      },
+      {
+        "question": "¿Qué estilo vocal es común en el mariachi ranchero?",
+        "options": [
+          "Voz potente y dramática, con emoción directa",
+          "Susurro shoegaze enterrado en reverb",
+          "Rap acelerado sobre 808",
+          "Canto coral renacentista sin solista"
+        ],
+        "correct": "Voz potente y dramática, con emoción directa",
+        "explanation": "La interpretación vocal suele proyectar orgullo, amor, dolor o celebración de forma muy frontal."
+      }
+    ]
+  },
+  "regional-mexicano": {
+    "birthplace": "Etiqueta amplia para músicas populares mexicanas y mexicoamericanas con raíces regionales: norteño, banda sinaloense, sierreño, corridos, ranchera y derivaciones urbanas recientes.",
+    "era": "Tradiciones del siglo XX con fuerte expansión comercial y renovación global en los 2000-2020.",
+    "whatDefinesIt": "No es un solo sonido: agrupa subgéneros donde la instrumentación regional, la narrativa popular y la identidad mexicana o mexicoamericana son el centro.",
+    "howToRecognizeIt": [
+      "Acordeón y bajo sexto en norteño; tuba, metales y percusión en banda; guitarras en sierreño.",
+      "Letras narrativas sobre amor, orgullo, territorio, vida cotidiana, migración, riesgo o corridos.",
+      "Voces directas, timbres regionales y producción que puede ir de tradicional a urbana/streaming."
+    ],
+    "curiousFact": "El regional mexicano se ha convertido en una de las familias musicales latinas más fuertes del streaming global, especialmente por la explosión de corridos tumbados y sierreño moderno.",
+    "keyListening": "Compara Los Tigres del Norte para corrido/norteño, Banda MS para banda, Ariel Camacho para sierreño y Peso Pluma o Natanael Cano para la renovación tumbada.",
+    "quiz": [
+      {
+        "question": "¿Por qué “regional mexicano” no debe entenderse como un único género cerrado?",
+        "options": [
+          "Porque agrupa norteño, banda, sierreño, corridos y otras tradiciones",
+          "Porque solo significa mariachi clásico",
+          "Porque es exclusivamente música electrónica",
+          "Porque no tiene instrumentos reconocibles"
+        ],
+        "correct": "Porque agrupa norteño, banda, sierreño, corridos y otras tradiciones",
+        "explanation": "Es una familia amplia de estilos regionales mexicanos y mexicoamericanos."
+      },
+      {
+        "question": "¿Qué combinación instrumental puede indicar norteño?",
+        "options": [
+          "Acordeón y bajo sexto",
+          "Oud y qanun",
+          "Sitar y tabla",
+          "Sintetizadores trance únicamente"
+        ],
+        "correct": "Acordeón y bajo sexto",
+        "explanation": "El acordeón y el bajo sexto son claves del norteño tradicional."
+      },
+      {
+        "question": "¿Qué rasgo lírico aparece mucho en corridos y regional mexicano?",
+        "options": [
+          "Narrativa de historias, identidad, territorio o vida social",
+          "Letras abstractas sin relato siempre",
+          "Solo fantasía medieval",
+          "Exclusivamente ciencia ficción instrumental"
+        ],
+        "correct": "Narrativa de historias, identidad, territorio o vida social",
+        "explanation": "La narración es fundamental en muchos subgéneros regionales, especialmente los corridos."
+      }
+    ]
+  },
+  "son-jarocho": {
+    "birthplace": "Nace en Veracruz, México, como tradición afroindígena, española y criolla asociada al fandango, la tarima, el baile y la poesía popular improvisada.",
+    "era": "Tradición histórica veracruzana con raíz colonial y revitalizaciones contemporáneas.",
+    "whatDefinesIt": "El son jarocho combina jarana, requinto jarocho, arpa, leona, zapateado y versos. Más que una canción aislada, muchas veces funciona como práctica comunitaria en torno al fandango.",
+    "howToRecognizeIt": [
+      "Rasgueo brillante de jarana y líneas punteadas del requinto jarocho.",
+      "Zapateado sobre tarima como parte rítmica del conjunto.",
+      "Versos, décimas, llamada-respuesta y una sensación comunitaria de fandango."
+    ],
+    "curiousFact": "“La Bamba” es originalmente un son jarocho tradicional, mucho antes de convertirse en éxito rock and roll internacional.",
+    "keyListening": "Empieza por Mono Blanco para tradición viva, luego compara versiones de La Bamba y escucha fandangos para entender el contexto comunitario.",
+    "quiz": [
+      {
+        "question": "¿Qué instrumento es central en el son jarocho?",
+        "options": [
+          "Jarana jarocha",
+          "Guitarrón de mariachi exclusivamente",
+          "Sintetizador modular",
+          "Bandoneón argentino"
+        ],
+        "correct": "Jarana jarocha",
+        "explanation": "La jarana marca el rasgueo característico del son jarocho."
+      },
+      {
+        "question": "¿Qué función tiene la tarima en el fandango jarocho?",
+        "options": [
+          "Amplifica el zapateado como percusión y baile",
+          "Sirve para proyectar visuales EDM",
+          "Sustituye a todos los instrumentos",
+          "Es solo decoración de escenario"
+        ],
+        "correct": "Amplifica el zapateado como percusión y baile",
+        "explanation": "El zapateado sobre tarima forma parte del pulso rítmico y social del fandango."
+      },
+      {
+        "question": "¿Qué canción conocida procede del son jarocho?",
+        "options": [
+          "La Bamba",
+          "Wonderwall",
+          "Sandstorm",
+          "Enter Sandman"
+        ],
+        "correct": "La Bamba",
+        "explanation": "La Bamba es uno de los sones jarochos más conocidos internacionalmente."
+      }
+    ]
+  },
+  "rumba-catalana": {
+    "birthplace": "Surge en comunidades gitanas de Barcelona y Cataluña en el siglo XX, mezclando rumba flamenca, sonoridades cubanas, palmas, guitarra y canción popular urbana.",
+    "era": "Consolidación en los años 50-70; proyección popular desde Peret, El Pescaílla y generaciones posteriores.",
+    "whatDefinesIt": "La rumba catalana es festiva, urbana y percusiva: guitarra rasgueada, palmas, bajo sencillo, voces directas y un pulso que invita al baile sin ser flamenco puro ni salsa cubana.",
+    "howToRecognizeIt": [
+      "Rasgueo de guitarra con técnica de “ventilador”, muy percusiva.",
+      "Palmas, coros y estribillos festivos de respuesta inmediata.",
+      "Mezcla de aire flamenco, rumba, pop y ambiente callejero/barcelonés."
+    ],
+    "curiousFact": "Peret popularizó internacionalmente la técnica del ventilador, donde la guitarra funciona a la vez como instrumento armónico y percusivo.",
+    "keyListening": "Empieza por Peret para el canon, El Pescaílla para la raíz gitana urbana y Gipsy Kings para una proyección más internacional y fronteriza.",
+    "quiz": [
+      {
+        "question": "¿Qué técnica de guitarra se asocia a la rumba catalana?",
+        "options": [
+          "El ventilador",
+          "El tapping math rock",
+          "El tremolo black metal",
+          "El scratching de DJ"
+        ],
+        "correct": "El ventilador",
+        "explanation": "El ventilador combina rasgueo y percusión sobre la guitarra."
+      },
+      {
+        "question": "¿Qué mezcla describe mejor la rumba catalana?",
+        "options": [
+          "Rumba flamenca, sonoridad cubana, palmas y canción popular urbana",
+          "Minimal techno y ambient",
+          "Ópera italiana y barroco",
+          "Trap de Atlanta y drill"
+        ],
+        "correct": "Rumba flamenca, sonoridad cubana, palmas y canción popular urbana",
+        "explanation": "La rumba catalana nace de cruces culturales y urbanos, especialmente en Cataluña."
+      },
+      {
+        "question": "¿Qué artista es una referencia central?",
+        "options": [
+          "Peret",
+          "Burzum",
+          "Miles Davis",
+          "Daft Punk"
+        ],
+        "correct": "Peret",
+        "explanation": "Peret es una figura clave para entender la popularización del género."
+      }
+    ]
+  },
+  "copla": {
+    "birthplace": "Se desarrolla en España, especialmente desde principios y mediados del siglo XX, como canción escénica y popular vinculada a teatro, cine, radio y grandes intérpretes.",
+    "era": "Especialmente años 30-60, con fuerte presencia en la cultura española del siglo XX.",
+    "whatDefinesIt": "La copla se basa en dramatismo vocal, letras narrativas, melodrama, orquesta y personajes marcados por amor, honra, deseo, culpa, destino o marginalidad.",
+    "howToRecognizeIt": [
+      "Voz protagonista muy expresiva, teatral y cargada de intención.",
+      "Letras que cuentan historias completas, casi como pequeñas tragedias o escenas de cine.",
+      "Acompañamiento orquestal o teatral con giros andaluces, pasodoble, cuplé o canción española."
+    ],
+    "curiousFact": "Muchas coplas funcionan como relatos condensados: en tres o cuatro minutos presentan personaje, conflicto y desenlace emocional.",
+    "keyListening": "Empieza por Concha Piquer para el canon, Rocío Jurado para potencia vocal, Carlos Cano para relectura poética y Martirio para mirada contemporánea.",
+    "quiz": [
+      {
+        "question": "¿Qué rasgo distingue mucho a la copla?",
+        "options": [
+          "Narrativa dramática y voz teatral",
+          "Bajos 808 y hi-hats rápidos",
+          "Improvisación de sitar",
+          "Cowbells metálicas"
+        ],
+        "correct": "Narrativa dramática y voz teatral",
+        "explanation": "La copla suele contar historias intensas con interpretación vocal muy expresiva."
+      },
+      {
+        "question": "¿Qué temas aparecen a menudo en la copla?",
+        "options": [
+          "Amor, honra, deseo, culpa, destino y conflicto social",
+          "Ciencia ficción instrumental sin letra",
+          "Solo fiestas de club",
+          "Exclusivamente fantasía medieval"
+        ],
+        "correct": "Amor, honra, deseo, culpa, destino y conflicto social",
+        "explanation": "El melodrama y las tensiones sociales/personales son centrales en muchas coplas."
+      },
+      {
+        "question": "¿Qué intérprete es referencia histórica del género?",
+        "options": [
+          "Concha Piquer",
+          "Skrillex",
+          "Kraftwerk",
+          "Nujabes"
+        ],
+        "correct": "Concha Piquer",
+        "explanation": "Concha Piquer es una de las figuras esenciales de la copla española."
+      }
+    ]
+  },
+  "sevillanas": {
+    "birthplace": "Proceden de Andalucía y se asocian especialmente a Sevilla, ferias, romerías y contextos festivos vinculados al baile social.",
+    "era": "Raíces tradicionales con forma popular consolidada en el siglo XX y vigencia actual en ferias y celebraciones.",
+    "whatDefinesIt": "Las sevillanas son un cante y baile estructurado normalmente en cuatro coplas, con aire flamenco-festivo, palmas, guitarra, castañuelas y coreografía social por parejas o grupos.",
+    "howToRecognizeIt": [
+      "Estructura de cuatro sevillanas o coplas con pasos y cierres reconocibles.",
+      "Compás ternario/aire bailable, palmas, guitarra y estribillos populares.",
+      "Uso social en Feria de Abril, romerías, celebraciones y aprendizaje de baile."
+    ],
+    "curiousFact": "Aunque están emparentadas con el flamenco, las sevillanas tienen una función social más codificada y festiva, pensada para bailarse en comunidad.",
+    "keyListening": "Escucha sevillanas tradicionales de feria, luego compara versiones rocieras y grupos populares para notar su función de baile y celebración.",
+    "quiz": [
+      {
+        "question": "¿Cuántas partes suele tener una sevillana completa?",
+        "options": [
+          "Cuatro coplas o sevillanas",
+          "Una sola improvisación libre",
+          "Doce movimientos sin baile",
+          "Dos arias y un recitativo"
+        ],
+        "correct": "Cuatro coplas o sevillanas",
+        "explanation": "La forma habitual se organiza en cuatro partes bailables."
+      },
+      {
+        "question": "¿Dónde se escuchan y bailan mucho las sevillanas?",
+        "options": [
+          "Ferias, romerías y celebraciones andaluzas",
+          "Clubs de techno exclusivamente",
+          "Óperas alemanas",
+          "Block parties del Bronx"
+        ],
+        "correct": "Ferias, romerías y celebraciones andaluzas",
+        "explanation": "Su función social está muy ligada al baile comunitario festivo."
+      },
+      {
+        "question": "¿Qué elementos ayudan a reconocerlas?",
+        "options": [
+          "Palmas, guitarra, baile por parejas y aire flamenco-festivo",
+          "Growls y blast beats",
+          "Sitar y tabla",
+          "Cowbells de drift phonk"
+        ],
+        "correct": "Palmas, guitarra, baile por parejas y aire flamenco-festivo",
+        "explanation": "Esa combinación define su identidad sonora y social."
+      }
+    ]
+  },
+  "zarzuela": {
+    "birthplace": "Nace y se desarrolla en España como teatro lírico que alterna partes cantadas y habladas, con fuerte presencia en Madrid y otros centros teatrales.",
+    "era": "Desde el siglo XVII, con gran auge del género chico y grande en los siglos XIX y principios del XX.",
+    "whatDefinesIt": "La zarzuela mezcla canto lírico, diálogo hablado, números corales, romanzas, escenas cómicas y costumbrismo. Es teatro musical español, no simplemente ópera en castellano.",
+    "howToRecognizeIt": [
+      "Alternancia entre diálogo hablado y números cantados.",
+      "Romanzas líricas, coros populares, escenas cómicas y personajes costumbristas.",
+      "Orquesta y melodías con sabor español, madrileño, regional o popular según la obra."
+    ],
+    "curiousFact": "El género chico condensó historias populares en obras breves, muy conectadas con la vida urbana y el humor social de su época.",
+    "keyListening": "Empieza por La verbena de la Paloma para género chico, Doña Francisquita para lirismo y Luisa Fernanda para una zarzuela más expansiva.",
+    "quiz": [
+      {
+        "question": "¿Qué diferencia básica hay entre zarzuela y ópera tradicional?",
+        "options": [
+          "La zarzuela alterna canto y diálogo hablado",
+          "La zarzuela no usa voz",
+          "La zarzuela es exclusivamente electrónica",
+          "La zarzuela solo tiene batería y bajo"
+        ],
+        "correct": "La zarzuela alterna canto y diálogo hablado",
+        "explanation": "La alternancia de partes habladas y cantadas es una seña central del género."
+      },
+      {
+        "question": "¿Qué es una romanza en zarzuela?",
+        "options": [
+          "Un número vocal lírico destacado",
+          "Un patrón de hi-hats trap",
+          "Un tipo de cowbell",
+          "Una técnica de bajo funk"
+        ],
+        "correct": "Un número vocal lírico destacado",
+        "explanation": "La romanza concentra el lucimiento vocal y emocional de un personaje."
+      },
+      {
+        "question": "¿Qué obra ayuda a entender el género chico?",
+        "options": [
+          "La verbena de la Paloma",
+          "Kind of Blue",
+          "Loveless",
+          "Blue Lines"
+        ],
+        "correct": "La verbena de la Paloma",
+        "explanation": "Es una de las zarzuelas más conocidas del género chico madrileño."
+      }
+    ]
+  },
+  "musica-celta": {
+    "birthplace": "Etiqueta amplia aplicada a tradiciones de Irlanda, Escocia, Galicia, Asturias, Bretaña, Gales y otros territorios atlánticos con repertorios, danzas e instrumentos emparentados pero no idénticos.",
+    "era": "Tradiciones históricas con revivals folk desde el siglo XX y mucha proyección internacional contemporánea.",
+    "whatDefinesIt": "La música celta no es un solo género homogéneo: agrupa tradiciones atlánticas donde melodías modales, danzas, gaitas, fiddle, flautas y pulso comunitario tienen gran peso.",
+    "howToRecognizeIt": [
+      "Jigs, reels o muiñeiras con melodías repetitivas y ornamentadas.",
+      "Gaitas, fiddle/violín, tin whistle, flautas, bodhrán, arpa o instrumentos locales.",
+      "Sensación de danza, sesión de pub, romería, festival folk o tradición atlántica."
+    ],
+    "curiousFact": "La etiqueta “celta” se popularizó mucho en la industria folk, pero cada región tiene repertorios y estilos propios: irlandés, escocés, gallego, bretón o asturiano no son lo mismo.",
+    "keyListening": "Compara The Chieftains para tradición irlandesa, Carlos Núñez para Galicia, Alan Stivell para Bretaña y Capercaillie para Escocia.",
+    "quiz": [
+      {
+        "question": "¿Por qué “música celta” es una etiqueta amplia?",
+        "options": [
+          "Porque agrupa varias tradiciones atlánticas distintas",
+          "Porque solo describe un artista concreto",
+          "Porque es únicamente techno de club",
+          "Porque no tiene instrumentos acústicos"
+        ],
+        "correct": "Porque agrupa varias tradiciones atlánticas distintas",
+        "explanation": "Irlanda, Escocia, Galicia, Bretaña o Asturias comparten rasgos, pero tienen tradiciones propias."
+      },
+      {
+        "question": "¿Qué instrumentos suelen aparecer?",
+        "options": [
+          "Gaitas, fiddle, tin whistle y bodhrán",
+          "808s y autotune exclusivamente",
+          "Guitarras noise enterradas",
+          "Sintetizadores trance únicamente"
+        ],
+        "correct": "Gaitas, fiddle, tin whistle y bodhrán",
+        "explanation": "Estos instrumentos son comunes en varias escenas folk celtas."
+      },
+      {
+        "question": "¿Qué forma de danza es típica en la tradición irlandesa/escocesa?",
+        "options": [
+          "Jigs y reels",
+          "Dembow",
+          "Blast beat",
+          "Aria da capo"
+        ],
+        "correct": "Jigs y reels",
+        "explanation": "Jigs y reels son formas de danza fundamentales en muchas tradiciones celtas."
+      }
+    ]
+  },
+  "musica-balcanica": {
+    "birthplace": "Etiqueta amplia para tradiciones del sureste europeo, con influencias eslavas, otomanas, romaníes, griegas y locales, especialmente visibles en músicas de boda, danza y bandas de metales.",
+    "era": "Tradiciones históricas con fuerte continuidad popular y proyección internacional desde el siglo XX.",
+    "whatDefinesIt": "Se reconoce por energía colectiva, compases irregulares, metales, clarinetes, acordeón, voces abiertas y un cruce cultural donde lo festivo puede sonar virtuoso, melancólico y explosivo a la vez.",
+    "howToRecognizeIt": [
+      "Compases asimétricos como 7/8, 9/8 u otros patrones de danza irregular.",
+      "Metales, clarinete, acordeón, percusión y líneas melódicas muy ornamentadas.",
+      "Uso social en bodas, fiestas, danzas comunitarias y celebraciones intensas."
+    ],
+    "curiousFact": "Las brass bands balcánicas pueden sonar casi como una fanfarria descontrolada, pero suelen estar tocando patrones rítmicos muy precisos y complejos.",
+    "keyListening": "Empieza por Fanfare Ciocărlia o Boban Marković para metales, luego escucha música tradicional búlgara o serbia para notar compases y voces.",
+    "quiz": [
+      {
+        "question": "¿Qué rasgo rítmico aparece mucho en músicas balcánicas?",
+        "options": [
+          "Compases irregulares o asimétricos",
+          "Dembow fijo",
+          "Cuatro por cuatro techno siempre",
+          "Vals vienés exclusivamente"
+        ],
+        "correct": "Compases irregulares o asimétricos",
+        "explanation": "Los patrones de 7/8, 9/8 y otros metros asimétricos son muy característicos."
+      },
+      {
+        "question": "¿Qué instrumentación es frecuente en brass bands balcánicas?",
+        "options": [
+          "Metales, clarinetes, acordeón y percusión",
+          "Sitar y tanpura",
+          "Solo sintetizadores ambient",
+          "Guitarras shoegaze sin percusión"
+        ],
+        "correct": "Metales, clarinetes, acordeón y percusión",
+        "explanation": "Los metales y vientos son esenciales en muchas músicas festivas balcánicas."
+      },
+      {
+        "question": "¿Qué contexto social ayuda a entender el género?",
+        "options": [
+          "Bodas, danzas y celebraciones comunitarias",
+          "Dormitorios lo-fi de estudio",
+          "Ópera barroca italiana",
+          "Clubes minimal techno únicamente"
+        ],
+        "correct": "Bodas, danzas y celebraciones comunitarias",
+        "explanation": "Muchas músicas balcánicas se entienden por su función festiva y social."
+      }
+    ]
+  },
+  "musica-arabe": {
+    "birthplace": "Tradiciones del Oriente Medio y Norte de África, con centros históricos como Egipto, Levante, Magreb e Irak, y una gran diversidad clásica, popular y contemporánea.",
+    "era": "Tradiciones históricas con edad dorada discográfica y radiofónica en el siglo XX, más escenas populares modernas hasta hoy.",
+    "whatDefinesIt": "Mucha música árabe se basa en maqamat, modos melódicos con giros y emociones propias, ornamentación vocal, instrumentos como oud, qanun o ney, percusión y una relación intensa con el tarab.",
+    "howToRecognizeIt": [
+      "Melodías modales con ornamentación, melismas y posibles microtonos/cuarto de tono según tradición.",
+      "Oud, qanun, ney, violines árabes, riq, darbuka u otras percusiones.",
+      "Voz expresiva y desarrollo emocional prolongado, buscando tarab o conexión intensa con la audiencia."
+    ],
+    "curiousFact": "El tarab describe un estado de éxtasis emocional compartido entre intérprete y público, algo central para entender a figuras como Umm Kulthum.",
+    "keyListening": "Empieza por Umm Kulthum para el tarab egipcio, Fairuz para el lirismo libanés, Mohamed Abdel Wahab para modernización y Le Trio Joubran para oud contemporáneo.",
+    "quiz": [
+      {
+        "question": "¿Qué es el maqam en muchas músicas árabes?",
+        "options": [
+          "Un sistema modal con giros melódicos y carácter emocional",
+          "Un tipo de batería electrónica",
+          "Una forma de punk británico",
+          "Un patrón de dembow"
+        ],
+        "correct": "Un sistema modal con giros melódicos y carácter emocional",
+        "explanation": "El maqam organiza melodía, ornamentación y expresividad más allá de la escala mayor/menor occidental."
+      },
+      {
+        "question": "¿Qué instrumento es típico de muchas tradiciones árabes?",
+        "options": [
+          "Oud",
+          "Guitarrón mexicano",
+          "Bodhrán irlandés",
+          "Sampler MPC exclusivamente"
+        ],
+        "correct": "Oud",
+        "explanation": "El oud es uno de los instrumentos de cuerda más representativos de la música árabe."
+      },
+      {
+        "question": "¿Qué concepto describe la emoción compartida entre intérprete y audiencia?",
+        "options": [
+          "Tarab",
+          "Shoegaze",
+          "Dembow",
+          "Blast beat"
+        ],
+        "correct": "Tarab",
+        "explanation": "El tarab es clave para entender la intensidad emocional de muchas interpretaciones árabes."
+      }
+    ]
+  },
+  "musica-india-clasica": {
+    "birthplace": "Tradiciones clásicas del subcontinente indio, principalmente dos grandes sistemas: hindustani en el norte y carnático en el sur, ambos basados en raga, tala e improvisación reglada.",
+    "era": "Raíces antiguas y desarrollo durante siglos; formas modernas de concierto consolidadas especialmente entre los siglos XIX y XX.",
+    "whatDefinesIt": "La música india clásica desarrolla un raga, una personalidad melódica con reglas, notas, giros, momento y emoción, sobre un tala o ciclo rítmico. La improvisación es libre solo dentro de un marco muy codificado.",
+    "howToRecognizeIt": [
+      "Desarrollo gradual: alap sin pulso fijo, entrada del ritmo y expansión hacia secciones más virtuosas.",
+      "Drone de tanpura, tabla o mridangam, y solistas de voz, sitar, sarod, bansuri, santoor u otros instrumentos.",
+      "Uso de raga y tala: melodía modal profunda y ciclos rítmicos complejos."
+    ],
+    "curiousFact": "Un concierto puede comenzar de forma lenta y meditativa sin percusión y acabar en diálogo rítmico vertiginoso entre solista y tabla.",
+    "keyListening": "Empieza por Ravi Shankar para sitar hindustani, Ali Akbar Khan para sarod, M. S. Subbulakshmi para canto carnático y Zakir Hussain para la tabla.",
+    "quiz": [
+      {
+        "question": "¿Qué es un raga?",
+        "options": [
+          "Un marco melódico con reglas, carácter y desarrollo propio",
+          "Un beat de trap",
+          "Una guitarra regional mexicana",
+          "Una forma de synthwave"
+        ],
+        "correct": "Un marco melódico con reglas, carácter y desarrollo propio",
+        "explanation": "El raga define notas, giros, énfasis y carácter emocional de la interpretación."
+      },
+      {
+        "question": "¿Qué es un tala?",
+        "options": [
+          "Un ciclo rítmico organizado",
+          "Un tipo de videoclip",
+          "Una técnica de guitarra punk",
+          "Un coro de zarzuela"
+        ],
+        "correct": "Un ciclo rítmico organizado",
+        "explanation": "El tala estructura el tiempo mediante ciclos rítmicos, a menudo muy complejos."
+      },
+      {
+        "question": "¿Qué instrumento suele sostener el drone de fondo?",
+        "options": [
+          "Tanpura",
+          "Cowbell",
+          "Bandoneón",
+          "Guitarra eléctrica distorsionada"
+        ],
+        "correct": "Tanpura",
+        "explanation": "La tanpura crea el bordón/drone sobre el que se desarrolla el raga."
+      }
+    ]
+  },
+  "post-punk-revival": {
+    "birthplace": "Surge a finales de los 90 y primeros 2000, especialmente en Nueva York, Londres y otras escenas indie, recuperando la tensión rítmica, guitarras angulares y estética de post-punk/new wave de finales de los 70 y 80.",
+    "era": "Finales de los 90 y años 2000 como explosión principal; continuidad posterior en indie y dance-punk.",
+    "whatDefinesIt": "El post-punk revival actualiza bajos tensos, guitarras secas, ritmos bailables o nerviosos, voces frías y estética urbana. Se diferencia del garage rock revival porque mira más a Joy Division, Gang of Four, Talking Heads o The Cure que al rock and roll crudo.",
+    "howToRecognizeIt": [
+      "Bajo prominente y líneas repetitivas que crean tensión más que simple groove rock.",
+      "Guitarras angulares, secas o entrecortadas, con menos blues y más nervio urbano.",
+      "Voces contenidas, frías o dramáticas, y mezcla de indie rock con dance-punk/new wave."
+    ],
+    "curiousFact": "Interpol, Bloc Party, Franz Ferdinand, Editors o The Rapture representan mejor esta etiqueta que The Strokes, que suelen encajar más en garage/indie rock revival.",
+    "keyListening": "Empieza por Interpol para oscuridad, Bloc Party para nervio rítmico, Franz Ferdinand para filo bailable y The Rapture para la conexión dance-punk.",
+    "quiz": [
+      {
+        "question": "¿Qué banda encaja especialmente bien como referencia de post-punk revival?",
+        "options": [
+          "Interpol",
+          "Led Zeppelin",
+          "Banda MS",
+          "Ravi Shankar"
+        ],
+        "correct": "Interpol",
+        "explanation": "Interpol recupera la tensión oscura y urbana asociada al post-punk revival."
+      },
+      {
+        "question": "¿Qué diferencia el post-punk revival del garage rock revival?",
+        "options": [
+          "Más tensión angular/new wave y menos rock and roll crudo",
+          "Más mariachi tradicional",
+          "Más ragas hindustani",
+          "Más zarzuela lírica"
+        ],
+        "correct": "Más tensión angular/new wave y menos rock and roll crudo",
+        "explanation": "El post-punk revival mira más a post-punk, new wave y dance-punk que al garage rock clásico."
+      },
+      {
+        "question": "¿Qué elemento suele destacar en el sonido?",
+        "options": [
+          "Bajo tenso y guitarras angulares",
+          "Guitarrón y trompetas",
+          "Tabla y tanpura",
+          "Violines barrocos únicamente"
+        ],
+        "correct": "Bajo tenso y guitarras angulares",
+        "explanation": "Ese pulso nervioso y angular es una marca clara del género."
+      }
+    ]
+  },
+  "neoclassical": {
+    "birthplace": "Esta ficha se refiere a neoclásica contemporánea o modern classical, no al neoclasicismo histórico del siglo XX. Surge en Europa y Norteamérica desde finales del siglo XX, cruzando piano, cuerdas, minimalismo, ambient y sensibilidad cinematográfica.",
+    "era": "Finales del siglo XX y siglo XXI, con fuerte popularidad en streaming, bandas sonoras y escenas post-minimalistas.",
+    "whatDefinesIt": "La neoclásica contemporánea usa recursos clásicos como piano, cuerdas y armonías sencillas, pero con producción moderna, repetición minimalista, intimidad, texturas ambientales y cercanía a música de cine o electrónica suave.",
+    "howToRecognizeIt": [
+      "Piano íntimo, cuerdas o pequeños ensembles con melodías claras y repetitivas.",
+      "Producción moderna: reverbs, capas ambientales, silencio, textura y cercanía emocional.",
+      "Menos desarrollo sinfónico clásico y más atmósfera, motivo breve y contemplación."
+    ],
+    "curiousFact": "El término puede confundir: Stravinsky también se asocia al neoclasicismo histórico, pero artistas como Max Richter, Nils Frahm o Einaudi pertenecen más a la neoclásica contemporánea.",
+    "keyListening": "Empieza por Max Richter para la dimensión cinematográfica, Nils Frahm para el cruce con electrónica, Ólafur Arnalds para textura íntima y Einaudi para accesibilidad melódica.",
+    "quiz": [
+      {
+        "question": "¿Qué aclara mejor esta etiqueta en la app?",
+        "options": [
+          "Se refiere a neoclásica contemporánea / modern classical",
+          "Se refiere solo al Barroco del siglo XVII",
+          "Es otro nombre para black metal",
+          "Es regional mexicano acústico"
+        ],
+        "correct": "Se refiere a neoclásica contemporánea / modern classical",
+        "explanation": "La ficha apunta a piano, cuerdas, minimalismo y producción moderna, no al neoclasicismo histórico."
+      },
+      {
+        "question": "¿Qué rasgo sonoro es típico?",
+        "options": [
+          "Piano íntimo, cuerdas, repetición y atmósfera moderna",
+          "Growls y blast beats",
+          "Acordeón norteño y bajo sexto",
+          "Metales balcánicos en 7/8"
+        ],
+        "correct": "Piano íntimo, cuerdas, repetición y atmósfera moderna",
+        "explanation": "La neoclásica contemporánea combina lenguaje clásico con sensibilidad minimalista y producción actual."
+      },
+      {
+        "question": "¿Qué artista encaja en esta escena?",
+        "options": [
+          "Max Richter",
+          "Chief Keef",
+          "Peret",
+          "Umm Kulthum"
+        ],
+        "correct": "Max Richter",
+        "explanation": "Max Richter es una figura clave del modern classical contemporáneo."
+      }
+    ]
+  },
+  "film-score": {
+    "birthplace": "La música de cine se desarrolla junto al propio lenguaje cinematográfico, desde acompañamientos en salas de cine mudo hasta la gran tradición orquestal de Hollywood y las bandas sonoras híbridas actuales.",
+    "era": "Desde principios del siglo XX hasta hoy; edad dorada orquestal en Hollywood, reinvenciones electrónicas y minimalistas posteriores.",
+    "whatDefinesIt": "Un film score no es solo música instrumental bonita: está compuesto para narrar con la imagen, reforzar emoción, tensión, personaje, espacio, época o ritmo dramático. Puede ser orquestal, electrónica, minimalista, híbrida o experimental.",
+    "howToRecognizeIt": [
+      "Uso de leitmotivs o temas asociados a personajes, lugares o ideas.",
+      "Música que sigue o contradice la imagen para crear emoción, suspense, épica o intimidad.",
+      "Orquesta, sintetizadores, percusión, drones o texturas diseñadas para función narrativa."
+    ],
+    "curiousFact": "El mismo id film-score aparece duplicado en la biblioteca; este override unifica el contenido educativo mostrado para ambas entradas sin tocar la estructura ni borrar datos.",
+    "keyListening": "Compara John Williams para leitmotiv sinfónico, Ennio Morricone para identidad melódica, Hans Zimmer para diseño híbrido moderno y Hildur Guðnadóttir para textura psicológica.",
+    "quiz": [
+      {
+        "question": "¿Qué diferencia un film score de una canción pop usada en una película?",
+        "options": [
+          "El score se compone para acompañar y narrar con la imagen",
+          "El score siempre tiene letra de estribillo",
+          "El score solo se baila en clubs",
+          "El score no puede ser instrumental"
+        ],
+        "correct": "El score se compone para acompañar y narrar con la imagen",
+        "explanation": "La banda sonora original está diseñada para cumplir una función dramática dentro de la película."
+      },
+      {
+        "question": "¿Qué es un leitmotiv en cine?",
+        "options": [
+          "Un tema asociado a personaje, lugar o idea",
+          "Un patrón de dembow",
+          "Un tipo de acordeón",
+          "Una técnica de zapateado"
+        ],
+        "correct": "Un tema asociado a personaje, lugar o idea",
+        "explanation": "El leitmotiv ayuda a identificar o transformar significados narrativos a lo largo de la película."
+      },
+      {
+        "question": "¿Qué compositor representa el score sinfónico de Hollywood moderno?",
+        "options": [
+          "John Williams",
+          "J Dilla",
+          "Peret",
+          "Ravi Shankar"
+        ],
+        "correct": "John Williams",
+        "explanation": "John Williams es una referencia central del lenguaje orquestal y leitmotívico en cine."
+      }
+    ]
+  }
+});
+
 const INITIAL_GENRES=[
   /* ROCK FAMILY */
   {id:'rock-classic',name:'Rock clásico',parentFamily:'Rock',description:'El género que definió la música popular del s.XX. Guitarras eléctricas, batería y actitud.',originContext:'EE.UU. y Reino Unido, años 50-70',moodTags:['energético','nostálgico','poderoso'],suggestedSituations:['conducir','workout','fiesta'],artists:[
