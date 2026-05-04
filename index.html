@@ -184,10 +184,10 @@ textarea{resize:vertical}
 .user-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--border);background:var(--bg-elev3);color:var(--text-sub)}
 .user-chip.u1{border-color:rgba(29,185,84,.45);color:var(--green);background:rgba(29,185,84,.10)}
 .user-chip.u2{border-color:rgba(126,176,255,.45);color:#8db8ff;background:rgba(70,131,255,.12)}
-.user-checks{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
-.mini-toggle{border:1px solid var(--border);background:var(--bg-elev3);color:var(--text-sub);border-radius:999px;padding:5px 11px;font-size:10px;font-weight:800;cursor:pointer;transition:all .15s;min-height:28px;touch-action:manipulation}
+.user-checks{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap}
+.mini-toggle{border:1px solid var(--border);background:var(--bg-elev3);color:var(--text-sub);border-radius:999px;padding:6px 11px;font-size:10px;font-weight:800;cursor:pointer;transition:all .15s;min-height:28px;touch-action:manipulation}
 .mini-toggle:hover{border-color:var(--text-sub);color:var(--text)}
-.mini-toggle:disabled{opacity:.42;cursor:not-allowed;filter:grayscale(.35);transform:none}
+.mini-toggle:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.35)}
 .mini-toggle:disabled:hover{border-color:var(--border);color:var(--text-sub);background:var(--bg-elev3)}
 .mini-toggle.active.u1{background:rgba(29,185,84,.18);border-color:var(--green);color:var(--green)}
 .mini-toggle.active.u2{background:rgba(70,131,255,.18);border-color:#8db8ff;color:#8db8ff}
@@ -10493,9 +10493,10 @@ function SemanaTab({activeWeek,u1,u2,currentUserKey,genres,weeks,completedGenreI
   const [selGenre,setSelGenre]=useState('');
   const [weekSubTab,setWeekSubTab]=useState('escucha');
   const [jointListeningMode,setJointListeningMode]=useState(false);
-  const activeUserKey=currentUserKey||'u1';
-  const canMarkUser=useCallback((userKey)=>jointListeningMode||userKey===activeUserKey,[jointListeningMode,activeUserKey]);
   const genreObj=activeWeek?genres.find(g=>g.id===activeWeek.genreId):null;
+  const canEditListeningUser=useCallback((userKey)=>jointListeningMode||userKey===currentUserKey,[jointListeningMode,currentUserKey]);
+  const handleToggleArtistHeard=useCallback((weekId,artId,userKey)=>{if(!canEditListeningUser(userKey))return;onToggleArtistHeard(weekId,artId,userKey);},[canEditListeningUser,onToggleArtistHeard]);
+  const handleToggleSong=useCallback((weekId,artId,songIdx,userKey)=>{if(!canEditListeningUser(userKey))return;onToggleSong(weekId,artId,songIdx,userKey);},[canEditListeningUser,onToggleSong]);
 
   if(manualGenreSelect){
     const done=completedGenreIds||[];
@@ -10683,14 +10684,14 @@ function SemanaTab({activeWeek,u1,u2,currentUserKey,genres,weeks,completedGenreI
       </div>
 
       {weekSubTab==='escucha'&&(
-        <div className="card card-sm" style={{marginBottom:12,background:jointListeningMode?'rgba(29,185,84,.10)':'var(--bg-elev2)',border:jointListeningMode?'1px solid rgba(29,185,84,.35)':'1px solid var(--border)'}}>
-          <div className="row" style={{justifyContent:'space-between',gap:10}}>
-            <div>
-              <div style={{fontWeight:900,fontSize:13}}>🎧 Escucha conjunta</div>
-              <div className="muted" style={{fontSize:11,marginTop:3}}>{jointListeningMode?'Puedes marcar Jonathan y Lucy desde esta sesión.':'Modo individual: solo puedes marcar tu propio usuario.'}</div>
-            </div>
-            <button type="button" className={`mini-toggle ${jointListeningMode?'active u1':''}`} onClick={()=>setJointListeningMode(v=>!v)} style={{padding:'7px 13px'}}>{jointListeningMode?'Activada':'Desactivada'}</button>
+        <div className="card card-sm" style={{marginBottom:12,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap',border:'1px solid rgba(29,185,84,.22)'}}>
+          <div>
+            <div style={{fontWeight:900,fontSize:13}}>🎧 Escucha conjunta</div>
+            <div className="muted" style={{fontSize:11}}>{jointListeningMode?'Modo conjunto activo: podéis marcar Jonathan y Lucy.':'Modo individual: solo puedes marcar tu propio usuario.'}</div>
           </div>
+          <button type="button" className={`btn btn-sm ${jointListeningMode?'btn-primary':''}`} onClick={()=>setJointListeningMode(v=>!v)}>
+            {jointListeningMode?'Activada':'Activar'}
+          </button>
         </div>
       )}
 
@@ -10726,8 +10727,8 @@ function SemanaTab({activeWeek,u1,u2,currentUserKey,genres,weeks,completedGenreI
             <div className="row" style={{justifyContent:'space-between',marginBottom:8}}>
               <div className="row" style={{gap:8,flex:1,minWidth:0}}>
                 <div className="user-checks" title="Marcar artista escuchado por usuario">
-                  <button type="button" disabled={!canMarkUser('u1')} className={`mini-toggle ${isHeardBy(artist,'u1')?'active u1':''}`} onClick={()=>canMarkUser('u1')&&onToggleArtistHeard(activeWeek.id,artist.id,'u1')}>✓ {u1}</button>
-                  <button type="button" disabled={!canMarkUser('u2')} className={`mini-toggle ${isHeardBy(artist,'u2')?'active u2':''}`} onClick={()=>canMarkUser('u2')&&onToggleArtistHeard(activeWeek.id,artist.id,'u2')}>✓ {u2}</button>
+                  <button type="button" disabled={!canEditListeningUser('u1')} className={`mini-toggle ${isHeardBy(artist,'u1')?'active u1':''}`} onClick={()=>handleToggleArtistHeard(activeWeek.id,artist.id,'u1')}>✓ {u1}</button>
+                  <button type="button" disabled={!canEditListeningUser('u2')} className={`mini-toggle ${isHeardBy(artist,'u2')?'active u2':''}`} onClick={()=>handleToggleArtistHeard(activeWeek.id,artist.id,'u2')}>✓ {u2}</button>
                 </div>
                 <div style={{minWidth:0}}>
                   <div className="row" style={{flexWrap:'wrap',gap:4}}>
@@ -10755,8 +10756,8 @@ function SemanaTab({activeWeek,u1,u2,currentUserKey,genres,weeks,completedGenreI
                 <div key={i} className={`song-chip ${(heardU1||heardU2)?'heard':''}`}
                   title={s.note}>
                   <div className="user-checks" onClick={e=>e.stopPropagation()}>
-                    <button type="button" disabled={!canMarkUser('u1')} className={`mini-toggle ${heardU1?'active u1':''}`} onClick={()=>canMarkUser('u1')&&onToggleSong(activeWeek.id,artist.id,i,'u1')}>✓ {u1}</button>
-                    <button type="button" disabled={!canMarkUser('u2')} className={`mini-toggle ${heardU2?'active u2':''}`} onClick={()=>canMarkUser('u2')&&onToggleSong(activeWeek.id,artist.id,i,'u2')}>✓ {u2}</button>
+                    <button type="button" disabled={!canEditListeningUser('u1')} className={`mini-toggle ${heardU1?'active u1':''}`} onClick={()=>handleToggleSong(activeWeek.id,artist.id,i,'u1')}>✓ {u1}</button>
+                    <button type="button" disabled={!canEditListeningUser('u2')} className={`mini-toggle ${heardU2?'active u2':''}`} onClick={()=>handleToggleSong(activeWeek.id,artist.id,i,'u2')}>✓ {u2}</button>
                   </div>
                   <span>{s.title}</span>
                   <button className="spotify-btn" type="button" title={`Abrir en Spotify: ${artist.name} - ${s.title}`} aria-label={`Abrir en Spotify ${artist.name} ${s.title}`} onClick={e=>openSpotifyForSong(artist.name,s,e)}>▶</button>
@@ -11818,7 +11819,7 @@ function App(){
         {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade}/>}
       </div>
 
-      {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 16px',borderRadius:999,fontWeight:900,fontSize:13,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.45)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
+      {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
       {levelToast&&<div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',animation:'levelToastPop .28s ease-out',background:levelToast.isEvolution?'linear-gradient(135deg,rgba(29,185,84,.98),rgba(255,164,43,.97),rgba(186,113,255,.92))':'linear-gradient(135deg,rgba(29,185,84,.98),rgba(255,164,43,.95))',color:'#000',padding:levelToast.isEvolution?'24px 30px':'22px 28px',borderRadius:24,fontWeight:900,zIndex:2147483647,boxShadow:'0 24px 90px rgba(0,0,0,.62)',pointerEvents:'none',textAlign:'center',minWidth:levelToast.isEvolution?320:260,border:'1px solid rgba(255,255,255,.42)'}}>
         {levelToast.isEvolution?<>
           <div style={{fontSize:13,textTransform:'uppercase',letterSpacing:'1.2px',opacity:.78,marginBottom:10}}>✨ Evolución musical</div>
