@@ -9554,7 +9554,7 @@ function upgradeLibraryData(data){
       existingNames.add(nameKey);
     }
   });
-  return {...data,genres:upgradedGenres,challenges:Array.isArray(data.challenges)?data.challenges:[]};
+  return {...data,genres:upgradedGenres,challenges:Array.isArray(data.challenges)?data.challenges:[],xpEvents:Array.isArray(data.xpEvents)?data.xpEvents:[]};
 }
 
 /* ============================================================
@@ -9585,6 +9585,7 @@ function initData(){
     activeWeekId:null,
     completedGenreIds:[],
     challenges:[],
+    xpEvents:[],
     createdAt:new Date().toISOString(),
     updatedAt:new Date().toISOString()
   };
@@ -9762,6 +9763,14 @@ function getChallengeSongXp(c,genres){
 function getChallengeTotalXp(c,genres){return getChallengeBaseXp(c)+getChallengeBonusXp(c)+getChallengeSongXp(c,genres);}
 function isChallengeWin(c){return getChallengeBonusXp(c)>0;}
 
+
+function makeSongXpRef(weekId,artId,songIdx,userKey){return `song:${weekId}:${artId}:${songIdx}:${userKey}`;}
+function makeTestXpRef(weekId,genreId,userKey){return `test:${weekId}:${genreId||'genre'}:${userKey}`;}
+function makeChallengeXpRef(challengeId,userKey){return `challenge:${challengeId}:${userKey}`;}
+function getUserXpEvents(xpEvents,userKey){return (xpEvents||[]).filter(e=>e&&e.userKey===userKey&&typeof e.amount!=='undefined');}
+function getUserXpEventRefs(xpEvents,userKey){return new Set(getUserXpEvents(xpEvents,userKey).map(e=>e.refId).filter(Boolean));}
+function getUserXpEventSum(xpEvents,userKey){return getUserXpEvents(xpEvents,userKey).reduce((sum,e)=>sum+(Number(e.amount)||0),0);}
+
 function getWeekSongProgress(week){
   const artists=(week&&week.artists)||[];
   let totalSongs=0, listenedSongs=0;
@@ -9886,37 +9895,53 @@ function getNextMascotForLevel(level){
   const safeLevel=Math.max(1,Number(level)||1);
   return MASCOT_EVOLUTIONS.find(m=>m.min>safeLevel)||null;
 }
-function getUserGamificationStats(weeks,challenges,userKey,genres=[]){
+
+function getUserGamificationStats(weeks,challenges,userKey,genres=[],xpEvents=[]){
   const allWeeks=(weeks||[]);
   const completedWeeks=allWeeks.filter(w=>w.status==='completed');
-  let songs=0,fullWeeks=0,favs=0,tests=0,testScore10=0,testXp=0,perfectTests=0,challengeWins=0,completedChallenges=0,challengeXp=0,artistsCompleted=0;
+  const eventRefs=getUserXpEventRefs(xpEvents,userKey);
+  const eventXp=getUserXpEventSum(xpEvents,userKey);
+  let songs=0,fullWeeks=0,favs=0,tests=0,testScore10=0,legacyTestXp=0,perfectTests=0,challengeWins=0,completedChallenges=0,legacyChallengeXp=0,artistsCompleted=0,legacySongXp=0;
   const genreSet=new Set();
-  completedWeeks.forEach(w=>{
+
+  allWeeks.forEach(w=>{
     const p=getWeekUserProgress(w,userKey);
     songs+=p.heardSongs;
     favs+=p.favoriteSongs;
     artistsCompleted+=p.completedArtists||0;
-    if(p.pct>=100){fullWeeks++; if(w.genreId)genreSet.add(w.genreId);}
     const q=w.learningQuiz&&w.learningQuiz[userKey];
     if(q&&typeof q.score!=='undefined'){
       const total=Math.max(1,Number(q.total)||3);
       const score=Number(q.score)||0;
       tests++;
       testScore10+=(score/total)*10;
-      testXp+=getTestXp(score,total);
       if(score>=total)perfectTests++;
+      const testRef=makeTestXpRef(w.id,w.genreId,userKey);
+      if(w.status==='completed'&&!eventRefs.has(testRef))legacyTestXp+=getTestXp(score,total);
     }
   });
+
+  completedWeeks.forEach(w=>{
+    const p=getWeekUserProgress(w,userKey);
+    if(p.pct>=100){fullWeeks++; if(w.genreId)genreSet.add(w.genreId);}
+    (w.artists||[]).forEach(a=>((a.listenedSongs)||[]).forEach((song,i)=>{
+      if(isHeardBy(song,userKey)&&!eventRefs.has(makeSongXpRef(w.id,a.id,i,userKey)))legacySongXp+=2;
+    }));
+  });
+
   (challenges||[]).forEach(c=>{
     if(c.status==='completed'&&c.to===userKey){
       completedChallenges++;
       if(isChallengeWin(c))challengeWins++;
-      challengeXp+=getChallengeTotalXp(c,genres);
+      const challengeRef=makeChallengeXpRef(c.id,userKey);
+      if(!eventRefs.has(challengeRef))legacyChallengeXp+=getChallengeTotalXp(c,genres);
     }
   });
   const avgTest=tests?testScore10/tests:null;
   const genresCompleted=genreSet.size;
-  const xp=songs*2+fullWeeks*50+testXp+challengeXp+favs*5+genresCompleted*20;
+  const testXp=legacyTestXp+getUserXpEvents(xpEvents,userKey).filter(e=>e.type==='test').reduce((sum,e)=>sum+(Number(e.amount)||0),0);
+  const challengeXp=legacyChallengeXp+getUserXpEvents(xpEvents,userKey).filter(e=>e.type==='challenge').reduce((sum,e)=>sum+(Number(e.amount)||0),0);
+  const xp=eventXp+legacySongXp+fullWeeks*50+legacyTestXp+legacyChallengeXp+favs*5+genresCompleted*20;
   const level=Math.max(1,Math.floor(xp/150)+1);
   const next=level*150;
   const current=Math.max(0,xp-(level-1)*150);
@@ -9944,11 +9969,11 @@ function XpUserCard({name,stats,userKey}){
     {!!locked.length&&<div style={{marginTop:6}}>{locked.slice(0,3).map(b=><span key={b.id} className="badge-locked">🔒 {b.label}</span>)}</div>}
   </div>;
 }
-function ProfileTab({weeks,challenges,genres,u1,u2,currentUserKey}){
+function ProfileTab({weeks,challenges,genres,xpEvents,u1,u2,currentUserKey}){
   const [profileUser,setProfileUser]=useState(currentUserKey||'u1');
   useEffect(()=>{setProfileUser(currentUserKey||'u1');},[currentUserKey]);
   const names={u1,u2};
-  const stats=getUserGamificationStats(weeks,challenges,profileUser,genres);
+  const stats=getUserGamificationStats(weeks,challenges,profileUser,genres,xpEvents);
   const pct=Math.min(100,Math.round((stats.current/stats.needed)*100));
   const earnedIds=new Set(stats.badges.map(b=>b.id));
   const locked=ACHIEVEMENT_DEFS.filter(b=>!earnedIds.has(b.id));
@@ -10091,8 +10116,6 @@ function LearningPanel({genre,week,u1,u2,onSaveQuiz,onToast}){
     const score=quiz.reduce((sum,q,i)=>sum+((answers[i]||'')===q.correct?1:0),0);
     const result={score,total:quiz.length,answers,completedAt:new Date().toISOString(),genreId:genre.id};
     onSaveQuiz&&onSaveQuiz(week.id,userKey,result);
-    const xp=getTestXp(score,quiz.length);
-    onToast&&onToast(xp,xp?`Test ${score}/${quiz.length}`:`Test ${score}/${quiz.length} · sin XP`);
   }
   return(
     <div>
@@ -10292,7 +10315,7 @@ function WeekDetailModal({week,u1,u2,onClose}){
 /* ============================================================
    TABS
    ============================================================ */
-function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artistRankings,genres,completedGenreIds,challenges,onGenerate,onGoSemana,onManualSelect}){
+function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artistRankings,genres,completedGenreIds,challenges,xpEvents,onGenerate,onGoSemana,onManualSelect}){
   const avgU1=useMemo(()=>{
     const v=completedWeeks.filter(w=>!isNaN(parseFloat(w.rating?.scoreU1))).map(w=>parseFloat(w.rating.scoreU1));
     return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;
@@ -10306,8 +10329,8 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   const activeProgress=useMemo(()=>getWeekSongProgress(activeWeek),[activeWeek]);
   const streak=useMemo(()=>getCurrentStreak(completedWeeks),[completedWeeks]);
   const comparison=useMemo(()=>getComparisonInsights(completedWeeks),[completedWeeks]);
-  const xpU1=useMemo(()=>getUserGamificationStats(weeks,challenges,'u1',genres),[weeks,challenges,genres]);
-  const xpU2=useMemo(()=>getUserGamificationStats(weeks,challenges,'u2',genres),[weeks,challenges,genres]);
+  const xpU1=useMemo(()=>getUserGamificationStats(weeks,challenges,'u1',genres,xpEvents),[weeks,challenges,genres,xpEvents]);
+  const xpU2=useMemo(()=>getUserGamificationStats(weeks,challenges,'u2',genres,xpEvents),[weeks,challenges,genres,xpEvents]);
 
   return(
     <div>
@@ -10766,7 +10789,7 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
   );
 }
 
-function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
+function RankingsTab({genreRankings,artistRankings,completedWeeks,challenges,genres,xpEvents,u1,u2}){
   const [rt,setRt]=useState('genres');
   if(!completedWeeks.length) return<div className="empty-state"><div className="icon">🏆</div><div style={{fontWeight:500}}>Sin rankings todavía</div><p className="muted">Completad vuestra primera semana para ver los rankings.</p></div>;
 
@@ -10778,8 +10801,8 @@ function RankingsTab({genreRankings,artistRankings,completedWeeks,u1,u2}){
   const comparison=getComparisonInsights(completedWeeks);
   const quizStats=calcQuizStats(completedWeeks);
   const quizRows=quizStats.rows||[];
-  const xpU1=getUserGamificationStats(completedWeeks,[], 'u1');
-  const xpU2=getUserGamificationStats(completedWeeks,[], 'u2');
+  const xpU1=getUserGamificationStats(completedWeeks,challenges||[], 'u1',genres||[],xpEvents||[]);
+  const xpU2=getUserGamificationStats(completedWeeks,challenges||[], 'u2',genres||[],xpEvents||[]);
 
   return(
     <div>
@@ -11183,7 +11206,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
         </div>:null}
         {c.type==='mood'&&<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Mood descrito por {names[c.to]}</label><textarea rows={2} value={local.mood||''} onChange={e=>setLocal(p=>({...p,mood:e.target.value}))} placeholder="oscuro, nostálgico, eufórico..."/></div>}
         <div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario</label><textarea rows={2} value={local.comment||''} onChange={e=>setLocal(p=>({...p,comment:e.target.value}))} placeholder="Qué te ha parecido..."/></div>
-        <button className="btn btn-primary" onClick={()=>{if(c.type==='genre'&&genre&&genreProgressStats(c,genre).pct<100){alert('Para completar un reto de género, marca todas las canciones.');return;}if(c.type==='favorite3'&&(local.favoriteGuess===''||local.favoriteGuess==null)){alert('Elige cuál crees que fue la favorita.');return;}if(c.type==='ranking3'){const rg=local.rankingGuess||[];if(rg.length!==3||rg.some(x=>x===''||x==null)||new Set(rg.map(Number)).size!==3){alert('Ordena las 3 canciones sin repetir.');return;}}const completedPatch={status:'completed',completedAt:new Date().toISOString(),response:{...(c.response||{}),...local}};const completedChallenge={...c,...completedPatch};onUpdateChallenge(c.id,completedPatch);const xp=getChallengeTotalXp(completedChallenge,genres);onToast&&onToast(xp,challengeTypeLabel(c.type));}}>Completar reto</button>
+        <button className="btn btn-primary" onClick={()=>{if(c.type==='genre'&&genre&&genreProgressStats(c,genre).pct<100){alert('Para completar un reto de género, marca todas las canciones.');return;}if(c.type==='favorite3'&&(local.favoriteGuess===''||local.favoriteGuess==null)){alert('Elige cuál crees que fue la favorita.');return;}if(c.type==='ranking3'){const rg=local.rankingGuess||[];if(rg.length!==3||rg.some(x=>x===''||x==null)||new Set(rg.map(Number)).size!==3){alert('Ordena las 3 canciones sin repetir.');return;}}const completedPatch={status:'completed',completedAt:new Date().toISOString(),response:{...(c.response||{}),...local}};onUpdateChallenge(c.id,completedPatch);}}>Completar reto</button>
       </div>:<div className="challenge-result">
         <div style={{fontWeight:800,marginBottom:5}}>Resultado</div>
         {c.type==='favorite3'&&<div className="muted" style={{fontSize:12}}>Favorita real: {trackOptions[Number(c.senderFavoriteIndex)]?`${trackOptions[Number(c.senderFavoriteIndex)].artistName} — ${trackOptions[Number(c.senderFavoriteIndex)].songTitle}`:'—'} · Predicción: {trackOptions[Number(c.response?.favoriteGuess)]?`${trackOptions[Number(c.response?.favoriteGuess)].artistName} — ${trackOptions[Number(c.response?.favoriteGuess)].songTitle}`:'—'} · Bonus: +{getFavorite3BonusXp(c)} XP</div>}
@@ -11341,6 +11364,28 @@ function App(){
     setXpToast({amount:Number(amount)||0,label:label||'XP ganado'});
     xpToastTimerRef.current=setTimeout(()=>setXpToast(null),2500);
   },[]);
+  const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
+
+  const awardXp=useCallback((userKey,type,amount,label,refId,meta={})=>{
+    const value=Number(amount)||0;
+    if(!userKey||!type||!refId||value<=0)return;
+    let delta=0;
+    update(prev=>{
+      const events=Array.isArray(prev.xpEvents)?prev.xpEvents:[];
+      const idx=events.findIndex(e=>e&&e.userKey===userKey&&e.refId===refId);
+      if(idx>=0){
+        const current=Number(events[idx].amount)||0;
+        if(value<=current)return prev;
+        delta=value-current;
+        const next=[...events];
+        next[idx]={...next[idx],amount:value,label:label||events[idx].label,type,meta:{...(events[idx].meta||{}),...meta},updatedAt:new Date().toISOString()};
+        return {...prev,xpEvents:next};
+      }
+      delta=value;
+      return {...prev,xpEvents:[...events,{id:genId(),userKey,type,amount:value,label:label||'XP ganado',refId,meta,createdAt:new Date().toISOString()}]};
+    });
+    if(delta>0)showXpToast(delta,label||'XP ganado');
+  },[showXpToast,update]);
 
   useEffect(()=>{
     let unsubAuth=null;
@@ -11445,14 +11490,12 @@ function App(){
     await api.signOut(api.auth);
   }
 
-  const safeData=data||{settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[],challenges:[]};
-  const {settings,genres,weeks,activeWeekId,completedGenreIds,challenges=[]}=safeData;
+  const safeData=data||{settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[],challenges:[],xpEvents:[]};
+  const {settings,genres,weeks,activeWeekId,completedGenreIds,challenges=[],xpEvents=[]}=safeData;
   const u1=settings.user1||'Jonathan';
   const u2=settings.user2||'Lucy';
   const currentUserKey=getUserKeyFromEmail(authUser&&authUser.email)||'u1';
   const pendingChallengeCount=challengePendingForUser(challenges,currentUserKey);
-
-  const update=useCallback(fn=>setData(prev=>({...fn(prev)})),[]);
 
   const forceLibraryUpgrade=useCallback(()=>{
     setData(prev=>{
@@ -11543,29 +11586,46 @@ function App(){
   }
 
   function toggleSong(weekId,artId,songIdx,userKey){
+    const u=userKey||'u1';
+    const week=weeks.find(w=>w.id===weekId);
+    const artist=week&&(week.artists||[]).find(a=>a.id===artId);
+    const song=artist&&artist.listenedSongs&&artist.listenedSongs[songIdx];
+    const wasHeard=song?isHeardBy(song,u):false;
     update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,artists:w.artists.map(a=>{
       if(a.id!==artId)return a;
       const listenedSongs=(a.listenedSongs||[]).map((s,i)=>{
         if(i!==songIdx)return s;
-        const current=isHeardBy(s,userKey||'u1');
-        const listenedBy={...(s.listenedBy||{}),[userKey||'u1']:!current};
+        const current=isHeardBy(s,u);
+        const listenedBy={...(s.listenedBy||{}),[u]:!current};
         return {...s,listenedBy,listened:!!(listenedBy.u1||listenedBy.u2)};
       });
       const listenedBy={...(a.listenedBy||{})};
-      ['u1','u2'].forEach(u=>{listenedBy[u]=listenedSongs.some(song=>isHeardBy(song,u));});
+      ['u1','u2'].forEach(x=>{listenedBy[x]=listenedSongs.some(song=>isHeardBy(song,x));});
       return {...a,listenedSongs,listenedBy,listened:!!(listenedBy.u1||listenedBy.u2)};
     })}:w)}));
+    if(song&&!wasHeard)awardXp(u,'song',2,'Canción escuchada',makeSongXpRef(weekId,artId,songIdx,u),{weekId,artId,songIdx,title:song.title,artistName:artist?.name});
   }
 
   function updateLearningQuiz(weekId,userKey,result){
+    const week=weeks.find(w=>w.id===weekId);
     update(prev=>({...prev,weeks:prev.weeks.map(w=>w.id===weekId?{...w,learningQuiz:{...(w.learningQuiz||{}),[userKey]:{...result,answeredAt:new Date().toISOString()}}}:w)}));
+    const score=Number(result?.score)||0;
+    const total=Math.max(1,Number(result?.total)||3);
+    const xp=getTestXp(score,total);
+    awardXp(userKey,'test',xp,`Test ${score}/${total}`,makeTestXpRef(weekId,result?.genreId||week?.genreId,userKey),{weekId,genreId:result?.genreId||week?.genreId,score,total});
   }
 
   function createChallenge(challenge){
     update(prev=>({...prev,challenges:[...(prev.challenges||[]),{...challenge,id:genId(),createdAt:new Date().toISOString()}]}));
   }
   function updateChallenge(id,patch){
+    const previous=(challenges||[]).find(c=>c.id===id);
+    const completedChallenge=previous?{...previous,...patch}:null;
     update(prev=>({...prev,challenges:(prev.challenges||[]).map(c=>c.id===id?{...c,...patch,updatedAt:new Date().toISOString()}:c)}));
+    if(previous&&previous.status!=='completed'&&patch&&patch.status==='completed'){
+      const xp=getChallengeTotalXp(completedChallenge,genres);
+      awardXp(completedChallenge.to,'challenge',xp,challengeTypeLabel(completedChallenge.type),makeChallengeXpRef(id,completedChallenge.to),{challengeId:id,type:completedChallenge.type});
+    }
   }
   function deleteChallenge(id){
     if(!window.confirm('¿Eliminar este reto?'))return;
@@ -11665,13 +11725,13 @@ function App(){
       </nav>
 
       <div>
-        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} challenges={challenges} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
+        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} challenges={challenges} xpEvents={xpEvents} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
         {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz} onToast={showXpToast}/>}
-        {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
+        {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2}/>}
         {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
         {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
-        {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
+        {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
         {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade}/>}
       </div>
 
