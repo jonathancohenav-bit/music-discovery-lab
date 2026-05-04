@@ -9684,11 +9684,83 @@ function calcQuizStats(weeks){
   });
   return byUser;
 }
-function challengeTypeLabel(type){return {song:'Canción',artist:'Artista',genre:'Género',mood:'Mood'}[type]||'Reto';}
+function challengeTypeLabel(type){return {song:'Canción',artist:'Artista',genre:'Género',mood:'Mood',favorite3:'Adivina mi favorita',ranking3:'Ordena mi ranking'}[type]||'Reto';}
 function qualitativeLabel(v){return {love:'Me encantó',like:'Me gustó',neutral:'Me dejó indiferente',hard:'Me costó',nope:'No me gustó'}[v]||v||'';}
 function challengeRequiresSenderTrack(type){return type==='song';}
 function challengeAllowsGuess(type){return type==='song'||type==='artist'||type==='genre';}
 function challengePendingForUser(challenges,userKey){return (challenges||[]).filter(c=>c.status!=='completed'&&c.to===userKey).length;}
+
+function getTestXp(score,total=3){
+  const t=Math.max(1,Number(total)||3);
+  const pct=(Number(score)||0)/t;
+  if(pct>=1)return 20;
+  if(pct>=2/3)return 12;
+  if(pct>=1/3)return 5;
+  return 0;
+}
+function getScoreGuessXp(real,guess){
+  if(real===''||guess===''||real==null||guess==null)return 0;
+  const r=Number(real),g=Number(guess);
+  if(isNaN(r)||isNaN(g))return 0;
+  const diff=Math.abs(r-g);
+  if(diff===0)return 25;
+  if(diff<=0.5)return 15;
+  if(diff<=1)return 8;
+  return 0;
+}
+function getScoreGuessLabel(real,guess){
+  const xp=getScoreGuessXp(real,guess);
+  if(xp>=25)return '🎯 Exacto';
+  if(xp>=15)return '🔥 Casi lo clavas';
+  if(xp>=8)return '✅ Cerca';
+  return 'Sin acierto';
+}
+function getQualitativeGuessXp(real,guess){return real&&guess&&real===guess?25:0;}
+function getTrackChallengeTracks(c){return Array.isArray(c?.tracks)?c.tracks:[];}
+function getFavorite3BonusXp(c){
+  const guess=c?.response?.favoriteGuess;
+  if(guess===''||guess==null||c?.senderFavoriteIndex===''||c?.senderFavoriteIndex==null)return 0;
+  return Number(guess)===Number(c.senderFavoriteIndex)?30:0;
+}
+function getRanking3Matches(c){
+  const real=Array.isArray(c?.senderRanking)?c.senderRanking.map(Number):[0,1,2];
+  const guess=Array.isArray(c?.response?.rankingGuess)?c.response.rankingGuess.map(Number):[];
+  if(real.length!==3||guess.length!==3)return 0;
+  return real.reduce((sum,v,i)=>sum+(Number(guess[i])===Number(v)?1:0),0);
+}
+function getRanking3BonusXp(c){
+  const m=getRanking3Matches(c);
+  if(m>=3)return 30;
+  if(m>=2)return 15;
+  if(m>=1)return 8;
+  return 0;
+}
+function getChallengeBaseXp(c){
+  if(!c||c.status!=='completed')return 0;
+  if(c.type==='genre')return 50;
+  if(c.type==='favorite3'||c.type==='ranking3')return 25;
+  if(c.type==='song'||c.type==='artist')return 15;
+  if(c.type==='mood')return 20;
+  return 20;
+}
+function getChallengeBonusXp(c){
+  if(!c||c.status!=='completed')return 0;
+  if(c.type==='favorite3')return getFavorite3BonusXp(c);
+  if(c.type==='ranking3')return getRanking3BonusXp(c);
+  if(c.guessMode==='score')return getScoreGuessXp(c.senderScore,c.response?.guessScore);
+  if(c.guessMode==='qualitative')return getQualitativeGuessXp(c.senderQualitative,c.response?.guessQualitative);
+  return 0;
+}
+function getChallengeSongXp(c,genres){
+  if(!c||c.status!=='completed'||c.type!=='genre')return 0;
+  const genre=(genres||[]).find(g=>g.id===c.genreId);
+  const gp=(c.response&&c.response.genreProgress)||{};
+  let done=0;
+  (genre?.artists||[]).slice(0,8).forEach(a=>(a.suggestedSongs||[]).slice(0,3).forEach((song,i)=>{if(gp[`${a.id}__${i}`])done++;}));
+  return done*2;
+}
+function getChallengeTotalXp(c,genres){return getChallengeBaseXp(c)+getChallengeBonusXp(c)+getChallengeSongXp(c,genres);}
+function isChallengeWin(c){return getChallengeBonusXp(c)>0;}
 
 function getWeekSongProgress(week){
   const artists=(week&&week.artists)||[];
@@ -9779,7 +9851,7 @@ const ACHIEVEMENT_DEFS=[
   {id:'fav75',label:'Curador premium',icon:'🏆',desc:'Marca 75 canciones favoritas.',test:s=>s.favs>=75},
   {id:'tests5',label:'Alumno aplicado',icon:'🧠',desc:'Completa 5 tests.',test:s=>s.tests>=5},
   {id:'tests15',label:'Teórico musical',icon:'🎓',desc:'Completa 15 tests.',test:s=>s.tests>=15},
-  {id:'quiz80',label:'Buen oído teórico',icon:'🧩',desc:'Media de test igual o superior a 8 con mínimo 5 tests.',test:s=>s.tests>=5&&s.avgTest>=8},
+  {id:'perfectEar',label:'Oído perfecto',icon:'🧠',desc:'Consigue 3/3 en 8 tests de género.',test:s=>s.perfectTests>=8},
   {id:'challenge3',label:'Adivino musical',icon:'🎯',desc:'Acierta 3 retos de adivinanza.',test:s=>s.challengeWins>=3},
   {id:'challenge10',label:'Mentalista musical',icon:'🔮',desc:'Acierta 10 retos de adivinanza.',test:s=>s.challengeWins>=10},
   {id:'challenger5',label:'Acepta retos',icon:'⚔️',desc:'Completa 5 retos recibidos.',test:s=>s.completedChallenges>=5},
@@ -9814,10 +9886,10 @@ function getNextMascotForLevel(level){
   const safeLevel=Math.max(1,Number(level)||1);
   return MASCOT_EVOLUTIONS.find(m=>m.min>safeLevel)||null;
 }
-function getUserGamificationStats(weeks,challenges,userKey){
+function getUserGamificationStats(weeks,challenges,userKey,genres=[]){
   const allWeeks=(weeks||[]);
   const completedWeeks=allWeeks.filter(w=>w.status==='completed');
-  let songs=0,fullWeeks=0,favs=0,tests=0,testScore=0,challengeWins=0,completedChallenges=0,artistsCompleted=0;
+  let songs=0,fullWeeks=0,favs=0,tests=0,testScore10=0,testXp=0,perfectTests=0,challengeWins=0,completedChallenges=0,challengeXp=0,artistsCompleted=0;
   const genreSet=new Set();
   completedWeeks.forEach(w=>{
     const p=getWeekUserProgress(w,userKey);
@@ -9826,23 +9898,30 @@ function getUserGamificationStats(weeks,challenges,userKey){
     artistsCompleted+=p.completedArtists||0;
     if(p.pct>=100){fullWeeks++; if(w.genreId)genreSet.add(w.genreId);}
     const q=w.learningQuiz&&w.learningQuiz[userKey];
-    if(q&&typeof q.score!=='undefined'){tests++;testScore+=Number(q.score)||0;}
-  });
-  (challenges||[]).forEach(c=>{
-    if(c.status==='completed'&&c.to===userKey){completedChallenges++;
-      if(c.guessMode==='score'&&c.senderScore!==''&&c.response&&c.response.guessScore!==''){
-        if(Math.abs(Number(c.senderScore)-Number(c.response.guessScore))<=1)challengeWins++;
-      } else if(c.guessMode==='qualitative'&&c.senderQualitative&&c.response&&c.response.guessQualitative===c.senderQualitative){challengeWins++;}
+    if(q&&typeof q.score!=='undefined'){
+      const total=Math.max(1,Number(q.total)||3);
+      const score=Number(q.score)||0;
+      tests++;
+      testScore10+=(score/total)*10;
+      testXp+=getTestXp(score,total);
+      if(score>=total)perfectTests++;
     }
   });
-  const avgTest=tests?testScore/tests:null;
+  (challenges||[]).forEach(c=>{
+    if(c.status==='completed'&&c.to===userKey){
+      completedChallenges++;
+      if(isChallengeWin(c))challengeWins++;
+      challengeXp+=getChallengeTotalXp(c,genres);
+    }
+  });
+  const avgTest=tests?testScore10/tests:null;
   const genresCompleted=genreSet.size;
-  const xp=songs*2+fullWeeks*50+tests*15+completedChallenges*20+challengeWins*20+favs*5+genresCompleted*10;
+  const xp=songs*2+fullWeeks*50+testXp+challengeXp+favs*5+genresCompleted*20;
   const level=Math.max(1,Math.floor(xp/150)+1);
   const next=level*150;
   const current=Math.max(0,xp-(level-1)*150);
   const needed=150;
-  const base={xp,level,next,current,needed,songs,fullWeeks,favs,tests,avgTest,completedChallenges,challengeWins,genresCompleted,artistsCompleted};
+  const base={xp,level,next,current,needed,songs,fullWeeks,favs,tests,avgTest,testXp,perfectTests,completedChallenges,challengeWins,challengeXp,genresCompleted,artistsCompleted};
   const badges=ACHIEVEMENT_DEFS.filter(b=>{try{return b.test(base);}catch(e){return false;}}).map(({test,...b})=>b);
   const mascot=getMascotForLevel(level);
   const nextMascot=getNextMascotForLevel(level);
@@ -9865,11 +9944,11 @@ function XpUserCard({name,stats,userKey}){
     {!!locked.length&&<div style={{marginTop:6}}>{locked.slice(0,3).map(b=><span key={b.id} className="badge-locked">🔒 {b.label}</span>)}</div>}
   </div>;
 }
-function ProfileTab({weeks,challenges,u1,u2,currentUserKey}){
+function ProfileTab({weeks,challenges,genres,u1,u2,currentUserKey}){
   const [profileUser,setProfileUser]=useState(currentUserKey||'u1');
   useEffect(()=>{setProfileUser(currentUserKey||'u1');},[currentUserKey]);
   const names={u1,u2};
-  const stats=getUserGamificationStats(weeks,challenges,profileUser);
+  const stats=getUserGamificationStats(weeks,challenges,profileUser,genres);
   const pct=Math.min(100,Math.round((stats.current/stats.needed)*100));
   const earnedIds=new Set(stats.badges.map(b=>b.id));
   const locked=ACHIEVEMENT_DEFS.filter(b=>!earnedIds.has(b.id));
@@ -10000,7 +10079,7 @@ function LearningSummaryCard({genre}){
   );
 }
 
-function LearningPanel({genre,week,u1,u2,onSaveQuiz}){
+function LearningPanel({genre,week,u1,u2,onSaveQuiz,onToast}){
   const l=getGenreLearning(genre);
   const [userKey,setUserKey]=useState('u1');
   const [answers,setAnswers]=useState({});
@@ -10010,7 +10089,10 @@ function LearningPanel({genre,week,u1,u2,onSaveQuiz}){
   function submit(){
     const quiz=l.quiz||[];
     const score=quiz.reduce((sum,q,i)=>sum+((answers[i]||'')===q.correct?1:0),0);
-    onSaveQuiz&&onSaveQuiz(week.id,userKey,{score,total:quiz.length,answers,completedAt:new Date().toISOString(),genreId:genre.id});
+    const result={score,total:quiz.length,answers,completedAt:new Date().toISOString(),genreId:genre.id};
+    onSaveQuiz&&onSaveQuiz(week.id,userKey,result);
+    const xp=getTestXp(score,quiz.length);
+    onToast&&onToast(xp,xp?`Test ${score}/${quiz.length}`:`Test ${score}/${quiz.length} · sin XP`);
   }
   return(
     <div>
@@ -10224,8 +10306,8 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   const activeProgress=useMemo(()=>getWeekSongProgress(activeWeek),[activeWeek]);
   const streak=useMemo(()=>getCurrentStreak(completedWeeks),[completedWeeks]);
   const comparison=useMemo(()=>getComparisonInsights(completedWeeks),[completedWeeks]);
-  const xpU1=useMemo(()=>getUserGamificationStats(weeks,challenges,'u1'),[weeks,challenges]);
-  const xpU2=useMemo(()=>getUserGamificationStats(weeks,challenges,'u2'),[weeks,challenges]);
+  const xpU1=useMemo(()=>getUserGamificationStats(weeks,challenges,'u1',genres),[weeks,challenges,genres]);
+  const xpU2=useMemo(()=>getUserGamificationStats(weeks,challenges,'u2',genres),[weeks,challenges,genres]);
 
   return(
     <div>
@@ -10306,7 +10388,7 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
         <div className="empty-state">
           <div className="icon">🎸</div>
           <div style={{fontWeight:500,marginBottom:6}}>¡Empezad vuestra aventura musical!</div>
-          <p className="muted">Generaed vuestra primera semana para descubrir un nuevo género juntos.</p>
+          <p className="muted">Generad vuestra primera semana y empezad a descubrir un nuevo género juntos.</p>
         </div>
       )}
 
@@ -10365,7 +10447,7 @@ function DashboardTab({weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artis
   );
 }
 
-function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleArtistHeard,onToggleSong,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating,onSaveLearningQuiz}){
+function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,onManualSelect,manualGenreSelect,setManualGenreSelect,onGenreSelect,onUpdateArtist,onToggleArtistHeard,onToggleSong,onCloseWeek,weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose,expandedArtist,setExpandedArtist,onClearRating,onSaveLearningQuiz,onToast}){
   const [selGenre,setSelGenre]=useState('');
   const [weekSubTab,setWeekSubTab]=useState('escucha');
   const genreObj=activeWeek?genres.find(g=>g.id===activeWeek.genreId):null;
@@ -10556,7 +10638,7 @@ function SemanaTab({activeWeek,u1,u2,genres,weeks,completedGenreIds,onGenerate,o
       </div>
 
       {weekSubTab==='aprende'&&genreObj&&(
-        <LearningPanel genre={genreObj} week={activeWeek} u1={u1} u2={u2} onSaveQuiz={onSaveLearningQuiz}/>
+        <LearningPanel genre={genreObj} week={activeWeek} u1={u1} u2={u2} onSaveQuiz={onSaveLearningQuiz} onToast={onToast}/>
       )}
 
       {weekSubTab==='escucha'&&(<>
@@ -10984,8 +11066,9 @@ function BibliotecaTab({genres,filteredGenres,genreSearch,setGenreSearch,genreFi
 }
 
 
-function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUpdateChallenge,onDeleteChallenge,onGenerateGenreChallenge}){
-  const [form,setForm]=useState({from:currentUserKey||'u1',to:(currentUserKey||'u1')==='u1'?'u2':'u1',type:'song',artistName:'',songTitle:'',genreId:'',description:'',guessMode:'score',senderScore:'',senderQualitative:'like',deadline:''});
+function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUpdateChallenge,onDeleteChallenge,onGenerateGenreChallenge,onToast}){
+  const emptyTracks=[{artistName:'',songTitle:''},{artistName:'',songTitle:''},{artistName:'',songTitle:''}];
+  const [form,setForm]=useState({from:currentUserKey||'u1',to:(currentUserKey||'u1')==='u1'?'u2':'u1',type:'song',artistName:'',songTitle:'',genreId:'',description:'',guessMode:'score',senderScore:'',senderQualitative:'like',deadline:'',tracks:emptyTracks,senderFavoriteIndex:'0',senderRanking:[0,1,2]});
   const names={u1,u2};
   const pending=(challenges||[]).filter(c=>c.status!=='completed');
   const completed=(challenges||[]).filter(c=>c.status==='completed');
@@ -10994,17 +11077,20 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   const otherPending=pending.filter(c=>c.to!==currentUserKey&&c.from!==currentUserKey);
   function resetForm(type=form.type,from=form.from){
     const to=from==='u1'?'u2':'u1';
-    setForm({from,to,type,artistName:'',songTitle:'',genreId:'',description:'',guessMode:type==='mood'?'none':'score',senderScore:'',senderQualitative:'like',deadline:''});
+    setForm({from,to,type,artistName:'',songTitle:'',genreId:'',description:'',guessMode:(type==='mood'||type==='favorite3'||type==='ranking3')?'none':'score',senderScore:'',senderQualitative:'like',deadline:'',tracks:[{artistName:'',songTitle:''},{artistName:'',songTitle:''},{artistName:'',songTitle:''}],senderFavoriteIndex:'0',senderRanking:[0,1,2]});
   }
   function submit(){
     if(form.from===form.to){alert('El reto debe enviarse al otro usuario.');return;}
     if(form.type==='genre'&&!form.genreId){alert('Selecciona un género para el reto.');return;}
     if(form.type==='song'&&(!form.artistName||!form.songTitle)){alert('Indica artista y canción.');return;}
     if(form.type==='artist'&&!form.artistName){alert('Indica artista.');return;}
+    if((form.type==='favorite3'||form.type==='ranking3')&&((form.tracks||[]).length!==3||(form.tracks||[]).some(t=>!t.artistName||!t.songTitle))){alert('Indica artista y canción para las 3 canciones.');return;}
+    if(form.type==='ranking3'&&new Set((form.senderRanking||[]).map(Number)).size!==3){alert('El ranking real debe usar las 3 canciones una vez.');return;}
     // Mood challenge: the receiver must provide the song and artist, so creator does not fill them.
     const genre=genres.find(g=>g.id===form.genreId);
     const cleanGuessMode=challengeAllowsGuess(form.type)?form.guessMode:'none';
-    onCreateChallenge({...form,guessMode:cleanGuessMode,genreName:genre?genre.name:'',status:'pending'});
+    const cleanTracks=(form.tracks||[]).map(t=>({artistName:(t.artistName||'').trim(),songTitle:(t.songTitle||'').trim()}));
+    onCreateChallenge({...form,tracks:cleanTracks,guessMode:cleanGuessMode,genreName:genre?genre.name:'',status:'pending'});
     resetForm('song',form.from);
   }
   function toggleGenreProgress(c,artistId,songIdx){
@@ -11025,9 +11111,11 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
     const [expanded,setExpanded]=useState(!(c.status==='completed'&&c.type==='genre'));
     const genre=genres.find(g=>g.id===c.genreId);
     const isSongLike=c.type==='song'||(c.type==='mood'&&(c.response?.artistName&&c.response?.songTitle||local.artistName&&local.songTitle));
+    const isThreeTrack=c.type==='favorite3'||c.type==='ranking3';
+    const trackOptions=getTrackChallengeTracks(c);
     const displayArtist=c.type==='mood'?(c.response?.artistName||local.artistName||'Canción propuesta por el retado'):c.artistName;
     const displaySong=c.type==='mood'?(c.response?.songTitle||local.songTitle||'Pendiente de elegir'):c.songTitle;
-    const title=c.type==='genre'?(c.genreName||genre?.name||'Género'):(c.type==='artist'?c.artistName:`${displayArtist} — ${displaySong}`);
+    const title=isThreeTrack?(c.type==='favorite3'?'Adivina mi favorita':'Ordena mi ranking'):c.type==='genre'?(c.genreName||genre?.name||'Género'):(c.type==='artist'?c.artistName:`${displayArtist} — ${displaySong}`);
     const canAnswer=!currentUserKey||c.to===currentUserKey||c.from===currentUserKey;
     return <div className={`challenge-card ${c.status==='completed'?'completed':'pending'}`}>
       <div className="row" style={{justifyContent:'space-between',gap:8,marginBottom:8}}>
@@ -11044,6 +11132,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
       </div>
       {c.description&&<p className="muted" style={{fontSize:12,marginBottom:8}}>{c.description}</p>}
       {c.type==='mood'&&<div className="learning-box" style={{marginBottom:8}}><div className="learning-box-title">Reto mood</div><div style={{fontSize:13}}>El retado debe elegir una canción y artista que describan su mood. Después podrá abrirla en Spotify y valorarla si quiere.</div></div>}
+      {isThreeTrack&&<div className="learning-box" style={{marginBottom:8}}><div className="learning-box-title">{c.type==='favorite3'?'Escucha las 3 y adivina la favorita':'Escucha las 3 y ordena el ranking'}</div><div className="col">{trackOptions.map((t,i)=><div key={i} className="challenge-track-box"><strong>{i+1}. {t.artistName} — {t.songTitle}</strong> <button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(t.artistName,{title:t.songTitle},e)}>▶</button></div>)}</div></div>}
       {c.guessMode==='score'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo opcional: adivinar la valoración de {names[c.from]} en puntos.</div>}
       {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12,marginBottom:8}}>Objetivo opcional: adivinar el calificativo de {names[c.from]}: de “me encantó” a “no me gustó”.</div>}
       {c.type==='genre'&&genre&&c.status==='completed'&&!expanded&&<div className="challenge-collapsed-summary">
@@ -11077,6 +11166,8 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
           <div><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Canción elegida por {names[c.to]}</label><input value={local.songTitle||''} onChange={e=>setLocal(p=>({...p,songTitle:e.target.value}))} placeholder="Canción"/></div>
           {(local.artistName&&local.songTitle)&&<div style={{gridColumn:'1/-1'}} className="challenge-track-box"><strong>{local.artistName} — {local.songTitle}</strong> <button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(local.artistName,{title:local.songTitle},e)}>▶</button></div>}
         </>}
+        {c.type==='favorite3'&&<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>¿Cuál crees que fue la favorita de {names[c.from]}?</label><select value={local.favoriteGuess??''} onChange={e=>setLocal(p=>({...p,favoriteGuess:e.target.value}))}><option value="">— Elige —</option>{trackOptions.map((t,i)=><option key={i} value={i}>{i+1}. {t.artistName} — {t.songTitle}</option>)}</select></div>}
+        {c.type==='ranking3'&&<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Tu predicción del ranking de {names[c.from]}</label><div className="grid3">{[0,1,2].map(pos=><select key={pos} value={(local.rankingGuess||[])[pos]??''} onChange={e=>setLocal(p=>{const next=[...((p.rankingGuess)||['','',''])];next[pos]=Number(e.target.value);return {...p,rankingGuess:next};})}><option value="">#{pos+1}</option>{trackOptions.map((t,i)=><option key={i} value={i}>{t.artistName} — {t.songTitle}</option>)}</select>)}</div></div>}
         <div>
           <label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Valoración del retado</label>
           <input type="number" min="0" max="10" value={local.rating||''} onChange={e=>setLocal(p=>({...p,rating:e.target.value}))} placeholder="0-10 opcional"/>
@@ -11092,15 +11183,18 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
         </div>:null}
         {c.type==='mood'&&<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Mood descrito por {names[c.to]}</label><textarea rows={2} value={local.mood||''} onChange={e=>setLocal(p=>({...p,mood:e.target.value}))} placeholder="oscuro, nostálgico, eufórico..."/></div>}
         <div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)',display:'block',marginBottom:3}}>Comentario</label><textarea rows={2} value={local.comment||''} onChange={e=>setLocal(p=>({...p,comment:e.target.value}))} placeholder="Qué te ha parecido..."/></div>
-        <button className="btn btn-primary" onClick={()=>onUpdateChallenge(c.id,{status:'completed',completedAt:new Date().toISOString(),response:{...(c.response||{}),...local}})}>Completar reto</button>
+        <button className="btn btn-primary" onClick={()=>{if(c.type==='genre'&&genre&&genreProgressStats(c,genre).pct<100){alert('Para completar un reto de género, marca todas las canciones.');return;}if(c.type==='favorite3'&&(local.favoriteGuess===''||local.favoriteGuess==null)){alert('Elige cuál crees que fue la favorita.');return;}if(c.type==='ranking3'){const rg=local.rankingGuess||[];if(rg.length!==3||rg.some(x=>x===''||x==null)||new Set(rg.map(Number)).size!==3){alert('Ordena las 3 canciones sin repetir.');return;}}const completedPatch={status:'completed',completedAt:new Date().toISOString(),response:{...(c.response||{}),...local}};const completedChallenge={...c,...completedPatch};onUpdateChallenge(c.id,completedPatch);const xp=getChallengeTotalXp(completedChallenge,genres);onToast&&onToast(xp,challengeTypeLabel(c.type));}}>Completar reto</button>
       </div>:<div className="challenge-result">
         <div style={{fontWeight:800,marginBottom:5}}>Resultado</div>
+        {c.type==='favorite3'&&<div className="muted" style={{fontSize:12}}>Favorita real: {trackOptions[Number(c.senderFavoriteIndex)]?`${trackOptions[Number(c.senderFavoriteIndex)].artistName} — ${trackOptions[Number(c.senderFavoriteIndex)].songTitle}`:'—'} · Predicción: {trackOptions[Number(c.response?.favoriteGuess)]?`${trackOptions[Number(c.response?.favoriteGuess)].artistName} — ${trackOptions[Number(c.response?.favoriteGuess)].songTitle}`:'—'} · Bonus: +{getFavorite3BonusXp(c)} XP</div>}
+        {c.type==='ranking3'&&<div className="muted" style={{fontSize:12}}>Aciertos de posición: {getRanking3Matches(c)}/3 · Bonus: +{getRanking3BonusXp(c)} XP</div>}
         {c.type==='mood'&&c.response?.artistName&&c.response?.songTitle&&<div style={{fontSize:12,marginBottom:4}}>Canción mood: <strong>{c.response.artistName} — {c.response.songTitle}</strong> <button className="spotify-btn" type="button" onClick={e=>openSpotifyForSong(c.response.artistName,{title:c.response.songTitle},e)}>▶</button></div>}
         <div className="muted" style={{fontSize:12}}>Valoración de {names[c.to]}: {c.response?.rating||'—'}</div>
-        {c.guessMode==='score'&&<div className="muted" style={{fontSize:12}}>Adivinó: {c.response?.guessScore||'—'} · Nota real de {names[c.from]}: {c.senderScore||'—'}</div>}
-        {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12}}>Adivinó: {qualitativeLabel(c.response?.guessQualitative)||'—'} · Real: {qualitativeLabel(c.senderQualitative)||'—'}</div>}
+        {c.guessMode==='score'&&<div className="muted" style={{fontSize:12}}>Adivinó: {c.response?.guessScore||'—'} · Nota real de {names[c.from]}: {c.senderScore||'—'} · {getScoreGuessLabel(c.senderScore,c.response?.guessScore)} · Bonus: +{getScoreGuessXp(c.senderScore,c.response?.guessScore)} XP</div>}
+        {c.guessMode==='qualitative'&&<div className="muted" style={{fontSize:12}}>Adivinó: {qualitativeLabel(c.response?.guessQualitative)||'—'} · Real: {qualitativeLabel(c.senderQualitative)||'—'} · Bonus: +{getQualitativeGuessXp(c.senderQualitative,c.response?.guessQualitative)} XP</div>}
         {c.response?.mood&&<div className="muted" style={{fontSize:12}}>Mood: {c.response.mood}</div>}
         {c.response?.comment&&<div style={{fontSize:12,marginTop:5}}>{c.response.comment}</div>}
+        <div className="muted" style={{fontSize:12,marginTop:5}}>XP del reto: +{getChallengeTotalXp(c,genres)}</div>
       </div>}
     </div>;
   }
@@ -11113,9 +11207,9 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
       <div className="grid2">
         <div><label style={{fontSize:12,color:'var(--muted)'}}>De</label><select value={form.from} onChange={e=>resetForm(form.type,e.target.value)}><option value="u1">{u1}</option><option value="u2">{u2}</option></select></div>
         <div><label style={{fontSize:12,color:'var(--muted)'}}>Para</label><select value={form.to} onChange={e=>setForm(p=>({...p,to:e.target.value}))}><option value="u1">{u1}</option><option value="u2">{u2}</option></select></div>
-        <div><label style={{fontSize:12,color:'var(--muted)'}}>Tipo</label><select value={form.type} onChange={e=>resetForm(e.target.value,form.from)}><option value="song">Canción</option><option value="artist">Artista</option><option value="genre">Género</option><option value="mood">Mood con canción</option></select></div>
+        <div><label style={{fontSize:12,color:'var(--muted)'}}>Tipo</label><select value={form.type} onChange={e=>resetForm(e.target.value,form.from)}><option value="song">Canción</option><option value="artist">Artista</option><option value="genre">Género</option><option value="mood">Mood con canción</option><option value="favorite3">Adivina mi favorita</option><option value="ranking3">Ordena mi ranking</option></select></div>
         {challengeAllowsGuess(form.type)&&<div><label style={{fontSize:12,color:'var(--muted)'}}>Modo de adivinanza</label><select value={form.guessMode} onChange={e=>setForm(p=>({...p,guessMode:e.target.value}))}><option value="none">Sin adivinanza</option><option value="score">Adivinar puntuación</option><option value="qualitative">Adivinar calificativo</option></select></div>}
-        {form.type==='genre'?<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)'}}>Género</label><select value={form.genreId} onChange={e=>setForm(p=>({...p,genreId:e.target.value}))}><option value="">— Selecciona —</option>{genres.map(g=><option key={g.id} value={g.id}>{g.name} · {g.parentFamily}</option>)}</select></div>:form.type==='mood'?<div style={{gridColumn:'1/-1'}} className="learning-box"><div className="learning-box-title">Mood con canción</div><div style={{fontSize:13}}>No tienes que meter canción ahora: el retado elegirá artista y canción para describir su mood.</div></div>:<>
+        {(form.type==='favorite3'||form.type==='ranking3')?<div style={{gridColumn:'1/-1'}} className="learning-box"><div className="learning-box-title">{form.type==='favorite3'?'Adivina mi favorita':'Ordena mi ranking'}</div><div className="grid2">{(form.tracks||[]).map((t,i)=><React.Fragment key={i}><div><label style={{fontSize:12,color:'var(--muted)'}}>Artista {i+1}</label><input value={t.artistName} onChange={e=>setForm(p=>({...p,tracks:p.tracks.map((x,idx)=>idx===i?{...x,artistName:e.target.value}:x)}))} placeholder="Artista"/></div><div><label style={{fontSize:12,color:'var(--muted)'}}>Canción {i+1}</label><input value={t.songTitle} onChange={e=>setForm(p=>({...p,tracks:p.tracks.map((x,idx)=>idx===i?{...x,songTitle:e.target.value}:x)}))} placeholder="Canción"/></div></React.Fragment>)}</div>{form.type==='favorite3'?<div style={{marginTop:10}}><label style={{fontSize:12,color:'var(--muted)'}}>Tu favorita real</label><select value={form.senderFavoriteIndex} onChange={e=>setForm(p=>({...p,senderFavoriteIndex:e.target.value}))}>{(form.tracks||[]).map((t,i)=><option key={i} value={i}>{i+1}. {t.artistName||'Artista'} — {t.songTitle||'Canción'}</option>)}</select></div>:<div style={{marginTop:10}}><label style={{fontSize:12,color:'var(--muted)'}}>Tu ranking real</label><div className="grid3">{[0,1,2].map(pos=><select key={pos} value={(form.senderRanking||[0,1,2])[pos]} onChange={e=>setForm(p=>{const next=[...(p.senderRanking||[0,1,2])];next[pos]=Number(e.target.value);return {...p,senderRanking:next};})}>{(form.tracks||[]).map((t,i)=><option key={i} value={i}>#{pos+1}: {t.artistName||'Artista'} — {t.songTitle||'Canción'}</option>)}</select>)}</div></div>}</div>:form.type==='genre'?<div style={{gridColumn:'1/-1'}}><label style={{fontSize:12,color:'var(--muted)'}}>Género</label><select value={form.genreId} onChange={e=>setForm(p=>({...p,genreId:e.target.value}))}><option value="">— Selecciona —</option>{genres.map(g=><option key={g.id} value={g.id}>{g.name} · {g.parentFamily}</option>)}</select></div>:form.type==='mood'?<div style={{gridColumn:'1/-1'}} className="learning-box"><div className="learning-box-title">Mood con canción</div><div style={{fontSize:13}}>No tienes que meter canción ahora: el retado elegirá artista y canción para describir su mood.</div></div>:<>
           <div><label style={{fontSize:12,color:'var(--muted)'}}>Artista</label><input value={form.artistName} onChange={e=>setForm(p=>({...p,artistName:e.target.value}))} placeholder="Artista"/></div>
           {form.type!=='artist'&&<div><label style={{fontSize:12,color:'var(--muted)'}}>Canción</label><input value={form.songTitle} onChange={e=>setForm(p=>({...p,songTitle:e.target.value}))} placeholder="Canción"/></div>}
         </>}
@@ -11240,6 +11334,13 @@ function App(){
   const [newArtistForm,setNewArtistForm]=useState(null);
   const [manualGenreSelect,setManualGenreSelect]=useState(false);
   const [viewWeek,setViewWeek]=useState(null);
+  const [xpToast,setXpToast]=useState(null);
+  const xpToastTimerRef=useRef(null);
+  const showXpToast=useCallback((amount,label)=>{
+    if(xpToastTimerRef.current)clearTimeout(xpToastTimerRef.current);
+    setXpToast({amount:Number(amount)||0,label:label||'XP ganado'});
+    xpToastTimerRef.current=setTimeout(()=>setXpToast(null),2500);
+  },[]);
 
   useEffect(()=>{
     let unsubAuth=null;
@@ -11302,7 +11403,7 @@ function App(){
     }).catch(err=>{
       console.error('Firebase ready error',err);setAuthMode('firebase_error');setSyncStatus('error');setSyncMessage(err.message||'Firebase no pudo inicializarse.');
     });
-    return()=>{cancelled=true;if(unsubAuth)unsubAuth();if(unsubscribeDocRef.current)unsubscribeDocRef.current();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);};
+    return()=>{cancelled=true;if(unsubAuth)unsubAuth();if(unsubscribeDocRef.current)unsubscribeDocRef.current();if(saveTimerRef.current)clearTimeout(saveTimerRef.current);if(xpToastTimerRef.current)clearTimeout(xpToastTimerRef.current);};
   },[]);
 
   useEffect(()=>{
@@ -11564,15 +11665,17 @@ function App(){
       </nav>
 
       <div>
-        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
-        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz}/>}
+        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} challenges={challenges} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
+        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz} onToast={showXpToast}/>}
         {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} u1={u1} u2={u2}/>}
         {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
-        {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}}/>}
-        {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
+        {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
+        {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
         {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade}/>}
       </div>
+
+      {xpToast&&<div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'12px 20px',borderRadius:999,fontWeight:900,zIndex:9999,boxShadow:'0 12px 36px rgba(0,0,0,.45)',textAlign:'center'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
 
       {/* MODALS */}
       {confirm&&confirm.type==='week'&&<ConfirmModal message="¿Eliminar esta semana? Esta acción no se puede deshacer." onConfirm={()=>deleteWeek(confirm.id)} onCancel={()=>setConfirm(null)}/>}
