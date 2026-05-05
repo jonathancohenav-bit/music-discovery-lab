@@ -302,10 +302,10 @@ function getUserKeyFromEmail(email){
 
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
 const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-4-static-active-editable-overrides';
-const CATALOG_EDIT_ARCHITECTURE_VERSION='catalog-edit-refactor-v1-0-overrides-changelog-active';
+const CATALOG_EDIT_ARCHITECTURE_VERSION='catalog-edit-refactor-v1-1-overrides-changelog-audit-scoped';
 const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-0-candidate-inactive';
-const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-2-static-catalog-editable-overrides-user-state-runtime';
-const APP_ARCHITECTURE_VERSION='app-architecture-v1-11-static-catalog-editable-overrides';
+const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-3-static-catalog-editable-overrides-audit-scoped';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-12-static-catalog-editable-overrides-audit-scoped';
 const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=false;
 
@@ -345,7 +345,7 @@ const USE_USER_STATE_CANDIDATE=false;
    - MUSIC_CATALOG is the active catalog read source.
    - USER_STATE_CANDIDATE is still inactive.
 
-   Important rule: Phase Q1.1 keeps MUSIC_CATALOG as the base read source, but the effective
+   Important rule: Phase Q1.2 keeps MUSIC_CATALOG as the base read source, but the effective
    catalog can now be extended or modified through persisted catalogOverrides,
    customCatalogItems and catalogChangeLog. USER_STATE_CANDIDATE remains inactive
    and editorial fixes are still out of scope.
@@ -387,7 +387,7 @@ const USE_USER_STATE_CANDIDATE=false;
    - MUSIC_CATALOG can become the catalog source later.
    - USER_STATE_CANDIDATE can become the user-state source later.
 
-   Important rule: Phase Q1.1 keeps USER_STATE_CANDIDATE inactive, but routes catalog reads
+   Important rule: Phase Q1.2 keeps USER_STATE_CANDIDATE inactive, but routes catalog reads
    through an effective editable catalog: MUSIC_CATALOG + catalogOverrides +
    customCatalogItems. Catalog edits are persisted and logged.
    ============================================================ */
@@ -35665,7 +35665,7 @@ function initData(){
 }
 
 /* ============================================================
-   EDITABLE CATALOG OVERLAY - PHASE Q1.1
+   EDITABLE CATALOG OVERLAY - PHASE Q1.2
 
    MUSIC_CATALOG remains the immutable base catalog shipped with the HTML.
    Runtime catalog administration is persisted separately through:
@@ -35777,7 +35777,7 @@ function prepareEditableCatalogData(data,source='migration'){
   const incomingLooksMeaningful=incoming.length>0;
   const differs=incomingLooksMeaningful&&stableAuditStringifyForCatalog(incoming)!==stableAuditStringifyForCatalog(base);
   if(!differs)return safe;
-  return updateCatalogInData(safe,auditSafeArray(safe.genres),'legacy_catalog_snapshot_migration',{source,userKey:null,note:'Migración automática Q1.1: se preserva data.genres existente como overlay editable'});
+  return updateCatalogInData(safe,auditSafeArray(safe.genres),'legacy_catalog_snapshot_migration',{source,userKey:null,note:'Migración automática Q1.2: se preserva data.genres existente como overlay editable'});
 }
 
 /* ============================================================
@@ -42588,8 +42588,23 @@ function stableAuditStringifyForLearning(value){
   return JSON.stringify(canonicalize(value||null));
 }
 function compareLegacyLearningWithStaticCandidates(data){
-  const res={ok:true,errors:[],warnings:[],stats:{total:0,matched:0,mismatched:0,missingStatic:0},details:[]};
-  const genres=Array.isArray(data&&data.genres)?data.genres:[];
+  const res={
+    ok:true,
+    errors:[],
+    warnings:[],
+    stats:{
+      version:LEARNING_ARCHITECTURE_VERSION,
+      auditScope:'base-catalog-only',
+      total:0,
+      matched:0,
+      legacyMismatched:0,
+      missingStatic:0,
+      customGenreCount:getCatalogAuditScope(data).customEffective.length,
+      customGenresExcludedFromLegacyEquivalence:getCatalogAuditScope(data).customEffective.length
+    },
+    details:[]
+  };
+  const genres=getBaseMusicCatalog();
   genres.forEach(g=>{
     const legacy=getGenreLearningLegacy(g);
     const staticLearning=getStaticGenreLearning(g&&g.id);
@@ -42597,16 +42612,21 @@ function compareLegacyLearningWithStaticCandidates(data){
     if(!staticLearning){
       res.ok=false;
       res.stats.missingStatic+=1;
-      res.errors.push({genreId:g&&g.id,genreName:g&&g.name,message:'No existe learning/quiz estático para este género'});
+      res.errors.push({genreId:g&&g.id,genreName:g&&g.name,message:'Género base sin learning/quiz estático'});
       return;
     }
     const same=stableAuditStringifyForLearning(legacy)===stableAuditStringifyForLearning(staticLearning);
     if(same)res.stats.matched+=1;
     else{
-      res.ok=false;
-      res.stats.mismatched+=1;
-      res.errors.push({genreId:g&&g.id,genreName:g&&g.name,message:'El learning estático no coincide con el legacy efectivo'});
-      res.details.push({genreId:g&&g.id,genreName:g&&g.name,legacy,staticLearning});
+      res.stats.legacyMismatched+=1;
+      res.details.push({
+        genreId:g&&g.id,
+        genreName:g&&g.name,
+        severity:'info',
+        message:'Diferencia legacy/static mantenida como diagnóstico informativo; la fuente activa es LEARNING_CONTENT + QUIZZES',
+        legacy,
+        staticLearning
+      });
     }
   });
   return res;
@@ -43108,18 +43128,27 @@ function validateLearningCoverage(data){
 }
 function validateQuizIntegrity(data){
   const res=auditMakeResult();
+  const baseIds=getBaseCatalogIdSet();
   auditSafeArray(data&&data.genres).forEach(g=>{
+    const isBase=baseIds.has(g&&g.id);
+    const hasStatic=!!getStaticGenreLearning(g&&g.id);
+    const isCustom=!isBase;
     const quiz=(getGenreLearning(g)||{}).quiz||[];
-    if(quiz.length!==3)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionCount:quiz.length,message:'Quiz efectivo con número de preguntas distinto de 3'});
+    if(quiz.length!==3)auditPush(res,isCustom?'warning':'warning',{genreId:g.id,genreName:g.name,questionCount:quiz.length,scope:isCustom?'custom_editable_genre':'base_catalog',message:isCustom?'Quiz de género editable/custom con número de preguntas distinto de 3':'Quiz efectivo con número de preguntas distinto de 3'});
     quiz.forEach((q,idx)=>{
-      if(!q.question)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin texto'});
-      if(!Array.isArray(q.options)||q.options.length<2)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin options válidas'});
-      if(!q.correct)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin correct'});
-      if(Array.isArray(q.options)&&q.correct&&!q.options.includes(q.correct))auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,correct:q.correct,options:q.options,message:'La respuesta correct no está dentro de options'});
-      if(!q.explanation)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin explanation'});
+      const severity=isCustom||!hasStatic?'warning':'error';
+      const scope=isCustom?'custom_editable_genre':'base_catalog';
+      if(!q.question)auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin texto'});
+      if(!Array.isArray(q.options)||q.options.length<2)auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin options válidas'});
+      if(!q.correct)auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin correct'});
+      if(Array.isArray(q.options)&&q.correct&&!q.options.includes(q.correct))auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,correct:q.correct,options:q.options,message:'La respuesta correct no está dentro de options'});
+      if(!q.explanation)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin explanation'});
     });
+    if(isCustom&&!hasStatic){
+      res.details.push({genreId:g.id,genreName:g.name,scope:'custom_editable_genre',message:'Género editable/custom sin QUIZZES estático; se trata como draft, no como error estructural'});
+    }
   });
-  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length};
+  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length,customDraftIssueCount:res.warnings.filter(w=>w.scope==='custom_editable_genre').length};
   return res;
 }
 function validateLearningPriorityConflicts(data){
@@ -43309,7 +43338,7 @@ function compareEffectiveCatalogWithCandidate(data){
   res.stats={
     version:CATALOG_ARCHITECTURE_VERSION,
     active:USE_STATIC_MUSIC_CATALOG,
-    phase:'Q1.1',
+    phase:'Q1.2',
     activeRuntimeSource:'getRuntimeGenres(data)',
     candidateSource:'MUSIC_CATALOG static base via buildMusicCatalogCandidate(data)',
     candidateType:'static-music-catalog-base-with-editable-overlays',
@@ -43318,7 +43347,7 @@ function compareEffectiveCatalogWithCandidate(data){
     candidateActive:USE_STATIC_MUSIC_CATALOG,
     editableOverlayActive:hasEditableOverlay,
     clarification:hasEditableOverlay
-      ? 'Q1.1 allows the effective catalog to differ from MUSIC_CATALOG base through persisted catalogOverrides/customCatalogItems. Differences are expected and logged.'
+      ? 'Q1.2 allows the effective catalog to differ from MUSIC_CATALOG base through persisted catalogOverrides/customCatalogItems. Differences are expected and logged.'
       : 'No editable overlay is active, so effective catalog should match MUSIC_CATALOG base.',
     effectiveGenreCount:effectiveGenres.length,
     candidateGenreCount:candidateGenres.length,
@@ -43412,6 +43441,27 @@ function describeCatalogArchitecture(data){
   };
 }
 
+function getBaseCatalogIdSet(){
+  return new Set(getBaseMusicCatalog().map(g=>g&&g.id).filter(Boolean));
+}
+function isBaseCatalogGenreId(genreId){
+  return getBaseCatalogIdSet().has(genreId);
+}
+function getEffectiveCatalogDataForAudit(data){
+  const safe=ensureCatalogEditState(data||{});
+  return {...safe,genres:auditDeepClone(getRuntimeGenres(safe))};
+}
+function getBaseCatalogDataForAudit(data){
+  const safe=ensureCatalogEditState(data||{});
+  return {...safe,genres:getBaseMusicCatalog()};
+}
+function getCatalogAuditScope(data){
+  const baseIds=getBaseCatalogIdSet();
+  const effective=auditSafeArray(getRuntimeGenres(data));
+  const baseEffective=effective.filter(g=>baseIds.has(g&&g.id));
+  const customEffective=effective.filter(g=>!baseIds.has(g&&g.id));
+  return {baseIds,effective,baseEffective,customEffective};
+}
 function getRuntimeGenres(data){
   if(USE_STATIC_MUSIC_CATALOG && typeof MUSIC_CATALOG!=='undefined' && Array.isArray(MUSIC_CATALOG)){
     return applyCatalogCustomizations(MUSIC_CATALOG,data);
@@ -43502,36 +43552,47 @@ function describeRuntimeAccessArchitecture(data){
 }
 
 function describeLearningArchitecture(data){
-  const genres=auditSafeArray(data&&data.genres);
+  const scope=getCatalogAuditScope(data);
+  const baseGenres=getBaseMusicCatalog();
+  const customGenres=scope.customEffective;
   const staticLearningIds=Object.keys(LEARNING_CONTENT||{});
   const staticQuizIds=Object.keys(QUIZZES||{});
-  const runtimeStaticCovered=genres.filter(g=>!!getStaticGenreLearning(g&&g.id)).length;
-  const missingStatic=genres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name}));
+  const baseStaticCovered=baseGenres.filter(g=>!!getStaticGenreLearning(g&&g.id)).length;
+  const missingStaticBase=baseGenres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name,scope:'base_catalog'}));
+  const missingStaticCustom=customGenres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name,scope:'custom_editable_genre',message:'Género editable/custom sin learning/quiz estático; tratado como draft'}));
   return {
-    ok:missingStatic.length===0,
-    errors:missingStatic.map(x=>({...x,message:'Género sin cobertura en LEARNING_CONTENT / QUIZZES'})),
-    warnings:[],
+    ok:missingStaticBase.length===0,
+    errors:missingStaticBase.map(x=>({...x,message:'Género base sin cobertura en LEARNING_CONTENT / QUIZZES'})),
+    warnings:missingStaticCustom,
     stats:{
       version:LEARNING_ARCHITECTURE_VERSION,
+      phase:'Q1.2',
+      auditScope:'base-catalog-required-custom-draft-aware',
       activeSource:'LEARNING_CONTENT + QUIZZES',
       uiSelector:'getGenreLearning(genre)',
       legacyResolver:'getGenreLearningLegacy(genre)',
       legacyStatus:'retained for validation and emergency fallback only',
       staticLearningEntries:staticLearningIds.length,
       staticQuizEntries:staticQuizIds.length,
-      runtimeGenres:genres.length,
-      runtimeStaticCovered,
-      missingStaticCount:missingStatic.length
+      baseCatalogGenres:baseGenres.length,
+      baseStaticCovered,
+      baseMissingStaticCount:missingStaticBase.length,
+      effectiveRuntimeGenres:scope.effective.length,
+      customEditableGenreCount:customGenres.length,
+      customMissingStaticCount:missingStaticCustom.length
     },
     details:{
       invariants:[
         'UI uses getGenreLearning(genre).',
         'getGenreLearning(genre) returns LEARNING_CONTENT / QUIZZES first.',
+        'Base catalog genres are required to have static Learning/Quiz coverage.',
+        'Custom/editable genres are allowed to be drafts and are not counted as structural Learning errors.',
         'getGenreLearningLegacy(genre) is retained for audit comparison and emergency fallback only.',
         'CURATED_LEARNING_BY_GENRE and embedded genre.learning are legacy validation sources, not active editorial sources.',
         'Question order and option order are preserved.'
       ],
-      missingStatic
+      missingStaticBase,
+      missingStaticCustom
     }
   };
 }
@@ -43550,9 +43611,10 @@ function describeCatalogEditArchitecture(data){
     warnings:[],
     stats:{
       version:CATALOG_EDIT_ARCHITECTURE_VERSION,
-      phase:'Q1.1',
+      phase:'Q1.2',
       baseCatalog:'MUSIC_CATALOG',
       effectiveCatalog:'MUSIC_CATALOG + catalogOverrides/customCatalogItems',
+      auditScope:'base catalog vs editable catalog separated',
       catalogEditable:true,
       resetOriginalAvailable:true,
       hasFullCatalogSnapshotOverride:hasSnapshot,
@@ -43573,7 +43635,8 @@ function describeCatalogEditArchitecture(data){
       notes:[
         'MUSIC_CATALOG is not mutated at runtime.',
         'All app-based catalog edits are persisted as an effective catalog snapshot overlay and logged in catalogChangeLog.',
-        'Reset library clears catalogOverrides/customCatalogItems and restores the original MUSIC_CATALOG base.'
+        'Reset library clears catalogOverrides/customCatalogItems and restores the original MUSIC_CATALOG base.',
+        'Q1.2 separates base catalog audit errors from editable/custom draft warnings.'
       ]
     }
   };
@@ -43636,7 +43699,9 @@ function validateArchitectureAuditPresence(report){
 }
 
 function generateSystemAuditReport(data){
-  const activeGenresForReport=auditSafeArray(getRuntimeGenres(data));
+  const activeDataForReport=getEffectiveCatalogDataForAudit(data);
+  const baseDataForLearningAudit=getBaseCatalogDataForAudit(data);
+  const activeGenresForReport=auditSafeArray(activeDataForReport&&activeDataForReport.genres);
   const legacyGenresForReport=auditSafeArray(data&&data.genres);
   const report={
     generatedAt:auditNow(),
@@ -43661,15 +43726,16 @@ function generateSystemAuditReport(data){
       catalogChangeLogCount:auditSafeArray(data&&data.catalogChangeLog).length,
       catalogOverrideActive:!!(data&&data.catalogOverrides&&Array.isArray(data.catalogOverrides.fullCatalogSnapshot)),
       customCatalogGenreCount:auditSafeArray(data&&data.customCatalogItems&&data.customCatalogItems.genres).length,
+      auditScope:'base-catalog-errors-separated-from-editable-drafts',
       weekCount:auditSafeArray(data&&data.weeks).length,
       challengeCount:auditSafeArray(data&&data.challenges).length,
       xpEventCount:auditSafeArray(data&&data.xpEvents).length
     },
-    catalog:validateCatalogShape(data),
-    duplicateGenres:validateDuplicateGenres(data),
-    artists:validateArtistIntegrity(data),
-    songs:validateSongIntegrity(data),
-    suspiciousSongs:validateSuspiciousSongTitles(data),
+    catalog:validateCatalogShape(activeDataForReport),
+    duplicateGenres:validateDuplicateGenres(activeDataForReport),
+    artists:validateArtistIntegrity(activeDataForReport),
+    songs:validateSongIntegrity(activeDataForReport),
+    suspiciousSongs:validateSuspiciousSongTitles(activeDataForReport),
     runtimeAccessArchitecture:describeRuntimeAccessArchitecture(data),
     runtimeAccessIntegrity:compareRuntimeAccessWithCurrent(data),
     catalogArchitecture:describeCatalogArchitecture(data),
@@ -43679,14 +43745,14 @@ function generateSystemAuditReport(data){
     catalogChangeLogIntegrity:validateCatalogChangeLogIntegrity(data),
     userStateArchitecture:describeUserStateArchitecture(data),
     userStateCandidateIntegrity:compareEffectiveUserStateWithCandidate(data),
-    learningArchitecture:describeLearningArchitecture(data),
-    learning:validateLearningCoverage(data),
-    quizzes:validateQuizIntegrity(data),
-    learningStaticEquivalence:compareLegacyLearningWithStaticCandidates(data),
-    learningPriority:validateLearningPriorityConflicts(data),
-    userFields:validateUserFieldsInsideCatalog(data),
-    weeks:validateWeekReferences(data),
-    challenges:validateChallengeReferences(data),
+    learningArchitecture:describeLearningArchitecture(activeDataForReport),
+    learning:validateLearningCoverage(activeDataForReport),
+    quizzes:validateQuizIntegrity(activeDataForReport),
+    learningStaticEquivalence:compareLegacyLearningWithStaticCandidates(activeDataForReport),
+    learningPriority:validateLearningPriorityConflicts(baseDataForLearningAudit),
+    userFields:validateUserFieldsInsideCatalog(activeDataForReport),
+    weeks:validateWeekReferences(activeDataForReport),
+    challenges:validateChallengeReferences(activeDataForReport),
     xp:validateXpConsistency(data),
     upgradeRisk:validateUpgradeInjectionRisk(data)
   };
