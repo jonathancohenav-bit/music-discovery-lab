@@ -308,9 +308,6 @@ const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-c
 const APP_ARCHITECTURE_VERSION='app-architecture-v1-13-static-catalog-editable-overrides-user-state-active';
 const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=true;
-const APP_LOGIC_CANARY_BUILD_MARKER='APP_LOGIC_CANARY_V1_VISIBLE_PROBE';
-window.__MUSICLAB_R2_CANARY_BUILD_MARKER=APP_LOGIC_CANARY_BUILD_MARKER;
-
 const APP_LOGIC_MAP={
   map:'APP_LOGIC_MAP_V0_1',
   version:'app-logic-map-v0-1-sections-only',
@@ -329,6 +326,25 @@ const APP_LOGIC_MAP={
   ]
 };
 window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP;
+
+const APP_COMPONENT_MAP={
+  map:'APP_COMPONENT_MAP_V0_1',
+  version:'app-component-map-v0-1-tabs-only',
+  generatedFrom:'R2.2',
+  runtimeImpact:'none',
+  description:'Mapa descriptivo mínimo que relaciona cada sección principal con su componente React actual. No controla navegación, render, auditoría principal, catálogo, estado de usuario, Firebase ni localStorage.',
+  components:[
+    {sectionId:'dashboard',componentName:'DashboardTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'semana',componentName:'SemanaTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'rankings',componentName:'RankingsTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'historial',componentName:'HistorialTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'biblioteca',componentName:'BibliotecaTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'retos',componentName:'RetosTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'perfil',componentName:'ProfileTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'ajustes',componentName:'AjustesTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'}
+  ]
+};
+window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -45040,7 +45056,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   </div>;
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportAppLogicMap}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportAppLogicMap,onExportAppComponentMap}){
   const [form,setForm]=useState({...settings});
   const [auditSummary,setAuditSummary]=useState(null);
   useEffect(()=>setForm({...settings}),[settings]);
@@ -45094,9 +45110,7 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
           <button className="btn" onClick={onExportEffectiveCatalog}>⬇ Catálogo efectivo</button>
           <button className="btn" onClick={onExportLearningSnapshot}>⬇ Learning/tests efectivos</button>
           <button className="btn" onClick={onExportStaticCatalogCandidate}>⬇ Catálogo limpio candidato</button>
-          <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato · R2C</button>
-          <button className="btn" onClick={onExportAppLogicCanary}>⬇ App Logic Canary</button>
-          <button className="btn" onClick={onExportAppLogicMap}>⬇ App Logic Map R2.1</button>
+          <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato</button>
         </div>
         <div className="learning-box" data-r2-canary-jsx="true" style={{fontSize:12,marginBottom:12}}>
           <div className="learning-box-title">R2 Canary · lógica de aplicación</div>
@@ -45111,6 +45125,13 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
             Mapa descriptivo de secciones de la app. No controla navegación, render, auditoría principal, catálogo, progreso, Firebase ni localStorage.
           </p>
           <button className="btn" onClick={onExportAppLogicMap}>⬇ Exportar App Logic Map R2.1</button>
+        </div>
+        <div className="learning-box" data-r2-component-map-jsx="true" style={{fontSize:12,marginBottom:12}}>
+          <div className="learning-box-title">R2.2 · Component Map mínimo</div>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>
+            Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación, render, auditoría principal, catálogo, progreso, Firebase ni localStorage.
+          </p>
+          <button className="btn" onClick={onExportAppComponentMap}>⬇ Exportar Component Map R2.2</button>
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
@@ -45368,10 +45389,6 @@ function App(){
   const u2=settings.user2||'Lucy';
   const currentUserKey=getUserKeyFromEmail(authUser&&authUser.email)||'u1';
   const pendingChallengeCount=challengePendingForUser(challenges,currentUserKey);
-  useEffect(()=>{
-    if(tab==='ajustes')installAppLogicCanaryRuntimeProbe();
-  },[tab]);
-
   const forceLibraryUpgrade=useCallback(()=>{
     setData(prev=>{
       if(!prev)return prev;
@@ -45599,35 +45616,18 @@ function App(){
       appLogicMap:APP_LOGIC_MAP
     });
   }
-  function installAppLogicCanaryRuntimeProbe(){
-    if(window.__MUSICLAB_R2_CANARY_PROBE_INSTALLED)return;
-    window.__MUSICLAB_R2_CANARY_PROBE_INSTALLED=true;
-    const inject=()=>{
-      try{
-        const cards=[...document.querySelectorAll('.card')];
-        const diagnosticCard=cards.find(card=>(card.textContent||'').includes('Diagnóstico avanzado, solo lectura'));
-        if(!diagnosticCard||diagnosticCard.querySelector('[data-r2-canary-probe="true"]'))return;
-        const box=document.createElement('div');
-        box.setAttribute('data-r2-canary-probe','true');
-        box.className='learning-box';
-        box.style.fontSize='12px';
-        box.style.marginBottom='12px';
-        box.innerHTML='<div class="learning-box-title">R2 Canary · runtime probe</div><p class="muted" style="font-size:12px;margin-bottom:10px">Marcador runtime independiente del JSX principal. Si ves esto, el HTML nuevo está ejecutándose.</p>';
-        const btn=document.createElement('button');
-        btn.className='btn';
-        btn.textContent='⬇ Exportar App Logic Canary, runtime probe';
-        btn.onclick=exportAppLogicCanary;
-        box.appendChild(btn);
-        const summary=diagnosticCard.querySelector('.learning-box');
-        if(summary)diagnosticCard.insertBefore(box,summary);
-        else diagnosticCard.appendChild(box);
-      }catch(e){console.warn('R2 Canary runtime probe error',e);}
-    };
-    inject();
-    window.__MUSICLAB_R2_CANARY_PROBE_TIMER=setInterval(inject,800);
+
+  function exportAppComponentMap(){
+    auditDownloadJson('musiclab_app_component_map_r2_2.json',{
+      map:'APP_COMPONENT_MAP_V0_1',
+      generatedAt:new Date().toISOString(),
+      baseAppVersion:APP_ARCHITECTURE_VERSION,
+      runtimeImpact:'none',
+      source:'APP_COMPONENT_MAP',
+      appLogicMap:APP_LOGIC_MAP,
+      componentMap:APP_COMPONENT_MAP
+    });
   }
-
-
   function importData(e){
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
@@ -45703,7 +45703,7 @@ function App(){
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
         {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
         {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportAppLogicMap={exportAppLogicMap}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportAppLogicMap={exportAppLogicMap} onExportAppComponentMap={exportAppComponentMap}/>}
       </div>
 
       {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
