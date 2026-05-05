@@ -512,6 +512,261 @@ window.__MUSICLAB_APPLICATION_LOGIC_INVENTORY_V0_1=APPLICATION_LOGIC_INVENTORY;
 
 
 /* ============================================================
+   APPLICATION LOGIC CODE DEPENDENCY AUDIT - R2.3B
+
+   Purpose:
+   - Runtime/static source audit extracted from the actual in-page Babel script.
+   - This is not a manual product inventory. It scans the current HTML script text
+     for component declarations, props, JSX usage, data references and mutation-like
+     functions.
+   - It does not control navigation, render, data persistence, Firebase, localStorage,
+     catalog, learning, quizzes, XP or user state.
+   ============================================================ */
+const APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT_VERSION='application-logic-code-dependency-audit-v0-1-runtime-source-scan';
+
+function getApplicationScriptSourceText(){
+  const scripts=Array.from(document.querySelectorAll('script[type="text/babel"]'));
+  const main=scripts.find(sc=>(sc.textContent||'').includes('function App('))||scripts[0];
+  return main?(main.textContent||''):'';
+}
+
+function countOccurrencesInText(text,needle){
+  if(!text||!needle)return 0;
+  return (text.match(new RegExp(escapeRegexForAudit(needle),'g'))||[]).length;
+}
+
+function escapeRegexForAudit(text){
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+}
+
+function extractBalancedBlockFromIndex(source,openBraceIndex){
+  if(openBraceIndex<0||source[openBraceIndex]!=='{')return '';
+  let depth=0;
+  for(let i=openBraceIndex;i<source.length;i++){
+    const ch=source[i];
+    if(ch==='{')depth++;
+    if(ch==='}'){
+      depth--;
+      if(depth===0)return source.slice(openBraceIndex+1,i);
+    }
+  }
+  return '';
+}
+
+function extractFunctionInfoFromSource(source,functionName){
+  const marker='function '+functionName;
+  const start=source.indexOf(marker);
+  if(start<0)return {name:functionName,exists:false};
+  const parenStart=source.indexOf('(',start);
+  if(parenStart<0)return {name:functionName,exists:true,signatureRaw:'',body:''};
+  let depth=0,parenEnd=-1;
+  for(let i=parenStart;i<source.length;i++){
+    const ch=source[i];
+    if(ch==='(')depth++;
+    if(ch===')'){
+      depth--;
+      if(depth===0){parenEnd=i;break;}
+    }
+  }
+  const signatureRaw=parenEnd>=0?source.slice(parenStart+1,parenEnd).trim():'';
+  const braceStart=source.indexOf('{',parenEnd>=0?parenEnd:start);
+  const body=extractBalancedBlockFromIndex(source,braceStart);
+  return {name:functionName,exists:true,signatureRaw,bodyLength:body.length,body};
+}
+
+function extractDestructuredProps(signatureRaw){
+  if(!signatureRaw)return [];
+  const t=signatureRaw.trim();
+  if(!(t.startsWith('{')&&t.endsWith('}')))return [];
+  return t.slice(1,-1).split(',').map(x=>x.trim()).filter(Boolean).map(x=>x.split(':')[0].split('=')[0].trim()).filter(Boolean);
+}
+
+function extractJsxUsageProps(source,componentName){
+  const props=[];
+  const blocks=[];
+  const rx=new RegExp('<'+escapeRegexForAudit(componentName)+'\\s+([\\s\\S]*?)(?:/?>)','g');
+  let m;
+  while((m=rx.exec(source))){
+    const raw=m[1]||'';
+    if(raw.includes('function ')||raw.length>5000)continue;
+    blocks.push(raw.trim().slice(0,1200));
+    const prx=/([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*(?:\{|"|')/g;
+    let p;
+    while((p=prx.exec(raw)))props.push(p[1]);
+  }
+  return {props:Array.from(new Set(props)),jsxBlocks:blocks};
+}
+
+function extractHookStateNames(body){
+  const out=[];
+  const rx=/const\s*\[\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*,\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\]\s*=\s*useState/g;
+  let m;
+  while((m=rx.exec(body||'')))out.push({state:m[1],setter:m[2]});
+  return out;
+}
+
+function extractReferencedTokens(body,tokens){
+  const found=[];
+  const text=body||'';
+  tokens.forEach(t=>{
+    if(new RegExp('(^|[^A-Za-z0-9_$])'+escapeRegexForAudit(t)+'([^A-Za-z0-9_$]|$)').test(text))found.push(t);
+  });
+  return found;
+}
+
+function extractCalledFunctions(body){
+  const calls=[];
+  const rx=/\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+  const ignore=new Set(['if','for','while','switch','catch','function','return','const','let','new','typeof','Math','Array','Object','String','Number','Boolean','Date','JSON','parseInt','parseFloat','encodeURIComponent','alert','confirm']);
+  let m;
+  while((m=rx.exec(body||''))){
+    const name=m[1];
+    if(!ignore.has(name))calls.push(name);
+  }
+  return Array.from(new Set(calls)).sort();
+}
+
+function analyzeComponentFromSource(source,componentName){
+  const fn=extractFunctionInfoFromSource(source,componentName);
+  const jsx=extractJsxUsageProps(source,componentName);
+  const body=fn.body||'';
+  const importantTokens=['data','settings','weeks','activeWeek','completedWeeks','completedGenreIds','challenges','xpEvents','genres','genreRankings','artistRankings','catalogOverrides','customCatalogItems','catalogChangeLog','MUSIC_CATALOG','LEARNING_CONTENT','QUIZZES','currentUserKey','update','setData','setConfirm','auditDownloadJson','generateSystemAuditReport','getRuntimeGenres','getRuntimeUserState','buildEffectiveCatalogSnapshot','buildEffectiveLearningSnapshot','buildUserStateCandidate'];
+  return {
+    componentName,
+    exists:!!fn.exists,
+    signatureRaw:fn.signatureRaw||'',
+    declaredProps:extractDestructuredProps(fn.signatureRaw||''),
+    passedPropsFromApp:jsx.props,
+    jsxUsageCount:jsx.jsxBlocks.length,
+    localState:extractHookStateNames(body),
+    hookCounts:{
+      useState:countOccurrencesInText(body,'useState('),
+      useMemo:countOccurrencesInText(body,'useMemo('),
+      useEffect:countOccurrencesInText(body,'useEffect('),
+      useCallback:countOccurrencesInText(body,'useCallback('),
+      useRef:countOccurrencesInText(body,'useRef(')
+    },
+    referencedImportantTokens:extractReferencedTokens(body,importantTokens),
+    calledFunctions:extractCalledFunctions(body).slice(0,80),
+    mutationSignals:{
+      callsUpdate:body.includes('update('),
+      callsSetData:body.includes('setData('),
+      callsSetConfirm:body.includes('setConfirm('),
+      callsAuditDownloadJson:body.includes('auditDownloadJson(')
+    },
+    bodyLength:fn.bodyLength||0,
+    extractionConfidence:fn.exists?'high':'missing'
+  };
+}
+
+function extractNamedFunctionsFromSource(source){
+  const names=[];
+  const rx=/\bfunction\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+  let m;
+  while((m=rx.exec(source)))names.push(m[1]);
+  return Array.from(new Set(names));
+}
+
+function analyzeFunctionSideEffectsFromSource(source,functionName){
+  const fn=extractFunctionInfoFromSource(source,functionName);
+  const body=fn.body||'';
+  const dataKeys=['weeks','activeWeek','completedGenreIds','challenges','xpEvents','settings','genres','catalogOverrides','customCatalogItems','catalogChangeLog','activeWeekId','completedGenreIds','quiz','ratings','comments'];
+  const runtimeAccessors=['getRuntimeGenres','getRuntimeUserState','buildEffectiveCatalogSnapshot','buildEffectiveLearningSnapshot','buildStaticCatalogCandidate','buildUserStateCandidate','generateSystemAuditReport','auditDownloadJson','updateCatalogInData','prepareEditableCatalogData','upgradeLibraryData'];
+  const mutates=body.includes('update(')||body.includes('setData(')||body.includes('setConfirm(')||body.includes('setTab(')||body.includes('setActive')||body.includes('setSelected')||body.includes('setProfile')||body.includes('setForm(');
+  return {
+    functionName,
+    signatureRaw:fn.signatureRaw||'',
+    bodyLength:fn.bodyLength||0,
+    mutationLike:mutates,
+    mutationSignals:{
+      update:body.includes('update('),
+      setData:body.includes('setData('),
+      setConfirm:body.includes('setConfirm('),
+      auditDownloadJson:body.includes('auditDownloadJson('),
+      localStorage:body.includes('localStorage'),
+      firebaseSetDoc:body.includes('setDoc('),
+      firebaseOnSnapshot:body.includes('onSnapshot(')
+    },
+    referencedDataKeys:extractReferencedTokens(body,dataKeys),
+    referencedRuntimeAccessors:extractReferencedTokens(body,runtimeAccessors),
+    calledFunctions:extractCalledFunctions(body).slice(0,60)
+  };
+}
+
+function compareManualInventoryWithCodeAudit(manualInventory,codeComponents){
+  const sections=auditSafeArray(manualInventory&&manualInventory.sections);
+  return sections.map(section=>{
+    const component=codeComponents.find(c=>c.componentName===section.componentName);
+    const combinedTokens=[...(component?.declaredProps||[]),...(component?.passedPropsFromApp||[]),...(component?.referencedImportantTokens||[]),...(component?.calledFunctions||[])].join(' ').toLowerCase();
+    const reads=auditSafeArray(section.reads);
+    const confirmedReads=reads.filter(r=>combinedTokens.includes(String(r).replace('(data)','').replace(/[^A-Za-z0-9_$]/g,'').toLowerCase())||combinedTokens.includes(String(r).split('(')[0].toLowerCase()));
+    return {
+      sectionId:section.sectionId,
+      componentName:section.componentName,
+      componentExists:!!component?.exists,
+      declaredPropsCount:(component?.declaredProps||[]).length,
+      passedPropsFromAppCount:(component?.passedPropsFromApp||[]).length,
+      manualReadsCount:reads.length,
+      confirmedManualReadsApprox:confirmedReads,
+      unconfirmedManualReadsApprox:reads.filter(r=>!confirmedReads.includes(r)),
+      manualWritesCount:auditSafeArray(section.writes).length,
+      componentMutationSignals:component?.mutationSignals||null,
+      confidence:component?.exists?'medium-static-regex':'missing-component'
+    };
+  });
+}
+
+function buildApplicationLogicCodeDependencyAudit(){
+  const source=getApplicationScriptSourceText();
+  const componentNames=auditSafeArray(APP_COMPONENT_MAP&&APP_COMPONENT_MAP.components).map(c=>c.componentName);
+  const components=componentNames.map(name=>analyzeComponentFromSource(source,name));
+  const allFunctionNames=extractNamedFunctionsFromSource(source);
+  const sideEffects=allFunctionNames.map(name=>analyzeFunctionSideEffectsFromSource(source,name));
+  const mutationLikeFunctions=sideEffects.filter(f=>f.mutationLike||f.mutationSignals.localStorage||f.mutationSignals.firebaseSetDoc||f.mutationSignals.firebaseOnSnapshot);
+  const exportFunctions=sideEffects.filter(f=>f.mutationSignals.auditDownloadJson||/^export/i.test(f.functionName)||f.functionName.includes('Export'));
+  const runtimeAccessFunctions=sideEffects.filter(f=>f.referencedRuntimeAccessors.length>0||['getRuntimeGenres','getRuntimeUserState'].includes(f.functionName));
+  return {
+    audit:'APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT_V0_1',
+    version:APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT_VERSION,
+    generatedAt:new Date().toISOString(),
+    baseAppVersion:APP_ARCHITECTURE_VERSION,
+    runtimeImpact:'none',
+    source:'runtime-babel-script-text-regex-scan',
+    sourceStats:{
+      characters:source.length,
+      functionDeclarations:allFunctionNames.length,
+      componentDeclarationsFound:components.filter(c=>c.exists).length,
+      mutationLikeFunctions:mutationLikeFunctions.length,
+      exportFunctions:exportFunctions.length,
+      runtimeAccessFunctions:runtimeAccessFunctions.length
+    },
+    appLogicMap:APP_LOGIC_MAP,
+    componentMap:APP_COMPONENT_MAP,
+    manualInventory:APPLICATION_LOGIC_INVENTORY,
+    components,
+    mutationLikeFunctions,
+    exportFunctions,
+    runtimeAccessFunctions,
+    comparisonAgainstR23Inventory:compareManualInventoryWithCodeAudit(APPLICATION_LOGIC_INVENTORY,components),
+    limitations:[
+      'Static regex scan of the current in-page Babel script, not a full AST parser.',
+      'Confirms declarations, props, function calls and token references visible in source text.',
+      'Does not prove semantic equivalence yet; it prepares the next candidate view model audit.'
+    ],
+    nextStep:{
+      phase:'R2.4 Candidate Application Logic Shell',
+      onlyAfter:'Review this code dependency audit and use DashboardTab/App prop extraction to build getDashboardViewModelCandidate(data).',
+      firstCandidate:'getDashboardViewModelCandidate(data)',
+      firstComparison:'compareDashboardViewModel(data)',
+      activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',
+      activationDefault:false
+    }
+  };
+}
+window.__MUSICLAB_BUILD_APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT=buildApplicationLogicCodeDependencyAudit;
+
+
+/* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
 
    ACTIVE SOURCE:
@@ -45221,7 +45476,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   </div>;
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportAppLogicMap,onExportAppComponentMap,onExportApplicationLogicInventory}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportAppLogicMap,onExportAppComponentMap,onExportApplicationLogicInventory,onExportApplicationLogicCodeDependencyAudit}){
   const [form,setForm]=useState({...settings});
   const [auditSummary,setAuditSummary]=useState(null);
   useEffect(()=>setForm({...settings}),[settings]);
@@ -45304,6 +45559,13 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
             Inventario real de responsabilidades por sección: lecturas, escrituras, cálculos derivados, acciones, riesgos, candidatos necesarios y prioridad de migración. No activa lógica candidata.
           </p>
           <button className="btn" onClick={onExportApplicationLogicInventory}>⬇ Exportar Application Logic Inventory R2.3</button>
+        </div>
+        <div className="learning-box" data-r2-3b-code-dependency-audit-jsx="true" style={{fontSize:12,marginBottom:12}}>
+          <div className="learning-box-title">R2.3B · Code Dependency Audit real</div>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>
+            Auditoría estática generada desde el script real cargado en runtime: componentes, props declaradas, props pasadas desde App, funciones mutation-like, exports y referencias a datos críticos. No activa lógica nueva.
+          </p>
+          <button className="btn" onClick={onExportApplicationLogicCodeDependencyAudit}>⬇ Exportar Code Dependency Audit R2.3B</button>
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
@@ -45813,6 +46075,9 @@ function App(){
       applicationLogicInventory:APPLICATION_LOGIC_INVENTORY
     });
   }
+  function exportApplicationLogicCodeDependencyAudit(){
+    auditDownloadJson('musiclab_application_logic_code_dependency_audit_r2_3b.json',buildApplicationLogicCodeDependencyAudit());
+  }
   function importData(e){
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
@@ -45888,7 +46153,7 @@ function App(){
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
         {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
         {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportAppLogicMap={exportAppLogicMap} onExportAppComponentMap={exportAppComponentMap} onExportApplicationLogicInventory={exportApplicationLogicInventory}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportAppLogicMap={exportAppLogicMap} onExportAppComponentMap={exportAppComponentMap} onExportApplicationLogicInventory={exportApplicationLogicInventory} onExportApplicationLogicCodeDependencyAudit={exportApplicationLogicCodeDependencyAudit}/>}
       </div>
 
       {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
