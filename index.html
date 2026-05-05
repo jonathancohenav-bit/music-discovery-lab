@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Music Discovery Lab 🎵</title>
+<title>Music Discovery Lab · R2.3-HARD-VISIBLE-2026-05-05-1459</title>
 <script>
 (function(){var w=console.warn;console.warn=function(){var m=arguments[0];if(typeof m==='string'&&m.indexOf('in-browser Babel transformer')>-1)return;return w.apply(console,arguments);};})();
 </script>
@@ -23,7 +23,7 @@ body{font-family:'Circular','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',
   --c1:var(--green);--c2:var(--green);--c3:rgba(29,185,84,.15);--c4:var(--green-dark);
   --success:var(--green);--muted:var(--text-sub);
 }
-.app{max-width:1280px;margin:0 auto;padding:16px;background:var(--gradient);min-height:100vh}
+.app{max-width:1280px;margin:0 auto;padding:64px 16px 16px;background:var(--gradient);min-height:100vh}
 /* NAV */
 .nav{display:flex;gap:8px;padding:6px;background:rgba(0,0,0,.5);backdrop-filter:blur(20px);border-radius:500px;margin-bottom:24px;overflow-x:auto;flex-wrap:wrap;border:1px solid var(--border)}
 .nav-btn{padding:10px 20px;border:none;background:transparent;border-radius:500px;cursor:pointer;font-size:14px;color:var(--text-sub);white-space:nowrap;transition:all .2s;font-family:inherit;font-weight:600}
@@ -239,18 +239,19 @@ textarea{resize:vertical}
 </style>
 </head>
 <body>
-<div id="mdl-hard-runtime-banner" style="position:fixed;right:12px;bottom:12px;z-index:99999;background:#0b2f18;color:#1ED760;border:1px solid rgba(29,185,84,.65);border-radius:999px;padding:7px 11px;font-family:Arial,sans-serif;font-size:11px;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.45)">
-  🧪 R2.2 HTML cargado · v1-14 · appLogic ON
+<div id="mdl-hard-runtime-banner" style="position:fixed;left:0;right:0;top:0;z-index:2147483647;background:#1DB954;color:#000;border-bottom:4px solid #fff;padding:12px 16px;font-family:Arial,sans-serif;font-size:15px;font-weight:900;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.65)">
+  🧪 R2.3-HARD-VISIBLE-2026-05-05-1459 · HTML NUEVO CARGADO · SI VES ESTO, GITHUB ESTÁ SIRVIENDO EL ARCHIVO CORRECTO
 </div>
 <script>
+window.__MDL_BUILD_ID__ = "R2.3-HARD-VISIBLE-2026-05-05-1459";
 window.__MDL_HTML_STATIC_SELF_CHECK__ = {
-  marker: "R2.2 HTML cargado",
-  app: "app-architecture-v1-14-app-logic-declarative-map-inactive",
-  appLogic: "app-logic-refactor-v1-0-declarative-map-inactive",
+  marker: "R2.3-HARD-VISIBLE-2026-05-05-1459",
+  app: "app-architecture-v1-15-r2-hard-visible-runtime-check",
+  appLogic: "app-logic-refactor-v1-1-hard-visible-runtime-check",
   injectedAt: "static-html-before-react"
 };
 </script>
-<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:#888">Cargando Music Discovery Lab…</div></div>
+<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:#888">Cargando Music Discovery Lab… · R2.3-HARD-VISIBLE-2026-05-05-1459</div></div>
 <script>
 window.addEventListener('error',function(e){
   var r=document.getElementById('root');
@@ -313,12 +314,87 @@ function getUserKeyFromEmail(email){
 
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
 const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-4-static-active-editable-overrides';
-const CATALOG_EDIT_ARCHITECTURE_VERSION='catalog-edit-refactor-v1-0-overrides-changelog-active';
-const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-0-candidate-inactive';
-const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-2-static-catalog-editable-overrides-user-state-runtime';
-const APP_ARCHITECTURE_VERSION='app-architecture-v1-11-static-catalog-editable-overrides';
+const CATALOG_EDIT_ARCHITECTURE_VERSION='catalog-edit-refactor-v1-1-overrides-changelog-audit-scoped';
+const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-1-candidate-active';
+const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-catalog-editable-overrides-user-state-active';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-15-r2-hard-visible-runtime-check';
 const USE_STATIC_MUSIC_CATALOG=true;
-const USE_USER_STATE_CANDIDATE=false;
+const USE_USER_STATE_CANDIDATE=true;
+
+/* ============================================================
+   APP LOGIC ARCHITECTURE STATUS
+
+   PHASE R2:
+   - Adds a declarative map of application sections, component ownership
+     and product-rule domains.
+   - Audit/report only. Runtime navigation, rendering, component props,
+     XP, library, active week, profile, rankings, history and settings
+     continue to work through the existing implementation.
+   - Do not activate APP_SECTIONS as the navigation source until a later
+     validated phase.
+   ============================================================ */
+const APP_LOGIC_ARCHITECTURE_VERSION='app-logic-refactor-v1-1-hard-visible-runtime-check';
+const USE_APP_SECTIONS_CONFIG=false;
+
+// Runtime self-check exposed for Settings and browser console diagnostics.
+if(typeof window!=='undefined'){
+  window.__MDL_APP_VERSION__=APP_ARCHITECTURE_VERSION;
+  window.__MDL_APP_LOGIC_VERSION__=APP_LOGIC_ARCHITECTURE_VERSION;
+  window.__MDL_RUNTIME_SELF_CHECK__={
+    app:APP_ARCHITECTURE_VERSION,
+    appLogic:APP_LOGIC_ARCHITECTURE_VERSION,
+    useStaticMusicCatalog:USE_STATIC_MUSIC_CATALOG,
+    useUserStateCandidate:USE_USER_STATE_CANDIDATE,
+    useAppSectionsConfig:USE_APP_SECTIONS_CONFIG,
+    buildId:"R2.3-HARD-VISIBLE-2026-05-05-1459"
+  };
+}
+
+const APP_SECTIONS=Object.freeze([
+  {id:'dashboard',label:'Dashboard',icon:'🏠',componentName:'DashboardTab',runtimeTabId:'dashboard',description:'Panel principal con métricas, semana activa, progreso comparado, rankings resumidos y tarjetas de usuario.'},
+  {id:'semana',label:'Semana activa',icon:'🎧',componentName:'SemanaTab',runtimeTabId:'semana',description:'Semana activa con escucha, Aprende, test, Spotify, marcado por usuario, cierre y valoración.'},
+  {id:'rankings',label:'Rankings',icon:'🏆',componentName:'RankingsTab',runtimeTabId:'rankings',description:'Rankings de géneros, artistas, comparativas, coincidencias, diferencias y señales derivadas.'},
+  {id:'historial',label:'Historial',icon:'📚',componentName:'HistorialTab',runtimeTabId:'historial',description:'Historial de semanas completadas, detalle, ratings, comentarios y acciones de borrado/ver.'},
+  {id:'biblioteca',label:'Biblioteca',icon:'🎼',componentName:'BibliotecaTab',runtimeTabId:'biblioteca',description:'Biblioteca musical efectiva con géneros, artistas, canciones, Aprende, tests, búsqueda, filtros y edición/importación.'},
+  {id:'retos',label:'Retos',icon:'🎯',componentName:'RetosTab',runtimeTabId:'retos',description:'Retos manuales y generados, progreso, validación, resultados y XP asociado.'},
+  {id:'perfil',label:'Perfil',icon:'👤',componentName:'ProfileTab',runtimeTabId:'perfil',description:'Perfil de Jonathan y Lucy con XP, niveles, mascota, insignias, estadísticas y progreso personal.'},
+  {id:'ajustes',label:'Ajustes',icon:'⚙️',componentName:'AjustesTab',runtimeTabId:'ajustes',description:'Ajustes, backup, importación/exportación, reset, biblioteca original, diagnósticos y herramientas técnicas.'}
+]);
+
+const APP_COMPONENT_MAP=Object.freeze({
+  App:{layer:'app-shell',responsibility:'orquestación actual de estado, autenticación, persistencia, tabs, modales, acciones y paso de props'},
+  DashboardTab:{sectionId:'dashboard',layer:'view',status:'active-runtime-component'},
+  SemanaTab:{sectionId:'semana',layer:'view',status:'active-runtime-component'},
+  RankingsTab:{sectionId:'rankings',layer:'view',status:'active-runtime-component'},
+  HistorialTab:{sectionId:'historial',layer:'view',status:'active-runtime-component'},
+  BibliotecaTab:{sectionId:'biblioteca',layer:'view',status:'active-runtime-component'},
+  RetosTab:{sectionId:'retos',layer:'view',status:'active-runtime-component'},
+  ProfileTab:{sectionId:'perfil',layer:'view',status:'active-runtime-component'},
+  AjustesTab:{sectionId:'ajustes',layer:'view',status:'active-runtime-component'},
+  XpUserCard:{sectionId:'perfil',layer:'shared-view',status:'active-runtime-component'},
+  LearningPanel:{sectionId:'semana',layer:'shared-view',status:'active-runtime-component'},
+  LearningSummaryCard:{sectionId:'biblioteca/semana',layer:'shared-view',status:'active-runtime-component'},
+  LibraryTestPreview:{sectionId:'biblioteca',layer:'shared-view',status:'active-runtime-component'},
+  ChallengeCard:{sectionId:'retos',layer:'shared-view',status:'active-runtime-component'},
+  GenreEditModal:{sectionId:'biblioteca',layer:'modal',status:'active-runtime-component'},
+  ArtistEditModal:{sectionId:'biblioteca/semana',layer:'modal',status:'active-runtime-component'},
+  WeekDetailModal:{sectionId:'historial',layer:'modal',status:'active-runtime-component'},
+  ConfirmModal:{sectionId:'shared',layer:'modal',status:'active-runtime-component'},
+  AuthGate:{sectionId:'auth',layer:'gate',status:'active-runtime-component'},
+  CloudStatusPill:{sectionId:'shared',layer:'status',status:'active-runtime-component'}
+});
+
+const PRODUCT_RULE_DOMAINS=Object.freeze({
+  xp:{status:'existing-runtime-helpers-active',ruleOwners:['getTestXp','getScoreGuessXp','getQualitativeGuessXp','getFavorite3BonusXp','getRanking3BonusXp','getChallengeBaseXp','getChallengeBonusXp','getChallengeSongXp','getChallengeTotalXp','awardXp','getUserGamificationStats']},
+  levels:{status:'existing-runtime-helpers-active',ruleOwners:['getLevelForXp','getNextLevelInfo','getUserGamificationStats']},
+  mascot:{status:'existing-runtime-helpers-active',ruleOwners:['getMascotForLevel','getNextMascotForLevel','XpUserCard','showLevelToast']},
+  achievements:{status:'existing-runtime-helpers-active',ruleOwners:['ACHIEVEMENT_DEFS','getUserGamificationStats','XpUserCard']},
+  activeWeek:{status:'existing-runtime-functions-active',ruleOwners:['generateWeek','randomGenre','toggleSong','toggleArtistHeard','updateArtist','updateLearningQuiz','closeWeek']},
+  library:{status:'effective-catalog-runtime-active',ruleOwners:['getRuntimeGenres','getEffectiveEditableCatalog','saveEffectiveCatalogSnapshot','resetLibraryNow','forceLibraryUpgrade']},
+  challenges:{status:'existing-runtime-functions-active',ruleOwners:['createChallenge','updateChallenge','deleteChallenge','generateGenreChallenge','ChallengeCard']},
+  spotify:{status:'isolated-helper-active',ruleOwners:['buildSpotifySearchUrl','getSpotifyUrl','openSpotifyForSong']},
+  persistence:{status:'existing-container-persistence-active',ruleOwners:['loadData','saveData','Firebase onSnapshot','Firebase setDoc','upgradeLibraryData']}
+});
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -354,11 +430,11 @@ const USE_USER_STATE_CANDIDATE=false;
    Current catalog route:
    - static-music-catalog-active-editable-overrides
    - MUSIC_CATALOG is the active catalog read source.
-   - USER_STATE_CANDIDATE is still inactive.
+   - USER_STATE_CANDIDATE is active as the user-state read route.
 
-   Important rule: Phase Q1.1 keeps MUSIC_CATALOG as the base read source, but the effective
+   Important rule: Phase Q1.2 keeps MUSIC_CATALOG as the base read source, but the effective
    catalog can now be extended or modified through persisted catalogOverrides,
-   customCatalogItems and catalogChangeLog. USER_STATE_CANDIDATE remains inactive
+   customCatalogItems and catalogChangeLog. USER_STATE_CANDIDATE is active as read route
    and editorial fixes are still out of scope.
    ============================================================ */
 
@@ -377,11 +453,11 @@ const USE_USER_STATE_CANDIDATE=false;
 
    Current user-state candidate type:
    - runtime-derived-user-state-candidate
-   - inactive
+   - active read route
    - extracted from the effective runtime data object
 
-   Important rule: Phase O does NOT activate a separated persistence model yet.
-   It only proves that all current non-catalog state can be isolated and audited
+   Important rule: Phase Q2 activates the separated user-state read route without migrating persistence yet.
+   It keeps all current non-catalog state isolated and audited
    before MUSIC_CATALOG is activated in a later phase.
    ============================================================ */
 
@@ -392,13 +468,13 @@ const USE_USER_STATE_CANDIDATE=false;
    - getRuntimeGenres(data) returns MUSIC_CATALOG because
      USE_STATIC_MUSIC_CATALOG is true.
    - getRuntimeUserState(data) still returns the current effective
-     user-state snapshot because USE_USER_STATE_CANDIDATE is false.
+     user-state snapshot because USE_USER_STATE_CANDIDATE is true.
 
    INACTIVE CANDIDATE ROUTES:
    - MUSIC_CATALOG can become the catalog source later.
    - USER_STATE_CANDIDATE can become the user-state source later.
 
-   Important rule: Phase Q1.1 keeps USER_STATE_CANDIDATE inactive, but routes catalog reads
+   Important rule: Phase Q1.2 keeps USER_STATE_CANDIDATE inactive, but routes catalog reads
    through an effective editable catalog: MUSIC_CATALOG + catalogOverrides +
    customCatalogItems. Catalog edits are persisted and logged.
    ============================================================ */
@@ -35676,7 +35752,7 @@ function initData(){
 }
 
 /* ============================================================
-   EDITABLE CATALOG OVERLAY - PHASE Q1.1
+   EDITABLE CATALOG OVERLAY - PHASE Q1.2
 
    MUSIC_CATALOG remains the immutable base catalog shipped with the HTML.
    Runtime catalog administration is persisted separately through:
@@ -35788,7 +35864,7 @@ function prepareEditableCatalogData(data,source='migration'){
   const incomingLooksMeaningful=incoming.length>0;
   const differs=incomingLooksMeaningful&&stableAuditStringifyForCatalog(incoming)!==stableAuditStringifyForCatalog(base);
   if(!differs)return safe;
-  return updateCatalogInData(safe,auditSafeArray(safe.genres),'legacy_catalog_snapshot_migration',{source,userKey:null,note:'Migración automática Q1.1: se preserva data.genres existente como overlay editable'});
+  return updateCatalogInData(safe,auditSafeArray(safe.genres),'legacy_catalog_snapshot_migration',{source,userKey:null,note:'Migración automática Q1.2: se preserva data.genres existente como overlay editable'});
 }
 
 /* ============================================================
@@ -42599,8 +42675,23 @@ function stableAuditStringifyForLearning(value){
   return JSON.stringify(canonicalize(value||null));
 }
 function compareLegacyLearningWithStaticCandidates(data){
-  const res={ok:true,errors:[],warnings:[],stats:{total:0,matched:0,mismatched:0,missingStatic:0},details:[]};
-  const genres=Array.isArray(data&&data.genres)?data.genres:[];
+  const res={
+    ok:true,
+    errors:[],
+    warnings:[],
+    stats:{
+      version:LEARNING_ARCHITECTURE_VERSION,
+      auditScope:'base-catalog-only',
+      total:0,
+      matched:0,
+      legacyMismatched:0,
+      missingStatic:0,
+      customGenreCount:getCatalogAuditScope(data).customEffective.length,
+      customGenresExcludedFromLegacyEquivalence:getCatalogAuditScope(data).customEffective.length
+    },
+    details:[]
+  };
+  const genres=getBaseMusicCatalog();
   genres.forEach(g=>{
     const legacy=getGenreLearningLegacy(g);
     const staticLearning=getStaticGenreLearning(g&&g.id);
@@ -42608,16 +42699,21 @@ function compareLegacyLearningWithStaticCandidates(data){
     if(!staticLearning){
       res.ok=false;
       res.stats.missingStatic+=1;
-      res.errors.push({genreId:g&&g.id,genreName:g&&g.name,message:'No existe learning/quiz estático para este género'});
+      res.errors.push({genreId:g&&g.id,genreName:g&&g.name,message:'Género base sin learning/quiz estático'});
       return;
     }
     const same=stableAuditStringifyForLearning(legacy)===stableAuditStringifyForLearning(staticLearning);
     if(same)res.stats.matched+=1;
     else{
-      res.ok=false;
-      res.stats.mismatched+=1;
-      res.errors.push({genreId:g&&g.id,genreName:g&&g.name,message:'El learning estático no coincide con el legacy efectivo'});
-      res.details.push({genreId:g&&g.id,genreName:g&&g.name,legacy,staticLearning});
+      res.stats.legacyMismatched+=1;
+      res.details.push({
+        genreId:g&&g.id,
+        genreName:g&&g.name,
+        severity:'info',
+        message:'Diferencia legacy/static mantenida como diagnóstico informativo; la fuente activa es LEARNING_CONTENT + QUIZZES',
+        legacy,
+        staticLearning
+      });
     }
   });
   return res;
@@ -42812,16 +42908,21 @@ function buildUserStateCandidate(data){
   const candidate={
     generatedAt:auditNow(),
     version:USER_STATE_ARCHITECTURE_VERSION,
-    source:'runtime:data-user-state',
-    active:false,
+    source:USE_USER_STATE_CANDIDATE?'runtime:USER_STATE_CANDIDATE_ACTIVE':'runtime:data-user-state',
+    active:USE_USER_STATE_CANDIDATE,
     candidateType:'runtime-derived-user-state-candidate',
-    candidateStatus:'inactive, validation-only',
+    candidateStatus:USE_USER_STATE_CANDIDATE?'active runtime user-state source, validation enabled':'inactive, validation-only',
     settings:auditDeepClone(data&&data.settings||{}),
     weeks:auditDeepClone(data&&data.weeks||[]),
     activeWeekId:data&&data.activeWeekId||null,
     completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
     challenges:auditDeepClone(data&&data.challenges||[]),
     xpEvents:auditDeepClone(data&&data.xpEvents||[]),
+    catalogEditState:{
+      catalogOverrides:auditDeepClone(data&&data.catalogOverrides||{}),
+      customCatalogItems:auditDeepClone(data&&data.customCatalogItems||{}),
+      catalogChangeLog:auditDeepClone(data&&data.catalogChangeLog||[])
+    },
     catalogEmbeddedUserState:{
       artistUserState:extractArtistUserState(genres),
       songUserState:extractSongUserState(genres)
@@ -42833,6 +42934,9 @@ function buildUserStateCandidate(data){
     completedGenreCount:auditSafeArray(candidate.completedGenreIds).length,
     challengeCount:auditSafeArray(candidate.challenges).length,
     xpEventCount:auditSafeArray(candidate.xpEvents).length,
+    catalogChangeLogCount:auditSafeArray(candidate.catalogEditState&&candidate.catalogEditState.catalogChangeLog).length,
+    catalogOverridesKeyCount:Object.keys(candidate.catalogEditState&&candidate.catalogEditState.catalogOverrides||{}).length,
+    customCatalogGenreCount:auditSafeArray(candidate.catalogEditState&&candidate.catalogEditState.customCatalogItems&&candidate.catalogEditState.customCatalogItems.genres).length,
     catalogArtistUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.artistUserState||{}).length,
     catalogSongUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.songUserState||{}).length
   };
@@ -42857,6 +42961,11 @@ function buildEffectiveUserStateSnapshot(data){
     completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
     challenges:auditDeepClone(data&&data.challenges||[]),
     xpEvents:auditDeepClone(data&&data.xpEvents||[]),
+    catalogEditState:{
+      catalogOverrides:auditDeepClone(data&&data.catalogOverrides||{}),
+      customCatalogItems:auditDeepClone(data&&data.customCatalogItems||{}),
+      catalogChangeLog:auditDeepClone(data&&data.catalogChangeLog||[])
+    },
     catalogEmbeddedUserState:{
       artistUserState:extractArtistUserState(genres),
       songUserState:extractSongUserState(genres)
@@ -42874,6 +42983,7 @@ function compareEffectiveUserStateWithCandidate(data){
     'completedGenreIds',
     'challenges',
     'xpEvents',
+    'catalogEditState',
     'catalogEmbeddedUserState'
   ];
   const matchedSections=[];
@@ -42885,12 +42995,12 @@ function compareEffectiveUserStateWithCandidate(data){
   });
   const stats={
     version:USER_STATE_ARCHITECTURE_VERSION,
-    active:false,
-    candidateActive:false,
-    activeUserStateSource:'data runtime object',
+    active:USE_USER_STATE_CANDIDATE,
+    candidateActive:USE_USER_STATE_CANDIDATE,
+    activeUserStateSource:USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE via getRuntimeUserState(data)':'data runtime object',
     candidateSource:'buildUserStateCandidate(data)',
     candidateType:'runtime-derived-user-state-candidate',
-    candidateStatus:'inactive, validation-only',
+    candidateStatus:USE_USER_STATE_CANDIDATE?'active runtime user-state source, validation enabled':'inactive, validation-only',
     comparedSectionCount:sections.length,
     matchedSectionCount:matchedSections.length,
     mismatchedSectionCount:mismatchedSections.length,
@@ -42903,6 +43013,8 @@ function compareEffectiveUserStateWithCandidate(data){
     candidateChallengeCount:auditSafeArray(candidate.challenges).length,
     effectiveXpEventCount:auditSafeArray(effective.xpEvents).length,
     candidateXpEventCount:auditSafeArray(candidate.xpEvents).length,
+    effectiveCatalogChangeLogCount:auditSafeArray(effective.catalogEditState&&effective.catalogEditState.catalogChangeLog).length,
+    candidateCatalogChangeLogCount:auditSafeArray(candidate.catalogEditState&&candidate.catalogEditState.catalogChangeLog).length,
     effectiveCatalogArtistUserStateCount:Object.keys(effective.catalogEmbeddedUserState.artistUserState||{}).length,
     candidateCatalogArtistUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.artistUserState||{}).length,
     effectiveCatalogSongUserStateCount:Object.keys(effective.catalogEmbeddedUserState.songUserState||{}).length,
@@ -42925,16 +43037,19 @@ function describeUserStateArchitecture(data){
     warnings:[],
     stats:{
       version:USER_STATE_ARCHITECTURE_VERSION,
-      activeSource:'data runtime object',
+      activeSource:USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE via getRuntimeUserState(data)':'data runtime object',
       candidateSource:'buildUserStateCandidate(data)',
-      candidateStatus:'inactive, validation-only, runtime-derived',
+      candidateStatus:USE_USER_STATE_CANDIDATE?'active runtime user-state source, validation enabled':'inactive, validation-only, runtime-derived',
       candidateType:'runtime-derived-user-state-candidate',
-      candidateActive:false,
+      candidateActive:USE_USER_STATE_CANDIDATE,
       settingsKeyCount:candidate.stats.settingsKeyCount,
       weekCount:candidate.stats.weekCount,
       completedGenreCount:candidate.stats.completedGenreCount,
       challengeCount:candidate.stats.challengeCount,
       xpEventCount:candidate.stats.xpEventCount,
+      catalogChangeLogCount:candidate.stats.catalogChangeLogCount,
+      catalogOverridesKeyCount:candidate.stats.catalogOverridesKeyCount,
+      customCatalogGenreCount:candidate.stats.customCatalogGenreCount,
       catalogArtistUserStateCount:candidate.stats.catalogArtistUserStateCount,
       catalogSongUserStateCount:candidate.stats.catalogSongUserStateCount,
       equivalenceOk:equivalence.ok,
@@ -42943,9 +43058,9 @@ function describeUserStateArchitecture(data){
     },
     details:{
       controlledNotices:[
-        'User state candidate is runtime-derived and inactive.',
-        'Phase O does not change persistence or activate a split data model.',
-        'The candidate is intended to prove that non-catalog state can be isolated before MUSIC_CATALOG activation.'
+        USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE is runtime-derived and active as the app user-state read route.':'User state candidate is runtime-derived and inactive.',
+        USE_USER_STATE_CANDIDATE?'Phase Q2 activates the user-state read route without changing Firestore/localStorage schema.':'Phase O does not change persistence or activate a split data model.',
+        'The candidate proves that non-catalog state can be isolated while data remains the persistence object.'
       ],
       stateSections:[
         'settings',
@@ -42954,6 +43069,7 @@ function describeUserStateArchitecture(data){
         'completedGenreIds',
         'challenges',
         'xpEvents',
+        'catalogEditState',
         'catalogEmbeddedUserState'
       ],
       intendedSeparation:{
@@ -42961,10 +43077,10 @@ function describeUserStateArchitecture(data){
         userState:'USER_STATE_CANDIDATE should own settings, weeks, completion, challenges, XP and user-specific flags.'
       },
       invariants:[
-        'The app still reads and saves the existing data object.',
-        'No Firestore/localStorage schema migration is activated in Phase O.',
-        'No catalog, learning, XP, week or challenge content is edited in Phase O.',
-        'MUSIC_CATALOG remains inactive.'
+        'The app still saves the existing data object as the persistence container.',
+        'No Firestore/localStorage schema migration is activated in Phase Q2.',
+        'No catalog, learning, XP, week or challenge content is edited in Phase Q2.',
+        'MUSIC_CATALOG remains active with editable overlays; USER_STATE_CANDIDATE is active as read route.'
       ],
       equivalenceStats:equivalence.stats
     }
@@ -43119,18 +43235,27 @@ function validateLearningCoverage(data){
 }
 function validateQuizIntegrity(data){
   const res=auditMakeResult();
+  const baseIds=getBaseCatalogIdSet();
   auditSafeArray(data&&data.genres).forEach(g=>{
+    const isBase=baseIds.has(g&&g.id);
+    const hasStatic=!!getStaticGenreLearning(g&&g.id);
+    const isCustom=!isBase;
     const quiz=(getGenreLearning(g)||{}).quiz||[];
-    if(quiz.length!==3)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionCount:quiz.length,message:'Quiz efectivo con número de preguntas distinto de 3'});
+    if(quiz.length!==3)auditPush(res,isCustom?'warning':'warning',{genreId:g.id,genreName:g.name,questionCount:quiz.length,scope:isCustom?'custom_editable_genre':'base_catalog',message:isCustom?'Quiz de género editable/custom con número de preguntas distinto de 3':'Quiz efectivo con número de preguntas distinto de 3'});
     quiz.forEach((q,idx)=>{
-      if(!q.question)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin texto'});
-      if(!Array.isArray(q.options)||q.options.length<2)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin options válidas'});
-      if(!q.correct)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin correct'});
-      if(Array.isArray(q.options)&&q.correct&&!q.options.includes(q.correct))auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,correct:q.correct,options:q.options,message:'La respuesta correct no está dentro de options'});
-      if(!q.explanation)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin explanation'});
+      const severity=isCustom||!hasStatic?'warning':'error';
+      const scope=isCustom?'custom_editable_genre':'base_catalog';
+      if(!q.question)auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin texto'});
+      if(!Array.isArray(q.options)||q.options.length<2)auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin options válidas'});
+      if(!q.correct)auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin correct'});
+      if(Array.isArray(q.options)&&q.correct&&!q.options.includes(q.correct))auditPush(res,severity,{genreId:g.id,genreName:g.name,questionIndex:idx,scope,correct:q.correct,options:q.options,message:'La respuesta correct no está dentro de options'});
+      if(!q.explanation)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionIndex:idx,scope,message:'Pregunta sin explanation'});
     });
+    if(isCustom&&!hasStatic){
+      res.details.push({genreId:g.id,genreName:g.name,scope:'custom_editable_genre',message:'Género editable/custom sin QUIZZES estático; se trata como draft, no como error estructural'});
+    }
   });
-  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length};
+  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length,customDraftIssueCount:res.warnings.filter(w=>w.scope==='custom_editable_genre').length};
   return res;
 }
 function validateLearningPriorityConflicts(data){
@@ -43320,7 +43445,7 @@ function compareEffectiveCatalogWithCandidate(data){
   res.stats={
     version:CATALOG_ARCHITECTURE_VERSION,
     active:USE_STATIC_MUSIC_CATALOG,
-    phase:'Q1.1',
+    phase:'Q1.2',
     activeRuntimeSource:'getRuntimeGenres(data)',
     candidateSource:'MUSIC_CATALOG static base via buildMusicCatalogCandidate(data)',
     candidateType:'static-music-catalog-base-with-editable-overlays',
@@ -43329,7 +43454,7 @@ function compareEffectiveCatalogWithCandidate(data){
     candidateActive:USE_STATIC_MUSIC_CATALOG,
     editableOverlayActive:hasEditableOverlay,
     clarification:hasEditableOverlay
-      ? 'Q1.1 allows the effective catalog to differ from MUSIC_CATALOG base through persisted catalogOverrides/customCatalogItems. Differences are expected and logged.'
+      ? 'Q1.2 allows the effective catalog to differ from MUSIC_CATALOG base through persisted catalogOverrides/customCatalogItems. Differences are expected and logged.'
       : 'No editable overlay is active, so effective catalog should match MUSIC_CATALOG base.',
     effectiveGenreCount:effectiveGenres.length,
     candidateGenreCount:candidateGenres.length,
@@ -43423,6 +43548,27 @@ function describeCatalogArchitecture(data){
   };
 }
 
+function getBaseCatalogIdSet(){
+  return new Set(getBaseMusicCatalog().map(g=>g&&g.id).filter(Boolean));
+}
+function isBaseCatalogGenreId(genreId){
+  return getBaseCatalogIdSet().has(genreId);
+}
+function getEffectiveCatalogDataForAudit(data){
+  const safe=ensureCatalogEditState(data||{});
+  return {...safe,genres:auditDeepClone(getRuntimeGenres(safe))};
+}
+function getBaseCatalogDataForAudit(data){
+  const safe=ensureCatalogEditState(data||{});
+  return {...safe,genres:getBaseMusicCatalog()};
+}
+function getCatalogAuditScope(data){
+  const baseIds=getBaseCatalogIdSet();
+  const effective=auditSafeArray(getRuntimeGenres(data));
+  const baseEffective=effective.filter(g=>baseIds.has(g&&g.id));
+  const customEffective=effective.filter(g=>!baseIds.has(g&&g.id));
+  return {baseIds,effective,baseEffective,customEffective};
+}
 function getRuntimeGenres(data){
   if(USE_STATIC_MUSIC_CATALOG && typeof MUSIC_CATALOG!=='undefined' && Array.isArray(MUSIC_CATALOG)){
     return applyCatalogCustomizations(MUSIC_CATALOG,data);
@@ -43484,8 +43630,8 @@ function describeRuntimeAccessArchitecture(data){
     warnings:[],
     stats:{
       version:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-      phase:'Q1',
-      status:'static catalog read route active; user-state route still runtime-based',
+      phase:'Q2',
+      status:'static editable catalog route active; USER_STATE_CANDIDATE read route active',
       useStaticMusicCatalog:USE_STATIC_MUSIC_CATALOG,
       useUserStateCandidate:USE_USER_STATE_CANDIDATE,
       activeCatalogRoute:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG + editable overlays':'data.genres',
@@ -43497,14 +43643,14 @@ function describeRuntimeAccessArchitecture(data){
     },
     details:{
       newAccessors:['getRuntimeGenres(data)','getRuntimeUserState(data)'],
-      activeFlags:['USE_STATIC_MUSIC_CATALOG=true'],
-      inactiveFlags:['USE_USER_STATE_CANDIDATE=false'],
+      activeFlags:['USE_STATIC_MUSIC_CATALOG=true','USE_USER_STATE_CANDIDATE=true'],
+      inactiveFlags:[],
       invariants:[
-        'Catalog reads are active through MUSIC_CATALOG in Phase Q1.',
-        'getRuntimeGenres(data) returns MUSIC_CATALOG while USE_STATIC_MUSIC_CATALOG is true.',
-        'getRuntimeUserState(data) returns the current effective user-state snapshot while USE_USER_STATE_CANDIDATE is false.',
-        'USER_STATE_CANDIDATE remains a validated candidate, not the active persistence model.',
-        'Firestore and localStorage schemas are not migrated in Phase Q1.',
+        'Catalog reads are active through MUSIC_CATALOG + editable overlays in Phase Q2.',
+        'getRuntimeGenres(data) returns MUSIC_CATALOG + catalogOverrides/customCatalogItems while USE_STATIC_MUSIC_CATALOG is true.',
+        'getRuntimeUserState(data) returns USER_STATE_CANDIDATE while USE_USER_STATE_CANDIDATE is true.',
+        'USER_STATE_CANDIDATE is active as the runtime read route, but data remains the persistence model.',
+        'Firestore and localStorage schemas are not migrated in Phase Q2.',
         'data.genres remains available as legacy/persistence source for comparison until cleanup.'
       ],
       equivalenceStats:equivalence.stats
@@ -43513,36 +43659,47 @@ function describeRuntimeAccessArchitecture(data){
 }
 
 function describeLearningArchitecture(data){
-  const genres=auditSafeArray(data&&data.genres);
+  const scope=getCatalogAuditScope(data);
+  const baseGenres=getBaseMusicCatalog();
+  const customGenres=scope.customEffective;
   const staticLearningIds=Object.keys(LEARNING_CONTENT||{});
   const staticQuizIds=Object.keys(QUIZZES||{});
-  const runtimeStaticCovered=genres.filter(g=>!!getStaticGenreLearning(g&&g.id)).length;
-  const missingStatic=genres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name}));
+  const baseStaticCovered=baseGenres.filter(g=>!!getStaticGenreLearning(g&&g.id)).length;
+  const missingStaticBase=baseGenres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name,scope:'base_catalog'}));
+  const missingStaticCustom=customGenres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name,scope:'custom_editable_genre',message:'Género editable/custom sin learning/quiz estático; tratado como draft'}));
   return {
-    ok:missingStatic.length===0,
-    errors:missingStatic.map(x=>({...x,message:'Género sin cobertura en LEARNING_CONTENT / QUIZZES'})),
-    warnings:[],
+    ok:missingStaticBase.length===0,
+    errors:missingStaticBase.map(x=>({...x,message:'Género base sin cobertura en LEARNING_CONTENT / QUIZZES'})),
+    warnings:missingStaticCustom,
     stats:{
       version:LEARNING_ARCHITECTURE_VERSION,
+      phase:'Q1.2',
+      auditScope:'base-catalog-required-custom-draft-aware',
       activeSource:'LEARNING_CONTENT + QUIZZES',
       uiSelector:'getGenreLearning(genre)',
       legacyResolver:'getGenreLearningLegacy(genre)',
       legacyStatus:'retained for validation and emergency fallback only',
       staticLearningEntries:staticLearningIds.length,
       staticQuizEntries:staticQuizIds.length,
-      runtimeGenres:genres.length,
-      runtimeStaticCovered,
-      missingStaticCount:missingStatic.length
+      baseCatalogGenres:baseGenres.length,
+      baseStaticCovered,
+      baseMissingStaticCount:missingStaticBase.length,
+      effectiveRuntimeGenres:scope.effective.length,
+      customEditableGenreCount:customGenres.length,
+      customMissingStaticCount:missingStaticCustom.length
     },
     details:{
       invariants:[
         'UI uses getGenreLearning(genre).',
         'getGenreLearning(genre) returns LEARNING_CONTENT / QUIZZES first.',
+        'Base catalog genres are required to have static Learning/Quiz coverage.',
+        'Custom/editable genres are allowed to be drafts and are not counted as structural Learning errors.',
         'getGenreLearningLegacy(genre) is retained for audit comparison and emergency fallback only.',
         'CURATED_LEARNING_BY_GENRE and embedded genre.learning are legacy validation sources, not active editorial sources.',
         'Question order and option order are preserved.'
       ],
-      missingStatic
+      missingStaticBase,
+      missingStaticCustom
     }
   };
 }
@@ -43561,9 +43718,10 @@ function describeCatalogEditArchitecture(data){
     warnings:[],
     stats:{
       version:CATALOG_EDIT_ARCHITECTURE_VERSION,
-      phase:'Q1.1',
+      phase:'Q1.2',
       baseCatalog:'MUSIC_CATALOG',
       effectiveCatalog:'MUSIC_CATALOG + catalogOverrides/customCatalogItems',
+      auditScope:'base catalog vs editable catalog separated',
       catalogEditable:true,
       resetOriginalAvailable:true,
       hasFullCatalogSnapshotOverride:hasSnapshot,
@@ -43584,7 +43742,8 @@ function describeCatalogEditArchitecture(data){
       notes:[
         'MUSIC_CATALOG is not mutated at runtime.',
         'All app-based catalog edits are persisted as an effective catalog snapshot overlay and logged in catalogChangeLog.',
-        'Reset library clears catalogOverrides/customCatalogItems and restores the original MUSIC_CATALOG base.'
+        'Reset library clears catalogOverrides/customCatalogItems and restores the original MUSIC_CATALOG base.',
+        'Q1.2 separates base catalog audit errors from editable/custom draft warnings.'
       ]
     }
   };
@@ -43623,8 +43782,127 @@ function validateCatalogChangeLogIntegrity(data){
   res.details={lastChanges:log.slice(-10),warnings:missing};
   return res;
 }
+
+function describeAppLogicArchitecture(data){
+  const sectionIds=APP_SECTIONS.map(s=>s.id);
+  return {
+    ok:true,
+    errors:[],
+    warnings:[],
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'declarative-map-inactive-audit-only',
+      appSectionsConfigActive:USE_APP_SECTIONS_CONFIG,
+      runtimeNavigationSource:'existing App JSX tab buttons',
+      runtimeRenderSource:'existing conditional tab rendering in App',
+      sectionCount:APP_SECTIONS.length,
+      componentMapCount:Object.keys(APP_COMPONENT_MAP||{}).length,
+      productRuleDomainCount:Object.keys(PRODUCT_RULE_DOMAINS||{}).length,
+      behaviorChanged:false,
+      catalogBehavior:'unchanged',
+      libraryBehavior:'unchanged',
+      activeWeekBehavior:'unchanged',
+      dashboardBehavior:'unchanged',
+      profileBehavior:'unchanged',
+      challengesBehavior:'unchanged',
+      settingsBehavior:'unchanged'
+    },
+    details:{
+      purpose:'R2 documents the application logic layer without using it as runtime source yet.',
+      invariants:[
+        'APP_SECTIONS is declarative and inactive in R2.',
+        'Navigation buttons remain rendered by the existing App JSX implementation.',
+        'Tab ids remain unchanged: dashboard, semana, rankings, historial, biblioteca, retos, perfil, ajustes.',
+        'Biblioteca must continue showing genres, artists, songs, Aprende and Tests through the existing runtime components.',
+        'No XP, level, mascot, challenge, profile, dashboard, history, settings or persistence behavior is changed in R2.',
+        'Future phases may activate declarative sources only after 1:1 audit parity is proven.'
+      ],
+      sectionIds
+    }
+  };
+}
+
+function validateAppSectionsIntegrity(){
+  const requiredIds=['dashboard','semana','rankings','historial','biblioteca','retos','perfil','ajustes'];
+  const ids=APP_SECTIONS.map(s=>s&&s.id).filter(Boolean);
+  const missing=requiredIds.filter(id=>!ids.includes(id));
+  const extra=ids.filter(id=>!requiredIds.includes(id));
+  const duplicates=ids.filter((id,i)=>ids.indexOf(id)!==i).filter((id,i,arr)=>arr.indexOf(id)===i);
+  const incomplete=APP_SECTIONS.filter(s=>!(s&&s.id&&s.label&&s.componentName&&s.runtimeTabId)).map(s=>({id:s&&s.id,label:s&&s.label,componentName:s&&s.componentName,runtimeTabId:s&&s.runtimeTabId,message:'APP_SECTIONS entry is incomplete'}));
+  const runtimeMismatch=APP_SECTIONS.filter(s=>s&&s.id&&s.runtimeTabId&&s.id!==s.runtimeTabId).map(s=>({id:s.id,runtimeTabId:s.runtimeTabId,message:'Section id and runtime tab id differ'}));
+  const errors=[
+    ...missing.map(id=>({id,message:'Required app section missing from APP_SECTIONS'})),
+    ...duplicates.map(id=>({id,message:'Duplicate app section id in APP_SECTIONS'})),
+    ...incomplete,
+    ...runtimeMismatch
+  ];
+  return {
+    ok:errors.length===0,
+    errors,
+    warnings:extra.map(id=>({id,message:'Extra app section declared; verify before activation'})),
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'inactive-audit-only',
+      requiredSectionCount:requiredIds.length,
+      declaredSectionCount:ids.length,
+      missingSectionCount:missing.length,
+      duplicateSectionCount:duplicates.length,
+      extraSectionCount:extra.length,
+      incompleteSectionCount:incomplete.length,
+      runtimeMismatchCount:runtimeMismatch.length,
+      activationReady:errors.length===0&&extra.length===0
+    },
+    details:{requiredIds,declaredIds:ids,missing,extra,duplicates,incomplete,runtimeMismatch,sections:APP_SECTIONS}
+  };
+}
+
+function describeAppComponentMap(){
+  const declaredComponents=Object.keys(APP_COMPONENT_MAP||{});
+  const sectionComponentNames=APP_SECTIONS.map(s=>s&&s.componentName).filter(Boolean);
+  const missingComponents=sectionComponentNames.filter(name=>!APP_COMPONENT_MAP[name]);
+  const unmappedSections=APP_SECTIONS.filter(s=>!APP_COMPONENT_MAP[s&&s.componentName]).map(s=>({sectionId:s&&s.id,componentName:s&&s.componentName,message:'Section component missing from APP_COMPONENT_MAP'}));
+  return {
+    ok:missingComponents.length===0,
+    errors:unmappedSections,
+    warnings:[],
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'component-map-inactive-audit-only',
+      declaredComponentCount:declaredComponents.length,
+      sectionComponentCount:sectionComponentNames.length,
+      missingComponentCount:missingComponents.length,
+      mappedSectionCount:sectionComponentNames.length-missingComponents.length
+    },
+    details:{declaredComponents,sectionComponentNames,missingComponents,componentMap:APP_COMPONENT_MAP}
+  };
+}
+
+function describeProductRulesArchitecture(){
+  const domains=Object.keys(PRODUCT_RULE_DOMAINS||{});
+  const requiredDomains=['xp','levels','mascot','achievements','activeWeek','library','challenges','spotify','persistence'];
+  const missing=requiredDomains.filter(d=>!domains.includes(d));
+  return {
+    ok:missing.length===0,
+    errors:missing.map(domain=>({domain,message:'Required product rule domain missing from PRODUCT_RULE_DOMAINS'})),
+    warnings:[],
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'rule-domain-map-inactive-audit-only',
+      domainCount:domains.length,
+      requiredDomainCount:requiredDomains.length,
+      missingDomainCount:missing.length,
+      behaviorChanged:false
+    },
+    details:{requiredDomains,domains,productRuleDomains:PRODUCT_RULE_DOMAINS}
+  };
+}
+
 function validateArchitectureAuditPresence(report){
-  const requiredBlocks=['runtimeAccessArchitecture','runtimeAccessIntegrity','catalogArchitecture','catalogStaticEquivalence','catalogEditArchitecture','catalogOverridesIntegrity','catalogChangeLogIntegrity','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence'];
+  const requiredBlocks=['runtimeAccessArchitecture','runtimeAccessIntegrity','catalogArchitecture','catalogStaticEquivalence','catalogEditArchitecture','catalogOverridesIntegrity','catalogChangeLogIntegrity','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence','appLogicArchitecture','appSectionsIntegrity','appComponentMap','productRulesArchitecture'];
   const missingBlocks=requiredBlocks.filter(k=>!(report&&report[k]&&typeof report[k]==='object'));
   return {
     ok:missingBlocks.length===0,
@@ -43637,6 +43915,7 @@ function validateArchitectureAuditPresence(report){
       userStateVersion:USER_STATE_ARCHITECTURE_VERSION,
       runtimeAccessVersion:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
       catalogEditVersion:CATALOG_EDIT_ARCHITECTURE_VERSION,
+      appLogicVersion:APP_LOGIC_ARCHITECTURE_VERSION,
       requiredBlockCount:requiredBlocks.length,
       presentBlockCount:requiredBlocks.length-missingBlocks.length,
       missingBlockCount:missingBlocks.length,
@@ -43647,7 +43926,9 @@ function validateArchitectureAuditPresence(report){
 }
 
 function generateSystemAuditReport(data){
-  const activeGenresForReport=auditSafeArray(getRuntimeGenres(data));
+  const activeDataForReport=getEffectiveCatalogDataForAudit(data);
+  const baseDataForLearningAudit=getBaseCatalogDataForAudit(data);
+  const activeGenresForReport=auditSafeArray(activeDataForReport&&activeDataForReport.genres);
   const legacyGenresForReport=auditSafeArray(data&&data.genres);
   const report={
     generatedAt:auditNow(),
@@ -43658,10 +43939,12 @@ function generateSystemAuditReport(data){
       catalog:CATALOG_ARCHITECTURE_VERSION,
       userState:USER_STATE_ARCHITECTURE_VERSION,
       runtimeAccess:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-      catalogEdit:CATALOG_EDIT_ARCHITECTURE_VERSION
+      catalogEdit:CATALOG_EDIT_ARCHITECTURE_VERSION,
+      appLogic:APP_LOGIC_ARCHITECTURE_VERSION
     },
     summary:{
       activeCatalogSource:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG + catalogOverrides/customCatalogItems':'data.genres',
+      activeUserStateSource:USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE':'data runtime object',
       legacyCatalogSource:'data.genres',
       genreCount:activeGenresForReport.length,
       artistCount:auditCountArtists(activeGenresForReport),
@@ -43672,15 +43955,19 @@ function generateSystemAuditReport(data){
       catalogChangeLogCount:auditSafeArray(data&&data.catalogChangeLog).length,
       catalogOverrideActive:!!(data&&data.catalogOverrides&&Array.isArray(data.catalogOverrides.fullCatalogSnapshot)),
       customCatalogGenreCount:auditSafeArray(data&&data.customCatalogItems&&data.customCatalogItems.genres).length,
+      auditScope:'base-catalog-errors-separated-from-editable-drafts',
+      appLogicSource:USE_APP_SECTIONS_CONFIG?'APP_SECTIONS':'existing App JSX/runtime logic',
+      appLogicDeclarativeMapActive:USE_APP_SECTIONS_CONFIG,
+      appSectionCount:APP_SECTIONS.length,
       weekCount:auditSafeArray(data&&data.weeks).length,
       challengeCount:auditSafeArray(data&&data.challenges).length,
       xpEventCount:auditSafeArray(data&&data.xpEvents).length
     },
-    catalog:validateCatalogShape(data),
-    duplicateGenres:validateDuplicateGenres(data),
-    artists:validateArtistIntegrity(data),
-    songs:validateSongIntegrity(data),
-    suspiciousSongs:validateSuspiciousSongTitles(data),
+    catalog:validateCatalogShape(activeDataForReport),
+    duplicateGenres:validateDuplicateGenres(activeDataForReport),
+    artists:validateArtistIntegrity(activeDataForReport),
+    songs:validateSongIntegrity(activeDataForReport),
+    suspiciousSongs:validateSuspiciousSongTitles(activeDataForReport),
     runtimeAccessArchitecture:describeRuntimeAccessArchitecture(data),
     runtimeAccessIntegrity:compareRuntimeAccessWithCurrent(data),
     catalogArchitecture:describeCatalogArchitecture(data),
@@ -43690,14 +43977,20 @@ function generateSystemAuditReport(data){
     catalogChangeLogIntegrity:validateCatalogChangeLogIntegrity(data),
     userStateArchitecture:describeUserStateArchitecture(data),
     userStateCandidateIntegrity:compareEffectiveUserStateWithCandidate(data),
-    learningArchitecture:describeLearningArchitecture(data),
-    learning:validateLearningCoverage(data),
-    quizzes:validateQuizIntegrity(data),
-    learningStaticEquivalence:compareLegacyLearningWithStaticCandidates(data),
-    learningPriority:validateLearningPriorityConflicts(data),
-    userFields:validateUserFieldsInsideCatalog(data),
-    weeks:validateWeekReferences(data),
-    challenges:validateChallengeReferences(data),
+    learningArchitecture:describeLearningArchitecture(activeDataForReport),
+    learning:validateLearningCoverage(activeDataForReport),
+    quizzes:validateQuizIntegrity(activeDataForReport),
+    learningStaticEquivalence:compareLegacyLearningWithStaticCandidates(activeDataForReport),
+    learningPriority:validateLearningPriorityConflicts(baseDataForLearningAudit),
+    appLogicArchitecture:describeAppLogicArchitecture(data),
+    appSectionsIntegrity:validateAppSectionsIntegrity(),
+    appComponentMap:describeAppComponentMap(),
+    productRulesArchitecture:describeProductRulesArchitecture(),
+    runtimeSelfCheck:(typeof window!=='undefined' ? window.__MDL_RUNTIME_SELF_CHECK__ : null),
+    htmlStaticSelfCheck:(typeof window!=='undefined' ? window.__MDL_HTML_STATIC_SELF_CHECK__ : null),
+    userFields:validateUserFieldsInsideCatalog(activeDataForReport),
+    weeks:validateWeekReferences(activeDataForReport),
+    challenges:validateChallengeReferences(activeDataForReport),
     xp:validateXpConsistency(data),
     upgradeRisk:validateUpgradeInjectionRisk(data)
   };
@@ -43720,7 +44013,10 @@ function buildAuditBundle(data){
     customCatalogItems:ensureCatalogEditState(data||{}).customCatalogItems,
     catalogChangeLog:ensureCatalogEditState(data||{}).catalogChangeLog,
     effectiveLearning:buildEffectiveLearningSnapshot(data),
-    learningSourceMap:buildLearningSourceMap(data)
+    learningSourceMap:buildLearningSourceMap(data),
+    appSections:APP_SECTIONS,
+    appComponentMap:APP_COMPONENT_MAP,
+    productRuleDomains:PRODUCT_RULE_DOMAINS
   };
 }
 
@@ -44991,16 +45287,32 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
         <p className="muted" style={{fontSize:12,marginBottom:12}}>
           Herramientas de auditoría para congelar el estado efectivo antes de refactorizar. No modifican catálogo, progreso, Firebase ni localStorage.
         </p>
-        <div className="learning-box" style={{fontSize:12,marginBottom:12,border:'2px solid rgba(29,185,84,.65)',background:'rgba(29,185,84,.10)'}}>
-          <div className="learning-box-title">🧪 R2.2, runtime cargado en esta pantalla</div>
-          <div style={{fontSize:13,marginBottom:4}}>App runtime: <b>{APP_ARCHITECTURE_VERSION}</b></div>
-          <div style={{fontSize:13,marginBottom:4}}>App logic: <b>{APP_LOGIC_ARCHITECTURE_VERSION}</b></div>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12,border:'3px solid #1DB954',background:'rgba(29,185,84,.14)'}}>
+          <div className="learning-box-title">🧪 R2.3-HARD-VISIBLE-2026-05-05-1459, runtime visible en Ajustes</div>
+          <div>App runtime: <b>{APP_ARCHITECTURE_VERSION}</b></div>
+          <div>App logic: <b>{APP_LOGIC_ARCHITECTURE_VERSION}</b></div>
+          <div>Build id: <b>R2.3-HARD-VISIBLE-2026-05-05-1459</b></div>
           <div style={{marginTop:6}}>Flags: catálogo estático <b>{String(USE_STATIC_MUSIC_CATALOG)}</b> · user state candidate <b>{String(USE_USER_STATE_CANDIDATE)}</b> · APP_SECTIONS activo <b>{String(USE_APP_SECTIONS_CONFIG)}</b></div>
-          <div style={{marginTop:6,color:'var(--text-sub)'}}>Console check: <code>window.__MDL_RUNTIME_SELF_CHECK__</code> y <code>window.__MDL_HTML_STATIC_SELF_CHECK__</code></div>
-          <div style={{marginTop:8,fontSize:11,color:'var(--green)',fontWeight:900}}>Si ves esta caja, Ajustes está renderizando la versión R2.2.</div>
+        </div>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
+          <div className="learning-box-title">Runtime cargado en esta pantalla</div>
+          <div>App runtime: <b>{APP_ARCHITECTURE_VERSION}</b></div>
+          <div>App logic: <b>{APP_LOGIC_ARCHITECTURE_VERSION}</b></div>
+          <div style={{marginTop:6}}>Flags: catálogo estático <b>{String(USE_STATIC_MUSIC_CATALOG)}</b> · user state candidate <b>{String(USE_USER_STATE_CANDIDATE)}</b> · APP_SECTIONS activo <b>{String(USE_APP_SECTIONS_CONFIG)}</b></div>
+          <div style={{marginTop:6,color:'var(--text-sub)'}}>Console check: <code>window.__MDL_RUNTIME_SELF_CHECK__</code></div>
         </div>
         <div className="row" style={{marginBottom:12}}>
-          <button className="btn btn-primary" onClick={()=>{const r=onGenerateAudit();setAuditSummary({...r.summary,__version:r.version,__architectureVersions:r.architectureVersions,__appLogicArchitecture:r.appLogicArchitecture,__appSectionsIntegrity:r.appSectionsIntegrity,__productRulesArchitecture:r.productRulesArchitecture,__runtimeSelfCheck:r.runtimeSelfCheck,__htmlStaticSelfCheck:r.htmlStaticSelfCheck});}}>Generar informe</button>
+          <button className="btn btn-primary" onClick={()=>{
+            const r=onGenerateAudit();
+            setAuditSummary({
+              ...(r&&r.summary?r.summary:{}),
+              __version:r&&r.version,
+              __architectureVersions:r&&r.architectureVersions?r.architectureVersions:{},
+              __appLogicArchitecture:r&&r.appLogicArchitecture?r.appLogicArchitecture:null,
+              __appSectionsIntegrity:r&&r.appSectionsIntegrity?r.appSectionsIntegrity:null,
+              __productRulesArchitecture:r&&r.productRulesArchitecture?r.productRulesArchitecture:null
+            });
+          }}>Generar informe</button>
           <button className="btn" onClick={onExportAudit}>⬇ Informe completo</button>
           <button className="btn" onClick={onExportEffectiveCatalog}>⬇ Catálogo efectivo</button>
           <button className="btn" onClick={onExportLearningSnapshot}>⬇ Learning/tests efectivos</button>
@@ -45009,14 +45321,14 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
-          <div>Informe generado por: <b>{auditSummary.__version||'sin versión visible'}</b></div>
-          <div>App logic audit: <b>{auditSummary.__architectureVersions&&auditSummary.__architectureVersions.appLogic?auditSummary.__architectureVersions.appLogic:'NO DETECTADO'}</b></div>
-          <div>Catálogo activo: <b>{auditSummary.activeCatalogSource}</b></div>
-          <div>User state activo: <b>{auditSummary.activeUserStateSource}</b></div>
-          <div>Bloques R2: appLogicArchitecture <b>{auditSummary.__appLogicArchitecture?'OK':'NO'}</b> · appSectionsIntegrity <b>{auditSummary.__appSectionsIntegrity?'OK':'NO'}</b> · productRulesArchitecture <b>{auditSummary.__productRulesArchitecture?'OK':'NO'}</b></div>
-          <div style={{marginTop:8}}>Géneros: <b>{auditSummary.genreCount}</b> · Artistas: <b>{auditSummary.artistCount}</b> · Canciones: <b>{auditSummary.songCount}</b></div>
+          <div>Informe generado por: <b>{auditSummary.__version||'sin versión'}</b></div>
+          <div>App logic audit: <b>{(auditSummary.__architectureVersions&&auditSummary.__architectureVersions.appLogic)||'NO INCLUIDO'}</b></div>
+          <div style={{marginTop:6}}>Géneros: <b>{auditSummary.genreCount}</b> · Artistas: <b>{auditSummary.artistCount}</b> · Canciones: <b>{auditSummary.songCount}</b></div>
           <div>Semanas: <b>{auditSummary.weekCount}</b> · Retos: <b>{auditSummary.challengeCount}</b> · XP events: <b>{auditSummary.xpEventCount}</b></div>
+          <div>Catálogo activo: <b>{auditSummary.activeCatalogSource||'n/d'}</b></div>
+          <div>User state activo: <b>{auditSummary.activeUserStateSource||'n/d'}</b></div>
           <div style={{marginTop:6}}>Errores: <b style={{color:auditSummary.totalErrors?'var(--danger)':'var(--green)'}}>{auditSummary.totalErrors}</b> · Warnings: <b style={{color:auditSummary.totalWarnings?'var(--warning)':'var(--green)'}}>{auditSummary.totalWarnings}</b></div>
+          <div style={{marginTop:6}}>Bloques R2: appLogicArchitecture <b>{auditSummary.__appLogicArchitecture?'OK':'NO'}</b> · appSectionsIntegrity <b>{auditSummary.__appSectionsIntegrity?'OK':'NO'}</b> · productRulesArchitecture <b>{auditSummary.__productRulesArchitecture?'OK':'NO'}</b></div>
         </div>}
       </div>
 
@@ -45513,8 +45825,8 @@ function App(){
           <div style={{fontWeight:500,fontSize:17,color:'var(--c2)'}}>Music Discovery Lab</div>
           <div className="muted" style={{fontSize:12}}>{u1} & {u2} · {completedWeeks.length} semanas · {genres.length} géneros</div>
           <div className="secure-session">🔐 Sesión segura con Google · persistencia activada</div>
-          <div style={{marginTop:6,display:'inline-flex',alignItems:'center',gap:6,padding:'5px 9px',borderRadius:999,border:'1px solid rgba(29,185,84,.45)',background:'rgba(29,185,84,.12)',color:'var(--green)',fontSize:11,fontWeight:900,letterSpacing:.2}}>
-            🧪 R2.2 runtime React · {APP_ARCHITECTURE_VERSION}
+          <div style={{marginTop:6,display:'inline-flex',alignItems:'center',gap:6,padding:'6px 10px',borderRadius:999,border:'1px solid rgba(29,185,84,.65)',background:'rgba(29,185,84,.18)',color:'var(--green)',fontSize:11,fontWeight:900,letterSpacing:.2}}>
+            🧪 R2.3-HARD-VISIBLE-2026-05-05-1459 · React runtime · {APP_ARCHITECTURE_VERSION}
           </div>
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
