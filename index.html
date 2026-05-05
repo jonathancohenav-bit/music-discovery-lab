@@ -301,7 +301,8 @@ function getUserKeyFromEmail(email){
 }
 
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
-const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-0-candidate-inactive';
+const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-1-runtime-candidate-clarified';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-6-learning-static-catalog-runtime-candidate';
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -320,6 +321,29 @@ const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-0-candidate-inactive';
    prove that the active static source still matches the previously effective
    runtime content. Do not delete legacy learning blocks until the final
    cleanup phase.
+   ============================================================ */
+
+/* ============================================================
+   MUSIC CATALOG ARCHITECTURE STATUS
+
+   ACTIVE SOURCE:
+   - data.genres
+
+   CANDIDATE / VALIDATION ONLY:
+   - buildMusicCatalogCandidate(data)
+   - buildStaticCatalogCandidate(data)
+   - compareEffectiveCatalogWithCandidate(data)
+
+   Current catalog candidate type:
+   - runtime-derived-candidate
+   - inactive
+   - generated from the effective runtime catalog after existing loading,
+     Firebase/localStorage resolution and upgradeLibraryData processing.
+
+   Important rule: Phase L.1 does NOT create a definitive static
+   MUSIC_CATALOG block yet. It only makes the runtime-derived candidate
+   explicit, auditable and non-ambiguous. Editorial fixes remain out of
+   scope.
    ============================================================ */
 
 /* ============================================================
@@ -17370,7 +17394,7 @@ function buildStaticCatalogCandidate(data){
     suggestedSituations:auditSafeArray(g.suggestedSituations),
     artists:auditSafeArray(g.artists).map(a=>auditPickStaticArtistFields(a))
   }));
-  return {generatedAt:auditNow(),source:'candidate:MUSIC_CATALOG_CANDIDATE-runtime-derived-inactive',architectureVersion:CATALOG_ARCHITECTURE_VERSION,active:false,genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres),genres};
+  return {generatedAt:auditNow(),source:'candidate:RUNTIME_CATALOG_CANDIDATE-derived-from-data.genres-inactive',architectureVersion:CATALOG_ARCHITECTURE_VERSION,active:false,genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres),genres};
 }
 function extractArtistUserState(genres){
   const out={};
@@ -17759,7 +17783,12 @@ function compareEffectiveCatalogWithCandidate(data){
     version:CATALOG_ARCHITECTURE_VERSION,
     active:false,
     activeRuntimeSource:'data.genres',
-    candidateSource:'MUSIC_CATALOG_CANDIDATE runtime-derived snapshot',
+    candidateSource:'buildMusicCatalogCandidate(data) runtime-derived snapshot',
+    candidateType:'runtime-derived-candidate',
+    staticCatalogBlockExists:false,
+    staticCatalogBlockName:null,
+    candidateActive:false,
+    clarification:'No definitive static MUSIC_CATALOG block exists yet; this candidate is generated from the effective runtime catalog for validation only.',
     effectiveGenreCount:effectiveGenres.length,
     candidateGenreCount:candidateGenres.length,
     matchedGenreCount:matchedGenres.length,
@@ -17783,6 +17812,16 @@ function describeCatalogArchitecture(data){
   const candidate=buildMusicCatalogCandidate(data);
   const candidateGenres=auditSafeArray(candidate&&candidate.genres);
   const equivalence=compareEffectiveCatalogWithCandidate(data);
+  const catalogClarification={
+    candidateType:'runtime-derived-candidate',
+    staticCatalogBlockExists:false,
+    staticCatalogBlockName:null,
+    candidateActive:false,
+    activeCatalogSource:'data.genres',
+    candidateBuilder:'buildMusicCatalogCandidate(data)',
+    status:'prepared, inactive, validation-only',
+    explanation:'Phase L.1 does not create a definitive static MUSIC_CATALOG block yet. The candidate is generated from the effective runtime catalog so equivalence can be audited before a future static extraction/activation phase.'
+  };
   return {
     ok:equivalence.ok,
     errors:equivalence.errors,
@@ -17790,8 +17829,12 @@ function describeCatalogArchitecture(data){
     stats:{
       version:CATALOG_ARCHITECTURE_VERSION,
       activeSource:'data.genres',
-      candidateSource:'MUSIC_CATALOG_CANDIDATE / buildMusicCatalogCandidate(data)',
+      candidateSource:'buildMusicCatalogCandidate(data)',
       candidateStatus:'inactive, validation-only, runtime-derived',
+      candidateType:catalogClarification.candidateType,
+      staticCatalogBlockExists:false,
+      staticCatalogBlockName:null,
+      candidateActive:false,
       runtimeGenres:genres.length,
       candidateGenres:candidateGenres.length,
       runtimeArtists:auditCountArtists(genres),
@@ -17805,11 +17848,16 @@ function describeCatalogArchitecture(data){
       extraGenreCount:equivalence.stats.extraGenreCount
     },
     details:{
+      clarification:catalogClarification,
+      controlledNotices:[
+        'Catalog candidate is runtime-derived, not yet a definitive static MUSIC_CATALOG block.',
+        'This is intentional for Phase L.1: it proves equivalence without changing the active app catalog source.'
+      ],
       invariants:[
         'The UI continues to read the active catalog from data.genres.',
-        'MUSIC_CATALOG_CANDIDATE is inactive and must not be used as app source yet.',
+        'The catalog candidate is inactive and must not be used as app source yet.',
         'The candidate is generated from the effective runtime catalog after Firestore/localStorage and upgradeLibraryData have resolved.',
-        'No editorial fixes are performed in Phase L.',
+        'No editorial fixes are performed in Phase L/L.1.',
         'Known dataset issues remain intentionally visible in the audit report for a later editorial-cleanup phase.'
       ],
       knownOutOfScope:[
@@ -17859,10 +17907,35 @@ function describeLearningArchitecture(data){
   };
 }
 
+function validateArchitectureAuditPresence(report){
+  const requiredBlocks=['catalogArchitecture','catalogStaticEquivalence','learningArchitecture','learningStaticEquivalence'];
+  const missingBlocks=requiredBlocks.filter(k=>!(report&&report[k]&&typeof report[k]==='object'));
+  return {
+    ok:missingBlocks.length===0,
+    errors:missingBlocks.map(block=>({block,message:'Required architecture audit block is missing'})),
+    warnings:[],
+    stats:{
+      appVersion:APP_ARCHITECTURE_VERSION,
+      learningVersion:LEARNING_ARCHITECTURE_VERSION,
+      catalogVersion:CATALOG_ARCHITECTURE_VERSION,
+      requiredBlockCount:requiredBlocks.length,
+      presentBlockCount:requiredBlocks.length-missingBlocks.length,
+      missingBlockCount:missingBlocks.length,
+      requiredBlocks
+    },
+    details:{missingBlocks}
+  };
+}
+
 function generateSystemAuditReport(data){
   const report={
     generatedAt:auditNow(),
-    version:LEARNING_ARCHITECTURE_VERSION,
+    version:APP_ARCHITECTURE_VERSION,
+    architectureVersions:{
+      app:APP_ARCHITECTURE_VERSION,
+      learning:LEARNING_ARCHITECTURE_VERSION,
+      catalog:CATALOG_ARCHITECTURE_VERSION
+    },
     summary:{
       genreCount:auditSafeArray(data&&data.genres).length,
       artistCount:auditCountArtists(data&&data.genres),
@@ -17889,6 +17962,7 @@ function generateSystemAuditReport(data){
     xp:validateXpConsistency(data),
     upgradeRisk:validateUpgradeInjectionRisk(data)
   };
+  report.architectureAuditPresence=validateArchitectureAuditPresence(report);
   report.summary.totalErrors=Object.values(report).filter(v=>v&&typeof v==='object'&&Array.isArray(v.errors)).reduce((sum,v)=>sum+v.errors.length,0);
   report.summary.totalWarnings=Object.values(report).filter(v=>v&&typeof v==='object'&&Array.isArray(v.warnings)).reduce((sum,v)=>sum+v.warnings.length,0);
   return report;
