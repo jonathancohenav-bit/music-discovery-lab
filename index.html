@@ -324,6 +324,19 @@ const USE_USER_STATE_CANDIDATE=true;
 const APP_LOGIC_ARCHITECTURE_VERSION='app-logic-refactor-v1-0-declarative-map-inactive';
 const USE_APP_SECTIONS_CONFIG=false;
 
+// Runtime self-check exposed for Settings and browser console diagnostics.
+if(typeof window!=='undefined'){
+  window.__MDL_APP_VERSION__=APP_ARCHITECTURE_VERSION;
+  window.__MDL_APP_LOGIC_VERSION__=APP_LOGIC_ARCHITECTURE_VERSION;
+  window.__MDL_RUNTIME_SELF_CHECK__={
+    app:APP_ARCHITECTURE_VERSION,
+    appLogic:APP_LOGIC_ARCHITECTURE_VERSION,
+    useStaticMusicCatalog:USE_STATIC_MUSIC_CATALOG,
+    useUserStateCandidate:USE_USER_STATE_CANDIDATE,
+    useAppSectionsConfig:USE_APP_SECTIONS_CONFIG
+  };
+}
+
 const APP_SECTIONS=Object.freeze([
   {id:'dashboard',label:'Dashboard',icon:'🏠',componentName:'DashboardTab',runtimeTabId:'dashboard',description:'Panel principal con métricas, semana activa, progreso comparado, rankings resumidos y tarjetas de usuario.'},
   {id:'semana',label:'Semana activa',icon:'🎧',componentName:'SemanaTab',runtimeTabId:'semana',description:'Semana activa con escucha, Aprende, test, Spotify, marcado por usuario, cierre y valoración.'},
@@ -45259,8 +45272,25 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
         <p className="muted" style={{fontSize:12,marginBottom:12}}>
           Herramientas de auditoría para congelar el estado efectivo antes de refactorizar. No modifican catálogo, progreso, Firebase ni localStorage.
         </p>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
+          <div className="learning-box-title">Runtime cargado en esta pantalla</div>
+          <div>App runtime: <b>{APP_ARCHITECTURE_VERSION}</b></div>
+          <div>App logic: <b>{APP_LOGIC_ARCHITECTURE_VERSION}</b></div>
+          <div style={{marginTop:6}}>Flags: catálogo estático <b>{String(USE_STATIC_MUSIC_CATALOG)}</b> · user state candidate <b>{String(USE_USER_STATE_CANDIDATE)}</b> · APP_SECTIONS activo <b>{String(USE_APP_SECTIONS_CONFIG)}</b></div>
+          <div style={{marginTop:6,color:'var(--text-sub)'}}>Console check: <code>window.__MDL_RUNTIME_SELF_CHECK__</code></div>
+        </div>
         <div className="row" style={{marginBottom:12}}>
-          <button className="btn btn-primary" onClick={()=>{const r=onGenerateAudit();setAuditSummary(r.summary);}}>Generar informe</button>
+          <button className="btn btn-primary" onClick={()=>{
+            const r=onGenerateAudit();
+            setAuditSummary({
+              ...(r&&r.summary?r.summary:{}),
+              __version:r&&r.version,
+              __architectureVersions:r&&r.architectureVersions?r.architectureVersions:{},
+              __appLogicArchitecture:r&&r.appLogicArchitecture?r.appLogicArchitecture:null,
+              __appSectionsIntegrity:r&&r.appSectionsIntegrity?r.appSectionsIntegrity:null,
+              __productRulesArchitecture:r&&r.productRulesArchitecture?r.productRulesArchitecture:null
+            });
+          }}>Generar informe</button>
           <button className="btn" onClick={onExportAudit}>⬇ Informe completo</button>
           <button className="btn" onClick={onExportEffectiveCatalog}>⬇ Catálogo efectivo</button>
           <button className="btn" onClick={onExportLearningSnapshot}>⬇ Learning/tests efectivos</button>
@@ -45269,9 +45299,14 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
-          <div>Géneros: <b>{auditSummary.genreCount}</b> · Artistas: <b>{auditSummary.artistCount}</b> · Canciones: <b>{auditSummary.songCount}</b></div>
+          <div>Informe generado por: <b>{auditSummary.__version||'sin versión'}</b></div>
+          <div>App logic audit: <b>{(auditSummary.__architectureVersions&&auditSummary.__architectureVersions.appLogic)||'NO INCLUIDO'}</b></div>
+          <div style={{marginTop:6}}>Géneros: <b>{auditSummary.genreCount}</b> · Artistas: <b>{auditSummary.artistCount}</b> · Canciones: <b>{auditSummary.songCount}</b></div>
           <div>Semanas: <b>{auditSummary.weekCount}</b> · Retos: <b>{auditSummary.challengeCount}</b> · XP events: <b>{auditSummary.xpEventCount}</b></div>
+          <div>Catálogo activo: <b>{auditSummary.activeCatalogSource||'n/d'}</b></div>
+          <div>User state activo: <b>{auditSummary.activeUserStateSource||'n/d'}</b></div>
           <div style={{marginTop:6}}>Errores: <b style={{color:auditSummary.totalErrors?'var(--danger)':'var(--green)'}}>{auditSummary.totalErrors}</b> · Warnings: <b style={{color:auditSummary.totalWarnings?'var(--warning)':'var(--green)'}}>{auditSummary.totalWarnings}</b></div>
+          <div style={{marginTop:6}}>Bloques R2: appLogicArchitecture <b>{auditSummary.__appLogicArchitecture?'OK':'NO'}</b> · appSectionsIntegrity <b>{auditSummary.__appSectionsIntegrity?'OK':'NO'}</b> · productRulesArchitecture <b>{auditSummary.__productRulesArchitecture?'OK':'NO'}</b></div>
         </div>}
       </div>
 
