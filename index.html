@@ -308,6 +308,8 @@ const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-c
 const APP_ARCHITECTURE_VERSION='app-architecture-v1-13-static-catalog-editable-overrides-user-state-active';
 const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=true;
+const APP_LOGIC_CANARY_BUILD_MARKER='APP_LOGIC_CANARY_V1_VISIBLE_PROBE';
+window.__MUSICLAB_R2_CANARY_BUILD_MARKER=APP_LOGIC_CANARY_BUILD_MARKER;
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -45073,9 +45075,10 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
           <button className="btn" onClick={onExportEffectiveCatalog}>⬇ Catálogo efectivo</button>
           <button className="btn" onClick={onExportLearningSnapshot}>⬇ Learning/tests efectivos</button>
           <button className="btn" onClick={onExportStaticCatalogCandidate}>⬇ Catálogo limpio candidato</button>
-          <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato</button>
+          <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato · R2C</button>
+          <button className="btn" onClick={onExportAppLogicCanary}>⬇ App Logic Canary</button>
         </div>
-        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
+        <div className="learning-box" data-r2-canary-jsx="true" style={{fontSize:12,marginBottom:12}}>
           <div className="learning-box-title">R2 Canary · lógica de aplicación</div>
           <p className="muted" style={{fontSize:12,marginBottom:10}}>
             Export mínimo para validar que podemos añadir una sección aislada de lógica de aplicación sin impacto en runtime, auditoría principal, catálogo, progreso, Firebase ni localStorage.
@@ -45338,6 +45341,9 @@ function App(){
   const u2=settings.user2||'Lucy';
   const currentUserKey=getUserKeyFromEmail(authUser&&authUser.email)||'u1';
   const pendingChallengeCount=challengePendingForUser(challenges,currentUserKey);
+  useEffect(()=>{
+    if(tab==='ajustes')installAppLogicCanaryRuntimeProbe();
+  },[tab]);
 
   const forceLibraryUpgrade=useCallback(()=>{
     setData(prev=>{
@@ -45546,24 +45552,41 @@ function App(){
   function exportUserStateCandidate(){
     auditDownloadJson('musiclab_user_state_candidate.json',buildUserStateCandidate(data));
   }
-
   function exportAppLogicCanary(){
     auditDownloadJson('musiclab_app_logic_canary.json',{
       canary:'APP_LOGIC_CANARY_V1',
       generatedAt:new Date().toISOString(),
       baseAppVersion:APP_ARCHITECTURE_VERSION,
       runtimeImpact:'none',
-      sections:[
-        'dashboard',
-        'semana',
-        'rankings',
-        'historial',
-        'biblioteca',
-        'retos',
-        'perfil',
-        'ajustes'
-      ]
+      sections:['dashboard','semana','rankings','historial','biblioteca','retos','perfil','ajustes']
     });
+  }
+  function installAppLogicCanaryRuntimeProbe(){
+    if(window.__MUSICLAB_R2_CANARY_PROBE_INSTALLED)return;
+    window.__MUSICLAB_R2_CANARY_PROBE_INSTALLED=true;
+    const inject=()=>{
+      try{
+        const cards=[...document.querySelectorAll('.card')];
+        const diagnosticCard=cards.find(card=>(card.textContent||'').includes('Diagnóstico avanzado, solo lectura'));
+        if(!diagnosticCard||diagnosticCard.querySelector('[data-r2-canary-probe="true"]'))return;
+        const box=document.createElement('div');
+        box.setAttribute('data-r2-canary-probe','true');
+        box.className='learning-box';
+        box.style.fontSize='12px';
+        box.style.marginBottom='12px';
+        box.innerHTML='<div class="learning-box-title">R2 Canary · runtime probe</div><p class="muted" style="font-size:12px;margin-bottom:10px">Marcador runtime independiente del JSX principal. Si ves esto, el HTML nuevo está ejecutándose.</p>';
+        const btn=document.createElement('button');
+        btn.className='btn';
+        btn.textContent='⬇ Exportar App Logic Canary, runtime probe';
+        btn.onclick=exportAppLogicCanary;
+        box.appendChild(btn);
+        const summary=diagnosticCard.querySelector('.learning-box');
+        if(summary)diagnosticCard.insertBefore(box,summary);
+        else diagnosticCard.appendChild(box);
+      }catch(e){console.warn('R2 Canary runtime probe error',e);}
+    };
+    inject();
+    window.__MUSICLAB_R2_CANARY_PROBE_TIMER=setInterval(inject,800);
   }
 
 
