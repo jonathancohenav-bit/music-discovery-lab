@@ -300,11 +300,39 @@ function getUserKeyFromEmail(email){
   return null;
 }
 
+const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
 
 /* ============================================================
-   LEARNING CONTENT PHASE 2: curated manual fichas (first block)
-   - Kept outside INITIAL_GENRES so it enriches existing Firestore data too.
-   - Does not overwrite artists, songs, rankings, ratings or history.
+   LEARNING / QUIZ ARCHITECTURE STATUS
+
+   ACTIVE SOURCE:
+   - LEARNING_CONTENT
+   - QUIZZES
+
+   LEGACY / VALIDATION ONLY:
+   - CURATED_LEARNING_BY_GENRE
+   - Object.assign(CURATED_LEARNING_BY_GENRE, ...) correction batches
+   - genre.learning blocks embedded inside legacy genre objects
+   - getGenreLearningLegacy(genre)
+
+   Important rule: legacy is intentionally kept temporarily so the audit can
+   prove that the active static source still matches the previously effective
+   runtime content. Do not delete legacy learning blocks until the final
+   cleanup phase.
+   ============================================================ */
+
+/* ============================================================
+   LEGACY LEARNING DATA - CURATED MANUAL FICHAS
+   Status: validation/backward-compatibility only.
+
+   This object used to be part of the active resolution chain. Since Phase J,
+   the app reads Learning/Tests from LEARNING_CONTENT + QUIZZES first. This
+   legacy object is preserved so getGenreLearningLegacy() can validate that
+   the new static source exactly matches the previously effective content.
+
+   Do not edit this block for new educational content. Future corrections
+   should happen in LEARNING_CONTENT / QUIZZES after the legacy comparison
+   has been reviewed.
    ============================================================ */
 const CURATED_LEARNING_BY_GENRE={
   'rock-classic':{
@@ -1199,9 +1227,13 @@ const CURATED_LEARNING_BY_GENRE={
    ============================================================ */
 
 /* ============================================================
-   TANDA 3.2: Critical Aprende corrections (non-destructive overrides)
-   - Updates only learning/quiz content for audited high-priority genres.
-   - Does not touch artists, songs, Auth, Firestore, Spotify or app logic.
+   LEGACY LEARNING DATA - CORRECTION BATCHES
+   Former role: non-destructive curated overrides for audited genres.
+   Current role: legacy comparison/backward-compatibility only.
+
+   These corrections have already been folded into LEARNING_CONTENT / QUIZZES.
+   They remain here temporarily so getGenreLearningLegacy() can reconstruct
+   the old effective result and the audit can prove equivalence.
    ============================================================ */
 Object.assign(CURATED_LEARNING_BY_GENRE, {
   "mariachi": {
@@ -1863,6 +1895,12 @@ Object.assign(CURATED_LEARNING_BY_GENRE, {
     ]
   }
 });
+
+/* ============================================================
+   END LEGACY LEARNING CURATED DATA
+   The blocks above are not the active Learning/Test source anymore.
+   Active educational content starts at LEARNING_CONTENT / QUIZZES.
+   ============================================================ */
 
 const INITIAL_GENRES=[
   /* ROCK FAMILY */
@@ -10811,11 +10849,21 @@ function ConfirmModal({message,onConfirm,onCancel}){
 
 
 /* ============================================================
-   STATIC LEARNING / QUIZZES - PHASE J ACTIVE SOURCE
-   Fuente generada desde el snapshot efectivo de getGenreLearning(runtime-genre).
-   Esta capa preserva las mejoras posteriores de CURATED_LEARNING_BY_GENRE
-   y de Object.assign(CURATED_LEARNING_BY_GENRE, ...), por ejemplo Mariachi.
-   Legacy se mantiene debajo como respaldo temporal y para validación.
+   ACTIVE STATIC LEARNING SOURCE - PHASE K
+
+   LEARNING_CONTENT + QUIZZES are now the active source of truth for the
+   Learn/Test experience. They were generated from the previously effective
+   runtime result, preserving later corrections from curated/manual layers
+   such as Mariachi, Emo, Indian classical music, Film Score, etc.
+
+   Structural contract:
+   - LEARNING_CONTENT[genreId] contains: birthplace, era, whatDefinesIt,
+     howToRecognizeIt, curiousFact, keyListening.
+   - QUIZZES[genreId] contains ordered quiz items with: question, options,
+     correct, explanation.
+   - Question order and option order must remain unchanged.
+
+   Legacy learning remains elsewhere only as temporary validation support.
    ============================================================ */
 const LEARNING_CONTENT={
   "rock-classic": {
@@ -17119,6 +17167,8 @@ const QUIZZES={
     }
   ]
 };
+
+/* Active selector for the new static educational source. */
 function getStaticGenreLearning(genreId){
   const learning=LEARNING_CONTENT&&LEARNING_CONTENT[genreId];
   const quiz=QUIZZES&&QUIZZES[genreId];
@@ -17162,6 +17212,10 @@ function compareLegacyLearningWithStaticCandidates(data){
   return res;
 }
 
+/*
+   Legacy resolver retained only for audit/equivalence checks.
+   Do not use this as the active UI source unless static content is missing.
+*/
 function getGenreLearningLegacy(genre){
   if(!genre)return null;
   const artistNames=(genre.artists||[]).slice(0,4).map(a=>a.name).join(', ');
@@ -17191,6 +17245,10 @@ function getGenreLearningLegacy(genre){
   return {...base,...(genre.learning||{}),...curated,quiz:(curated.quiz&&curated.quiz.length?curated.quiz:(genre.learning&&genre.learning.quiz&&genre.learning.quiz.length?genre.learning.quiz:base.quiz))};
 }
 
+/*
+   Public Learning/Test selector used by the UI.
+   Phase K rule: static source first, legacy only as emergency fallback.
+*/
 function getGenreLearning(genre){
   if(!genre)return null;
   const staticLearning=getStaticGenreLearning(genre.id);
@@ -17598,10 +17656,45 @@ function validateUpgradeInjectionRisk(data){
   if(res.stats.addedGenreCount||res.stats.addedArtistCount)auditPush(res,'warning',{message:'upgradeLibraryData todavía modificaría el catálogo si se aplicara de nuevo',stats:res.stats,details:res.details});
   return res;
 }
+function describeLearningArchitecture(data){
+  const genres=auditSafeArray(data&&data.genres);
+  const staticLearningIds=Object.keys(LEARNING_CONTENT||{});
+  const staticQuizIds=Object.keys(QUIZZES||{});
+  const runtimeStaticCovered=genres.filter(g=>!!getStaticGenreLearning(g&&g.id)).length;
+  const missingStatic=genres.filter(g=>!getStaticGenreLearning(g&&g.id)).map(g=>({genreId:g&&g.id,genreName:g&&g.name}));
+  return {
+    ok:missingStatic.length===0,
+    errors:missingStatic.map(x=>({...x,message:'Género sin cobertura en LEARNING_CONTENT / QUIZZES'})),
+    warnings:[],
+    stats:{
+      version:LEARNING_ARCHITECTURE_VERSION,
+      activeSource:'LEARNING_CONTENT + QUIZZES',
+      uiSelector:'getGenreLearning(genre)',
+      legacyResolver:'getGenreLearningLegacy(genre)',
+      legacyStatus:'retained for validation and emergency fallback only',
+      staticLearningEntries:staticLearningIds.length,
+      staticQuizEntries:staticQuizIds.length,
+      runtimeGenres:genres.length,
+      runtimeStaticCovered,
+      missingStaticCount:missingStatic.length
+    },
+    details:{
+      invariants:[
+        'UI uses getGenreLearning(genre).',
+        'getGenreLearning(genre) returns LEARNING_CONTENT / QUIZZES first.',
+        'getGenreLearningLegacy(genre) is retained for audit comparison and emergency fallback only.',
+        'CURATED_LEARNING_BY_GENRE and embedded genre.learning are legacy validation sources, not active editorial sources.',
+        'Question order and option order are preserved.'
+      ],
+      missingStatic
+    }
+  };
+}
+
 function generateSystemAuditReport(data){
   const report={
     generatedAt:auditNow(),
-    version:'learning-refactor-v1-4-ordered-static',
+    version:LEARNING_ARCHITECTURE_VERSION,
     summary:{
       genreCount:auditSafeArray(data&&data.genres).length,
       artistCount:auditCountArtists(data&&data.genres),
@@ -17615,6 +17708,7 @@ function generateSystemAuditReport(data){
     artists:validateArtistIntegrity(data),
     songs:validateSongIntegrity(data),
     suspiciousSongs:validateSuspiciousSongTitles(data),
+    learningArchitecture:describeLearningArchitecture(data),
     learning:validateLearningCoverage(data),
     quizzes:validateQuizIntegrity(data),
     learningStaticEquivalence:compareLegacyLearningWithStaticCandidates(data),
