@@ -301,6 +301,7 @@ function getUserKeyFromEmail(email){
 }
 
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
+const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-0-candidate-inactive';
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -17369,7 +17370,7 @@ function buildStaticCatalogCandidate(data){
     suggestedSituations:auditSafeArray(g.suggestedSituations),
     artists:auditSafeArray(g.artists).map(a=>auditPickStaticArtistFields(a))
   }));
-  return {generatedAt:auditNow(),source:'candidate:static-catalog-from-runtime',genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres),genres};
+  return {generatedAt:auditNow(),source:'candidate:MUSIC_CATALOG_CANDIDATE-runtime-derived-inactive',architectureVersion:CATALOG_ARCHITECTURE_VERSION,active:false,genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres),genres};
 }
 function extractArtistUserState(genres){
   const out={};
@@ -17656,6 +17657,173 @@ function validateUpgradeInjectionRisk(data){
   if(res.stats.addedGenreCount||res.stats.addedArtistCount)auditPush(res,'warning',{message:'upgradeLibraryData todavía modificaría el catálogo si se aplicara de nuevo',stats:res.stats,details:res.details});
   return res;
 }
+
+/* ============================================================
+   MUSIC CATALOG CANDIDATE - READ ONLY / INACTIVE
+
+   Phase L status:
+   - data.genres remains the active catalog source used by the app.
+   - MUSIC_CATALOG_CANDIDATE is derived from the current effective runtime
+     catalog for validation and future extraction only.
+   - This phase must not fix artists, songs, roles, duplicates, Firestore,
+     localStorage, weeks, XP, challenges or upgradeLibraryData.
+
+   Cleanup/editing rule:
+   - Do not use MUSIC_CATALOG_CANDIDATE as active app data until a later phase
+     explicitly switches the selector and validates persistence.
+   - Editorial fixes such as The B-52s duplicate, missing 3rd songs, duplicate
+     songs or role rebalance remain intentionally out of scope.
+   ============================================================ */
+function normalizeStaticSongForCatalog(song){
+  if(typeof song==='string')return {title:song,note:'',spotifyUrl:''};
+  const s= song&&typeof song==='object'?song:{};
+  return {title:s.title||s.name||s.song||'',note:s.note||'',spotifyUrl:s.spotifyUrl||''};
+}
+function normalizeStaticArtistForCatalog(artist){
+  const a=artist||{};
+  return {
+    id:a.id||'',
+    name:a.name||'',
+    role:a.role||'',
+    shortDescription:a.shortDescription||'',
+    suggestedSongs:auditSafeArray(a.suggestedSongs).map(normalizeStaticSongForCatalog)
+  };
+}
+function normalizeStaticGenreForCatalog(genre){
+  const g=genre||{};
+  return {
+    id:g.id||'',
+    name:g.name||'',
+    parentFamily:g.parentFamily||'',
+    description:g.description||'',
+    originContext:g.originContext||'',
+    moodTags:auditSafeArray(g.moodTags),
+    suggestedSituations:auditSafeArray(g.suggestedSituations),
+    artists:auditSafeArray(g.artists).map(normalizeStaticArtistForCatalog)
+  };
+}
+function buildMusicCatalogCandidate(data){
+  return buildStaticCatalogCandidate(data);
+}
+function stableAuditStringifyForCatalog(value){
+  if(Array.isArray(value))return '['+value.map(stableAuditStringifyForCatalog).join(',')+']';
+  if(value&&typeof value==='object'){
+    return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stableAuditStringifyForCatalog(value[k])).join(',')+'}';
+  }
+  return JSON.stringify(value);
+}
+function compareEffectiveCatalogWithCandidate(data){
+  const res=auditMakeResult();
+  const effectiveGenres=auditSafeArray(data&&data.genres).map(normalizeStaticGenreForCatalog);
+  const candidate=buildMusicCatalogCandidate(data);
+  const candidateGenres=auditSafeArray(candidate&&candidate.genres).map(normalizeStaticGenreForCatalog);
+  const effectiveById=new Map(effectiveGenres.map((g,idx)=>[g.id,{genre:g,idx}]));
+  const candidateById=new Map(candidateGenres.map((g,idx)=>[g.id,{genre:g,idx}]));
+  const missingGenres=[];
+  const extraGenres=[];
+  const mismatchedGenres=[];
+  const matchedGenres=[];
+
+  effectiveGenres.forEach((g,idx)=>{
+    const found=candidateById.get(g.id);
+    if(!found){
+      missingGenres.push({genreId:g.id,genreName:g.name,index:idx,message:'Género efectivo ausente en MUSIC_CATALOG_CANDIDATE'});
+      return;
+    }
+    const same=stableAuditStringifyForCatalog(g)===stableAuditStringifyForCatalog(found.genre);
+    if(same)matchedGenres.push({genreId:g.id,genreName:g.name,index:idx});
+    else mismatchedGenres.push({genreId:g.id,genreName:g.name,effectiveIndex:idx,candidateIndex:found.idx,message:'Género candidato no coincide con el catálogo efectivo normalizado'});
+  });
+  candidateGenres.forEach((g,idx)=>{
+    if(!effectiveById.has(g.id))extraGenres.push({genreId:g.id,genreName:g.name,index:idx,message:'Género extra en MUSIC_CATALOG_CANDIDATE'});
+  });
+
+  const effectiveArtistCount=auditCountArtists(effectiveGenres);
+  const candidateArtistCount=auditCountArtists(candidateGenres);
+  const effectiveSongCount=auditCountSongs(effectiveGenres);
+  const candidateSongCount=auditCountSongs(candidateGenres);
+  const artistCountMismatches=[];
+  const songCountMismatches=[];
+  effectiveGenres.forEach(g=>{
+    const c=candidateById.get(g.id)?.genre;
+    if(!c)return;
+    const ea=auditSafeArray(g.artists).length;
+    const ca=auditSafeArray(c.artists).length;
+    if(ea!==ca)artistCountMismatches.push({genreId:g.id,genreName:g.name,effectiveArtists:ea,candidateArtists:ca});
+    const es=auditSafeArray(g.artists).reduce((n,a)=>n+auditSafeArray(a.suggestedSongs).length,0);
+    const cs=auditSafeArray(c.artists).reduce((n,a)=>n+auditSafeArray(a.suggestedSongs).length,0);
+    if(es!==cs)songCountMismatches.push({genreId:g.id,genreName:g.name,effectiveSongs:es,candidateSongs:cs});
+  });
+
+  res.stats={
+    version:CATALOG_ARCHITECTURE_VERSION,
+    active:false,
+    activeRuntimeSource:'data.genres',
+    candidateSource:'MUSIC_CATALOG_CANDIDATE runtime-derived snapshot',
+    effectiveGenreCount:effectiveGenres.length,
+    candidateGenreCount:candidateGenres.length,
+    matchedGenreCount:matchedGenres.length,
+    mismatchedGenreCount:mismatchedGenres.length,
+    missingGenreCount:missingGenres.length,
+    extraGenreCount:extraGenres.length,
+    effectiveArtistCount,
+    candidateArtistCount,
+    effectiveSongCount,
+    candidateSongCount,
+    artistCountMismatchCount:artistCountMismatches.length,
+    songCountMismatchCount:songCountMismatches.length
+  };
+  res.details={matchedGenres,mismatchedGenres,missingGenres,extraGenres,artistCountMismatches,songCountMismatches};
+  missingGenres.concat(extraGenres,mismatchedGenres).forEach(item=>auditPush(res,'error',item));
+  artistCountMismatches.concat(songCountMismatches).forEach(item=>auditPush(res,'error',{...item,message:'Descuadre de recuento entre catálogo efectivo y candidato'}));
+  return res;
+}
+function describeCatalogArchitecture(data){
+  const genres=auditSafeArray(data&&data.genres);
+  const candidate=buildMusicCatalogCandidate(data);
+  const candidateGenres=auditSafeArray(candidate&&candidate.genres);
+  const equivalence=compareEffectiveCatalogWithCandidate(data);
+  return {
+    ok:equivalence.ok,
+    errors:equivalence.errors,
+    warnings:[],
+    stats:{
+      version:CATALOG_ARCHITECTURE_VERSION,
+      activeSource:'data.genres',
+      candidateSource:'MUSIC_CATALOG_CANDIDATE / buildMusicCatalogCandidate(data)',
+      candidateStatus:'inactive, validation-only, runtime-derived',
+      runtimeGenres:genres.length,
+      candidateGenres:candidateGenres.length,
+      runtimeArtists:auditCountArtists(genres),
+      candidateArtists:auditCountArtists(candidateGenres),
+      runtimeSongs:auditCountSongs(genres),
+      candidateSongs:auditCountSongs(candidateGenres),
+      equivalenceOk:equivalence.ok,
+      matchedGenreCount:equivalence.stats.matchedGenreCount,
+      mismatchedGenreCount:equivalence.stats.mismatchedGenreCount,
+      missingGenreCount:equivalence.stats.missingGenreCount,
+      extraGenreCount:equivalence.stats.extraGenreCount
+    },
+    details:{
+      invariants:[
+        'The UI continues to read the active catalog from data.genres.',
+        'MUSIC_CATALOG_CANDIDATE is inactive and must not be used as app source yet.',
+        'The candidate is generated from the effective runtime catalog after Firestore/localStorage and upgradeLibraryData have resolved.',
+        'No editorial fixes are performed in Phase L.',
+        'Known dataset issues remain intentionally visible in the audit report for a later editorial-cleanup phase.'
+      ],
+      knownOutOfScope:[
+        'The B-52s / The B-52’s duplicate in New Wave.',
+        'Artists with fewer or more than 3 songs.',
+        'Duplicate song titles inside some genres.',
+        'Role distribution differences from 4 core / 3 variation / 1 wildcard.',
+        'Suspicious non-song entries such as selections or DJ sets.'
+      ],
+      equivalenceStats:equivalence.stats
+    }
+  };
+}
+
 function describeLearningArchitecture(data){
   const genres=auditSafeArray(data&&data.genres);
   const staticLearningIds=Object.keys(LEARNING_CONTENT||{});
@@ -17708,6 +17876,8 @@ function generateSystemAuditReport(data){
     artists:validateArtistIntegrity(data),
     songs:validateSongIntegrity(data),
     suspiciousSongs:validateSuspiciousSongTitles(data),
+    catalogArchitecture:describeCatalogArchitecture(data),
+    catalogStaticEquivalence:compareEffectiveCatalogWithCandidate(data),
     learningArchitecture:describeLearningArchitecture(data),
     learning:validateLearningCoverage(data),
     quizzes:validateQuizIntegrity(data),
