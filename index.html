@@ -305,9 +305,70 @@ const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-4-static-active-editable
 const CATALOG_EDIT_ARCHITECTURE_VERSION='catalog-edit-refactor-v1-1-overrides-changelog-audit-scoped';
 const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-1-candidate-active';
 const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-catalog-editable-overrides-user-state-active';
-const APP_ARCHITECTURE_VERSION='app-architecture-v1-13-static-catalog-editable-overrides-user-state-active';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-14-app-logic-declarative-map-inactive';
 const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=true;
+
+/* ============================================================
+   APP LOGIC ARCHITECTURE STATUS
+
+   PHASE R2:
+   - Adds a declarative map of application sections, component ownership
+     and product-rule domains.
+   - Audit/report only. Runtime navigation, rendering, component props,
+     XP, library, active week, profile, rankings, history and settings
+     continue to work through the existing implementation.
+   - Do not activate APP_SECTIONS as the navigation source until a later
+     validated phase.
+   ============================================================ */
+const APP_LOGIC_ARCHITECTURE_VERSION='app-logic-refactor-v1-0-declarative-map-inactive';
+const USE_APP_SECTIONS_CONFIG=false;
+
+const APP_SECTIONS=Object.freeze([
+  {id:'dashboard',label:'Dashboard',icon:'🏠',componentName:'DashboardTab',runtimeTabId:'dashboard',description:'Panel principal con métricas, semana activa, progreso comparado, rankings resumidos y tarjetas de usuario.'},
+  {id:'semana',label:'Semana activa',icon:'🎧',componentName:'SemanaTab',runtimeTabId:'semana',description:'Semana activa con escucha, Aprende, test, Spotify, marcado por usuario, cierre y valoración.'},
+  {id:'rankings',label:'Rankings',icon:'🏆',componentName:'RankingsTab',runtimeTabId:'rankings',description:'Rankings de géneros, artistas, comparativas, coincidencias, diferencias y señales derivadas.'},
+  {id:'historial',label:'Historial',icon:'📚',componentName:'HistorialTab',runtimeTabId:'historial',description:'Historial de semanas completadas, detalle, ratings, comentarios y acciones de borrado/ver.'},
+  {id:'biblioteca',label:'Biblioteca',icon:'🎼',componentName:'BibliotecaTab',runtimeTabId:'biblioteca',description:'Biblioteca musical efectiva con géneros, artistas, canciones, Aprende, tests, búsqueda, filtros y edición/importación.'},
+  {id:'retos',label:'Retos',icon:'🎯',componentName:'RetosTab',runtimeTabId:'retos',description:'Retos manuales y generados, progreso, validación, resultados y XP asociado.'},
+  {id:'perfil',label:'Perfil',icon:'👤',componentName:'ProfileTab',runtimeTabId:'perfil',description:'Perfil de Jonathan y Lucy con XP, niveles, mascota, insignias, estadísticas y progreso personal.'},
+  {id:'ajustes',label:'Ajustes',icon:'⚙️',componentName:'AjustesTab',runtimeTabId:'ajustes',description:'Ajustes, backup, importación/exportación, reset, biblioteca original, diagnósticos y herramientas técnicas.'}
+]);
+
+const APP_COMPONENT_MAP=Object.freeze({
+  App:{layer:'app-shell',responsibility:'orquestación actual de estado, autenticación, persistencia, tabs, modales, acciones y paso de props'},
+  DashboardTab:{sectionId:'dashboard',layer:'view',status:'active-runtime-component'},
+  SemanaTab:{sectionId:'semana',layer:'view',status:'active-runtime-component'},
+  RankingsTab:{sectionId:'rankings',layer:'view',status:'active-runtime-component'},
+  HistorialTab:{sectionId:'historial',layer:'view',status:'active-runtime-component'},
+  BibliotecaTab:{sectionId:'biblioteca',layer:'view',status:'active-runtime-component'},
+  RetosTab:{sectionId:'retos',layer:'view',status:'active-runtime-component'},
+  ProfileTab:{sectionId:'perfil',layer:'view',status:'active-runtime-component'},
+  AjustesTab:{sectionId:'ajustes',layer:'view',status:'active-runtime-component'},
+  XpUserCard:{sectionId:'perfil',layer:'shared-view',status:'active-runtime-component'},
+  LearningPanel:{sectionId:'semana',layer:'shared-view',status:'active-runtime-component'},
+  LearningSummaryCard:{sectionId:'biblioteca/semana',layer:'shared-view',status:'active-runtime-component'},
+  LibraryTestPreview:{sectionId:'biblioteca',layer:'shared-view',status:'active-runtime-component'},
+  ChallengeCard:{sectionId:'retos',layer:'shared-view',status:'active-runtime-component'},
+  GenreEditModal:{sectionId:'biblioteca',layer:'modal',status:'active-runtime-component'},
+  ArtistEditModal:{sectionId:'biblioteca/semana',layer:'modal',status:'active-runtime-component'},
+  WeekDetailModal:{sectionId:'historial',layer:'modal',status:'active-runtime-component'},
+  ConfirmModal:{sectionId:'shared',layer:'modal',status:'active-runtime-component'},
+  AuthGate:{sectionId:'auth',layer:'gate',status:'active-runtime-component'},
+  CloudStatusPill:{sectionId:'shared',layer:'status',status:'active-runtime-component'}
+});
+
+const PRODUCT_RULE_DOMAINS=Object.freeze({
+  xp:{status:'existing-runtime-helpers-active',ruleOwners:['getTestXp','getScoreGuessXp','getQualitativeGuessXp','getFavorite3BonusXp','getRanking3BonusXp','getChallengeBaseXp','getChallengeBonusXp','getChallengeSongXp','getChallengeTotalXp','awardXp','getUserGamificationStats']},
+  levels:{status:'existing-runtime-helpers-active',ruleOwners:['getLevelForXp','getNextLevelInfo','getUserGamificationStats']},
+  mascot:{status:'existing-runtime-helpers-active',ruleOwners:['getMascotForLevel','getNextMascotForLevel','XpUserCard','showLevelToast']},
+  achievements:{status:'existing-runtime-helpers-active',ruleOwners:['ACHIEVEMENT_DEFS','getUserGamificationStats','XpUserCard']},
+  activeWeek:{status:'existing-runtime-functions-active',ruleOwners:['generateWeek','randomGenre','toggleSong','toggleArtistHeard','updateArtist','updateLearningQuiz','closeWeek']},
+  library:{status:'effective-catalog-runtime-active',ruleOwners:['getRuntimeGenres','getEffectiveEditableCatalog','saveEffectiveCatalogSnapshot','resetLibraryNow','forceLibraryUpgrade']},
+  challenges:{status:'existing-runtime-functions-active',ruleOwners:['createChallenge','updateChallenge','deleteChallenge','generateGenreChallenge','ChallengeCard']},
+  spotify:{status:'isolated-helper-active',ruleOwners:['buildSpotifySearchUrl','getSpotifyUrl','openSpotifyForSong']},
+  persistence:{status:'existing-container-persistence-active',ruleOwners:['loadData','saveData','Firebase onSnapshot','Firebase setDoc','upgradeLibraryData']}
+});
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -43695,8 +43756,127 @@ function validateCatalogChangeLogIntegrity(data){
   res.details={lastChanges:log.slice(-10),warnings:missing};
   return res;
 }
+
+function describeAppLogicArchitecture(data){
+  const sectionIds=APP_SECTIONS.map(s=>s.id);
+  return {
+    ok:true,
+    errors:[],
+    warnings:[],
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'declarative-map-inactive-audit-only',
+      appSectionsConfigActive:USE_APP_SECTIONS_CONFIG,
+      runtimeNavigationSource:'existing App JSX tab buttons',
+      runtimeRenderSource:'existing conditional tab rendering in App',
+      sectionCount:APP_SECTIONS.length,
+      componentMapCount:Object.keys(APP_COMPONENT_MAP||{}).length,
+      productRuleDomainCount:Object.keys(PRODUCT_RULE_DOMAINS||{}).length,
+      behaviorChanged:false,
+      catalogBehavior:'unchanged',
+      libraryBehavior:'unchanged',
+      activeWeekBehavior:'unchanged',
+      dashboardBehavior:'unchanged',
+      profileBehavior:'unchanged',
+      challengesBehavior:'unchanged',
+      settingsBehavior:'unchanged'
+    },
+    details:{
+      purpose:'R2 documents the application logic layer without using it as runtime source yet.',
+      invariants:[
+        'APP_SECTIONS is declarative and inactive in R2.',
+        'Navigation buttons remain rendered by the existing App JSX implementation.',
+        'Tab ids remain unchanged: dashboard, semana, rankings, historial, biblioteca, retos, perfil, ajustes.',
+        'Biblioteca must continue showing genres, artists, songs, Aprende and Tests through the existing runtime components.',
+        'No XP, level, mascot, challenge, profile, dashboard, history, settings or persistence behavior is changed in R2.',
+        'Future phases may activate declarative sources only after 1:1 audit parity is proven.'
+      ],
+      sectionIds
+    }
+  };
+}
+
+function validateAppSectionsIntegrity(){
+  const requiredIds=['dashboard','semana','rankings','historial','biblioteca','retos','perfil','ajustes'];
+  const ids=APP_SECTIONS.map(s=>s&&s.id).filter(Boolean);
+  const missing=requiredIds.filter(id=>!ids.includes(id));
+  const extra=ids.filter(id=>!requiredIds.includes(id));
+  const duplicates=ids.filter((id,i)=>ids.indexOf(id)!==i).filter((id,i,arr)=>arr.indexOf(id)===i);
+  const incomplete=APP_SECTIONS.filter(s=>!(s&&s.id&&s.label&&s.componentName&&s.runtimeTabId)).map(s=>({id:s&&s.id,label:s&&s.label,componentName:s&&s.componentName,runtimeTabId:s&&s.runtimeTabId,message:'APP_SECTIONS entry is incomplete'}));
+  const runtimeMismatch=APP_SECTIONS.filter(s=>s&&s.id&&s.runtimeTabId&&s.id!==s.runtimeTabId).map(s=>({id:s.id,runtimeTabId:s.runtimeTabId,message:'Section id and runtime tab id differ'}));
+  const errors=[
+    ...missing.map(id=>({id,message:'Required app section missing from APP_SECTIONS'})),
+    ...duplicates.map(id=>({id,message:'Duplicate app section id in APP_SECTIONS'})),
+    ...incomplete,
+    ...runtimeMismatch
+  ];
+  return {
+    ok:errors.length===0,
+    errors,
+    warnings:extra.map(id=>({id,message:'Extra app section declared; verify before activation'})),
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'inactive-audit-only',
+      requiredSectionCount:requiredIds.length,
+      declaredSectionCount:ids.length,
+      missingSectionCount:missing.length,
+      duplicateSectionCount:duplicates.length,
+      extraSectionCount:extra.length,
+      incompleteSectionCount:incomplete.length,
+      runtimeMismatchCount:runtimeMismatch.length,
+      activationReady:errors.length===0&&extra.length===0
+    },
+    details:{requiredIds,declaredIds:ids,missing,extra,duplicates,incomplete,runtimeMismatch,sections:APP_SECTIONS}
+  };
+}
+
+function describeAppComponentMap(){
+  const declaredComponents=Object.keys(APP_COMPONENT_MAP||{});
+  const sectionComponentNames=APP_SECTIONS.map(s=>s&&s.componentName).filter(Boolean);
+  const missingComponents=sectionComponentNames.filter(name=>!APP_COMPONENT_MAP[name]);
+  const unmappedSections=APP_SECTIONS.filter(s=>!APP_COMPONENT_MAP[s&&s.componentName]).map(s=>({sectionId:s&&s.id,componentName:s&&s.componentName,message:'Section component missing from APP_COMPONENT_MAP'}));
+  return {
+    ok:missingComponents.length===0,
+    errors:unmappedSections,
+    warnings:[],
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'component-map-inactive-audit-only',
+      declaredComponentCount:declaredComponents.length,
+      sectionComponentCount:sectionComponentNames.length,
+      missingComponentCount:missingComponents.length,
+      mappedSectionCount:sectionComponentNames.length-missingComponents.length
+    },
+    details:{declaredComponents,sectionComponentNames,missingComponents,componentMap:APP_COMPONENT_MAP}
+  };
+}
+
+function describeProductRulesArchitecture(){
+  const domains=Object.keys(PRODUCT_RULE_DOMAINS||{});
+  const requiredDomains=['xp','levels','mascot','achievements','activeWeek','library','challenges','spotify','persistence'];
+  const missing=requiredDomains.filter(d=>!domains.includes(d));
+  return {
+    ok:missing.length===0,
+    errors:missing.map(domain=>({domain,message:'Required product rule domain missing from PRODUCT_RULE_DOMAINS'})),
+    warnings:[],
+    stats:{
+      version:APP_LOGIC_ARCHITECTURE_VERSION,
+      phase:'R2',
+      mode:'rule-domain-map-inactive-audit-only',
+      domainCount:domains.length,
+      requiredDomainCount:requiredDomains.length,
+      missingDomainCount:missing.length,
+      behaviorChanged:false
+    },
+    details:{requiredDomains,domains,productRuleDomains:PRODUCT_RULE_DOMAINS}
+  };
+}
+
 function validateArchitectureAuditPresence(report){
-  const requiredBlocks=['runtimeAccessArchitecture','runtimeAccessIntegrity','catalogArchitecture','catalogStaticEquivalence','catalogEditArchitecture','catalogOverridesIntegrity','catalogChangeLogIntegrity','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence'];
+  const requiredBlocks=['runtimeAccessArchitecture','runtimeAccessIntegrity','catalogArchitecture','catalogStaticEquivalence','catalogEditArchitecture','catalogOverridesIntegrity','catalogChangeLogIntegrity','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence','appLogicArchitecture','appSectionsIntegrity','appComponentMap','productRulesArchitecture'];
   const missingBlocks=requiredBlocks.filter(k=>!(report&&report[k]&&typeof report[k]==='object'));
   return {
     ok:missingBlocks.length===0,
@@ -43709,6 +43889,7 @@ function validateArchitectureAuditPresence(report){
       userStateVersion:USER_STATE_ARCHITECTURE_VERSION,
       runtimeAccessVersion:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
       catalogEditVersion:CATALOG_EDIT_ARCHITECTURE_VERSION,
+      appLogicVersion:APP_LOGIC_ARCHITECTURE_VERSION,
       requiredBlockCount:requiredBlocks.length,
       presentBlockCount:requiredBlocks.length-missingBlocks.length,
       missingBlockCount:missingBlocks.length,
@@ -43732,7 +43913,8 @@ function generateSystemAuditReport(data){
       catalog:CATALOG_ARCHITECTURE_VERSION,
       userState:USER_STATE_ARCHITECTURE_VERSION,
       runtimeAccess:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-      catalogEdit:CATALOG_EDIT_ARCHITECTURE_VERSION
+      catalogEdit:CATALOG_EDIT_ARCHITECTURE_VERSION,
+      appLogic:APP_LOGIC_ARCHITECTURE_VERSION
     },
     summary:{
       activeCatalogSource:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG + catalogOverrides/customCatalogItems':'data.genres',
@@ -43748,6 +43930,9 @@ function generateSystemAuditReport(data){
       catalogOverrideActive:!!(data&&data.catalogOverrides&&Array.isArray(data.catalogOverrides.fullCatalogSnapshot)),
       customCatalogGenreCount:auditSafeArray(data&&data.customCatalogItems&&data.customCatalogItems.genres).length,
       auditScope:'base-catalog-errors-separated-from-editable-drafts',
+      appLogicSource:USE_APP_SECTIONS_CONFIG?'APP_SECTIONS':'existing App JSX/runtime logic',
+      appLogicDeclarativeMapActive:USE_APP_SECTIONS_CONFIG,
+      appSectionCount:APP_SECTIONS.length,
       weekCount:auditSafeArray(data&&data.weeks).length,
       challengeCount:auditSafeArray(data&&data.challenges).length,
       xpEventCount:auditSafeArray(data&&data.xpEvents).length
@@ -43771,6 +43956,10 @@ function generateSystemAuditReport(data){
     quizzes:validateQuizIntegrity(activeDataForReport),
     learningStaticEquivalence:compareLegacyLearningWithStaticCandidates(activeDataForReport),
     learningPriority:validateLearningPriorityConflicts(baseDataForLearningAudit),
+    appLogicArchitecture:describeAppLogicArchitecture(data),
+    appSectionsIntegrity:validateAppSectionsIntegrity(),
+    appComponentMap:describeAppComponentMap(),
+    productRulesArchitecture:describeProductRulesArchitecture(),
     userFields:validateUserFieldsInsideCatalog(activeDataForReport),
     weeks:validateWeekReferences(activeDataForReport),
     challenges:validateChallengeReferences(activeDataForReport),
@@ -43796,7 +43985,10 @@ function buildAuditBundle(data){
     customCatalogItems:ensureCatalogEditState(data||{}).customCatalogItems,
     catalogChangeLog:ensureCatalogEditState(data||{}).catalogChangeLog,
     effectiveLearning:buildEffectiveLearningSnapshot(data),
-    learningSourceMap:buildLearningSourceMap(data)
+    learningSourceMap:buildLearningSourceMap(data),
+    appSections:APP_SECTIONS,
+    appComponentMap:APP_COMPONENT_MAP,
+    productRuleDomains:PRODUCT_RULE_DOMAINS
   };
 }
 
