@@ -302,7 +302,8 @@ function getUserKeyFromEmail(email){
 
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
 const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-2-static-candidate-inactive';
-const APP_ARCHITECTURE_VERSION='app-architecture-v1-7-learning-static-music-catalog-candidate';
+const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-0-candidate-inactive';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-8-learning-static-music-catalog-user-state-candidate';
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -343,6 +344,29 @@ const APP_ARCHITECTURE_VERSION='app-architecture-v1-7-learning-static-music-cata
    Important rule: Phase N creates a real static MUSIC_CATALOG block, but
    does NOT activate it as the app source yet. The UI still reads data.genres.
    Editorial fixes remain out of scope.
+   ============================================================ */
+
+/* ============================================================
+   USER STATE ARCHITECTURE STATUS
+
+   ACTIVE SOURCE:
+   - data object as currently loaded/saved by the app
+   - data.weeks, data.completedGenreIds, data.challenges, data.xpEvents
+   - current settings and activeWeekId
+
+   CANDIDATE / VALIDATION ONLY:
+   - buildUserStateCandidate(data)
+   - compareEffectiveUserStateWithCandidate(data)
+   - describeUserStateArchitecture(data)
+
+   Current user-state candidate type:
+   - runtime-derived-user-state-candidate
+   - inactive
+   - extracted from the effective runtime data object
+
+   Important rule: Phase O does NOT activate a separated persistence model yet.
+   It only proves that all current non-catalog state can be isolated and audited
+   before MUSIC_CATALOG is activated in a later phase.
    ============================================================ */
 
 /* ============================================================
@@ -42635,17 +42659,165 @@ function extractSongUserState(genres){
 }
 function buildUserStateCandidate(data){
   const genres=auditSafeArray(data&&data.genres);
-  return {
+  const candidate={
     generatedAt:auditNow(),
-    source:'candidate:user-state-from-runtime',
+    version:USER_STATE_ARCHITECTURE_VERSION,
+    source:'runtime:data-user-state',
+    active:false,
+    candidateType:'runtime-derived-user-state-candidate',
+    candidateStatus:'inactive, validation-only',
     settings:auditDeepClone(data&&data.settings||{}),
     weeks:auditDeepClone(data&&data.weeks||[]),
     activeWeekId:data&&data.activeWeekId||null,
     completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
     challenges:auditDeepClone(data&&data.challenges||[]),
     xpEvents:auditDeepClone(data&&data.xpEvents||[]),
-    artistUserState:extractArtistUserState(genres),
-    songUserState:extractSongUserState(genres)
+    catalogEmbeddedUserState:{
+      artistUserState:extractArtistUserState(genres),
+      songUserState:extractSongUserState(genres)
+    }
+  };
+  candidate.stats={
+    settingsKeyCount:Object.keys(candidate.settings||{}).length,
+    weekCount:auditSafeArray(candidate.weeks).length,
+    completedGenreCount:auditSafeArray(candidate.completedGenreIds).length,
+    challengeCount:auditSafeArray(candidate.challenges).length,
+    xpEventCount:auditSafeArray(candidate.xpEvents).length,
+    catalogArtistUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.artistUserState||{}).length,
+    catalogSongUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.songUserState||{}).length
+  };
+  return candidate;
+}
+function stableAuditStringifyForUserState(value){
+  if(Array.isArray(value))return '['+value.map(stableAuditStringifyForUserState).join(',')+']';
+  if(value&&typeof value==='object'){
+    return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stableAuditStringifyForUserState(value[k])).join(',')+'}';
+  }
+  return JSON.stringify(value);
+}
+function buildEffectiveUserStateSnapshot(data){
+  const genres=auditSafeArray(data&&data.genres);
+  return {
+    generatedAt:auditNow(),
+    version:USER_STATE_ARCHITECTURE_VERSION,
+    source:'runtime:data-current-user-state',
+    settings:auditDeepClone(data&&data.settings||{}),
+    weeks:auditDeepClone(data&&data.weeks||[]),
+    activeWeekId:data&&data.activeWeekId||null,
+    completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
+    challenges:auditDeepClone(data&&data.challenges||[]),
+    xpEvents:auditDeepClone(data&&data.xpEvents||[]),
+    catalogEmbeddedUserState:{
+      artistUserState:extractArtistUserState(genres),
+      songUserState:extractSongUserState(genres)
+    }
+  };
+}
+function compareEffectiveUserStateWithCandidate(data){
+  const res=auditMakeResult();
+  const effective=buildEffectiveUserStateSnapshot(data);
+  const candidate=buildUserStateCandidate(data);
+  const sections=[
+    'settings',
+    'weeks',
+    'activeWeekId',
+    'completedGenreIds',
+    'challenges',
+    'xpEvents',
+    'catalogEmbeddedUserState'
+  ];
+  const matchedSections=[];
+  const mismatchedSections=[];
+  sections.forEach(section=>{
+    const same=stableAuditStringifyForUserState(effective[section])===stableAuditStringifyForUserState(candidate[section]);
+    if(same)matchedSections.push(section);
+    else mismatchedSections.push({section,message:'User-state candidate does not match effective runtime user state section'});
+  });
+  const stats={
+    version:USER_STATE_ARCHITECTURE_VERSION,
+    active:false,
+    candidateActive:false,
+    activeUserStateSource:'data runtime object',
+    candidateSource:'buildUserStateCandidate(data)',
+    candidateType:'runtime-derived-user-state-candidate',
+    candidateStatus:'inactive, validation-only',
+    comparedSectionCount:sections.length,
+    matchedSectionCount:matchedSections.length,
+    mismatchedSectionCount:mismatchedSections.length,
+    settingsKeyCount:Object.keys(candidate.settings||{}).length,
+    effectiveWeekCount:auditSafeArray(effective.weeks).length,
+    candidateWeekCount:auditSafeArray(candidate.weeks).length,
+    effectiveCompletedGenreCount:auditSafeArray(effective.completedGenreIds).length,
+    candidateCompletedGenreCount:auditSafeArray(candidate.completedGenreIds).length,
+    effectiveChallengeCount:auditSafeArray(effective.challenges).length,
+    candidateChallengeCount:auditSafeArray(candidate.challenges).length,
+    effectiveXpEventCount:auditSafeArray(effective.xpEvents).length,
+    candidateXpEventCount:auditSafeArray(candidate.xpEvents).length,
+    effectiveCatalogArtistUserStateCount:Object.keys(effective.catalogEmbeddedUserState.artistUserState||{}).length,
+    candidateCatalogArtistUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.artistUserState||{}).length,
+    effectiveCatalogSongUserStateCount:Object.keys(effective.catalogEmbeddedUserState.songUserState||{}).length,
+    candidateCatalogSongUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.songUserState||{}).length
+  };
+  res.stats=stats;
+  res.details={matchedSections,mismatchedSections,sectionsCompared:sections};
+  mismatchedSections.forEach(item=>auditPush(res,'error',item));
+  if(stats.effectiveWeekCount!==stats.candidateWeekCount)auditPush(res,'error',{message:'Week count mismatch between effective user state and candidate',effective:stats.effectiveWeekCount,candidate:stats.candidateWeekCount});
+  if(stats.effectiveXpEventCount!==stats.candidateXpEventCount)auditPush(res,'error',{message:'XP event count mismatch between effective user state and candidate',effective:stats.effectiveXpEventCount,candidate:stats.candidateXpEventCount});
+  if(stats.effectiveCompletedGenreCount!==stats.candidateCompletedGenreCount)auditPush(res,'error',{message:'Completed genre count mismatch between effective user state and candidate',effective:stats.effectiveCompletedGenreCount,candidate:stats.candidateCompletedGenreCount});
+  return res;
+}
+function describeUserStateArchitecture(data){
+  const candidate=buildUserStateCandidate(data);
+  const equivalence=compareEffectiveUserStateWithCandidate(data);
+  return {
+    ok:equivalence.ok,
+    errors:equivalence.errors,
+    warnings:[],
+    stats:{
+      version:USER_STATE_ARCHITECTURE_VERSION,
+      activeSource:'data runtime object',
+      candidateSource:'buildUserStateCandidate(data)',
+      candidateStatus:'inactive, validation-only, runtime-derived',
+      candidateType:'runtime-derived-user-state-candidate',
+      candidateActive:false,
+      settingsKeyCount:candidate.stats.settingsKeyCount,
+      weekCount:candidate.stats.weekCount,
+      completedGenreCount:candidate.stats.completedGenreCount,
+      challengeCount:candidate.stats.challengeCount,
+      xpEventCount:candidate.stats.xpEventCount,
+      catalogArtistUserStateCount:candidate.stats.catalogArtistUserStateCount,
+      catalogSongUserStateCount:candidate.stats.catalogSongUserStateCount,
+      equivalenceOk:equivalence.ok,
+      matchedSectionCount:equivalence.stats.matchedSectionCount,
+      mismatchedSectionCount:equivalence.stats.mismatchedSectionCount
+    },
+    details:{
+      controlledNotices:[
+        'User state candidate is runtime-derived and inactive.',
+        'Phase O does not change persistence or activate a split data model.',
+        'The candidate is intended to prove that non-catalog state can be isolated before MUSIC_CATALOG activation.'
+      ],
+      stateSections:[
+        'settings',
+        'weeks',
+        'activeWeekId',
+        'completedGenreIds',
+        'challenges',
+        'xpEvents',
+        'catalogEmbeddedUserState'
+      ],
+      intendedSeparation:{
+        catalog:'MUSIC_CATALOG should own genres, artists, songs, roles and music metadata.',
+        userState:'USER_STATE_CANDIDATE should own settings, weeks, completion, challenges, XP and user-specific flags.'
+      },
+      invariants:[
+        'The app still reads and saves the existing data object.',
+        'No Firestore/localStorage schema migration is activated in Phase O.',
+        'No catalog, learning, XP, week or challenge content is edited in Phase O.',
+        'MUSIC_CATALOG remains inactive.'
+      ],
+      equivalenceStats:equivalence.stats
+    }
   };
 }
 function buildEffectiveLearningSnapshot(data){
@@ -43122,7 +43294,7 @@ function describeLearningArchitecture(data){
 }
 
 function validateArchitectureAuditPresence(report){
-  const requiredBlocks=['catalogArchitecture','catalogStaticEquivalence','learningArchitecture','learningStaticEquivalence'];
+  const requiredBlocks=['catalogArchitecture','catalogStaticEquivalence','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence'];
   const missingBlocks=requiredBlocks.filter(k=>!(report&&report[k]&&typeof report[k]==='object'));
   return {
     ok:missingBlocks.length===0,
@@ -43132,6 +43304,7 @@ function validateArchitectureAuditPresence(report){
       appVersion:APP_ARCHITECTURE_VERSION,
       learningVersion:LEARNING_ARCHITECTURE_VERSION,
       catalogVersion:CATALOG_ARCHITECTURE_VERSION,
+      userStateVersion:USER_STATE_ARCHITECTURE_VERSION,
       requiredBlockCount:requiredBlocks.length,
       presentBlockCount:requiredBlocks.length-missingBlocks.length,
       missingBlockCount:missingBlocks.length,
@@ -43148,7 +43321,8 @@ function generateSystemAuditReport(data){
     architectureVersions:{
       app:APP_ARCHITECTURE_VERSION,
       learning:LEARNING_ARCHITECTURE_VERSION,
-      catalog:CATALOG_ARCHITECTURE_VERSION
+      catalog:CATALOG_ARCHITECTURE_VERSION,
+      userState:USER_STATE_ARCHITECTURE_VERSION
     },
     summary:{
       genreCount:auditSafeArray(data&&data.genres).length,
@@ -43165,6 +43339,8 @@ function generateSystemAuditReport(data){
     suspiciousSongs:validateSuspiciousSongTitles(data),
     catalogArchitecture:describeCatalogArchitecture(data),
     catalogStaticEquivalence:compareEffectiveCatalogWithCandidate(data),
+    userStateArchitecture:describeUserStateArchitecture(data),
+    userStateCandidateIntegrity:compareEffectiveUserStateWithCandidate(data),
     learningArchitecture:describeLearningArchitecture(data),
     learning:validateLearningCoverage(data),
     quizzes:validateQuizIntegrity(data),
@@ -43187,9 +43363,10 @@ function buildAuditBundle(data){
     report:generateSystemAuditReport(data),
     effectiveCatalog:buildEffectiveCatalogSnapshot(data),
     staticCatalogCandidate:buildStaticCatalogCandidate(data),
+    effectiveUserState:buildEffectiveUserStateSnapshot(data),
+    userStateCandidate:buildUserStateCandidate(data),
     effectiveLearning:buildEffectiveLearningSnapshot(data),
-    learningSourceMap:buildLearningSourceMap(data),
-    userStateCandidate:buildUserStateCandidate(data)
+    learningSourceMap:buildLearningSourceMap(data)
   };
 }
 
