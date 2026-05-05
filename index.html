@@ -10838,6 +10838,431 @@ function getGenreLearning(genre){
   return {...base,...(genre.learning||{}),...curated,quiz:(curated.quiz&&curated.quiz.length?curated.quiz:(genre.learning&&genre.learning.quiz&&genre.learning.quiz.length?genre.learning.quiz:base.quiz))};
 }
 
+
+/* ============================================================
+   AUDIT / SNAPSHOT TOOLS - READ ONLY
+   Fase G: diagnóstico no destructivo.
+   Estas funciones NO llaman a setData, saveData, setDoc ni localStorage.
+   ============================================================ */
+function auditNow(){return new Date().toISOString();}
+function auditSafeArray(v){return Array.isArray(v)?v:[];}
+function auditDeepClone(obj){
+  try{return JSON.parse(JSON.stringify(obj));}
+  catch(e){return obj;}
+}
+function auditNormalize(value){
+  return String(value||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[’']/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim()
+    .replace(/\s+/g,' ');
+}
+function auditSongTitle(song){
+  if(typeof song==='string')return song;
+  if(song&&typeof song==='object')return song.title||song.name||song.song||'';
+  return '';
+}
+function auditCountArtists(genres){
+  return auditSafeArray(genres).reduce((sum,g)=>sum+auditSafeArray(g&&g.artists).length,0);
+}
+function auditCountSongs(genres){
+  return auditSafeArray(genres).reduce((sum,g)=>sum+auditSafeArray(g&&g.artists).reduce((aSum,a)=>aSum+auditSafeArray(a&&a.suggestedSongs).length,0),0);
+}
+const AUDIT_ARTIST_USER_FIELDS=['scoreU1','scoreU2','commentU1','commentU2','favU1','favU2','replay','replayU1','replayU2','moodU1','moodU2','situationsU1','situationsU2'];
+const AUDIT_SONG_USER_FIELDS=['heardU1','heardU2','favU1','favU2','favoriteU1','favoriteU2','listenedU1','listenedU2','completedU1','completedU2'];
+function auditPickStaticArtistFields(artist){
+  const a=artist||{};
+  return {
+    id:a.id||'',
+    name:a.name||'',
+    role:a.role||'',
+    shortDescription:a.shortDescription||'',
+    suggestedSongs:auditSafeArray(a.suggestedSongs).map(s=>{
+      if(typeof s==='string')return {title:s};
+      return {title:s?.title||'',note:s?.note||'',spotifyUrl:s?.spotifyUrl||''};
+    })
+  };
+}
+function auditPickUserArtistFields(artist){
+  const a=artist||{};
+  return AUDIT_ARTIST_USER_FIELDS.reduce((acc,k)=>{
+    if(Object.prototype.hasOwnProperty.call(a,k)&&a[k]!==undefined&&a[k]!==''&&a[k]!==false&&a[k]!==null)acc[k]=a[k];
+    return acc;
+  },{});
+}
+function auditPickUserSongFields(song){
+  if(!song||typeof song!=='object')return {};
+  return AUDIT_SONG_USER_FIELDS.reduce((acc,k)=>{
+    if(Object.prototype.hasOwnProperty.call(song,k)&&song[k]!==undefined&&song[k]!==''&&song[k]!==false&&song[k]!==null)acc[k]=song[k];
+    return acc;
+  },{});
+}
+function auditDownloadJson(filename,obj){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function detectLearningSource(genre){
+  if(!genre)return 'missing';
+  const hasCurated=!!CURATED_LEARNING_BY_GENRE[genre.id];
+  const hasInternal=!!genre.learning;
+  if(hasCurated&&hasInternal)return 'curated_over_internal';
+  if(hasCurated)return 'curated';
+  if(hasInternal)return 'internal';
+  return 'fallback_generated';
+}
+function detectQuizSource(genre){
+  if(!genre)return 'missing';
+  const curated=CURATED_LEARNING_BY_GENRE[genre.id]||{};
+  if(curated.quiz&&curated.quiz.length)return genre.learning&&genre.learning.quiz&&genre.learning.quiz.length?'curated_over_internal':'curated';
+  if(genre.learning&&genre.learning.quiz&&genre.learning.quiz.length)return 'internal';
+  return 'fallback_generated';
+}
+function buildEffectiveCatalogSnapshot(data){
+  const genres=auditSafeArray(data&&data.genres);
+  return {generatedAt:auditNow(),source:'runtime:data.genres',genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres),genres:auditDeepClone(genres)};
+}
+function buildStaticCatalogCandidate(data){
+  const genres=auditSafeArray(data&&data.genres).map(g=>({
+    id:g.id||'',
+    name:g.name||'',
+    parentFamily:g.parentFamily||'',
+    description:g.description||'',
+    originContext:g.originContext||'',
+    moodTags:auditSafeArray(g.moodTags),
+    suggestedSituations:auditSafeArray(g.suggestedSituations),
+    artists:auditSafeArray(g.artists).map(a=>auditPickStaticArtistFields(a))
+  }));
+  return {generatedAt:auditNow(),source:'candidate:static-catalog-from-runtime',genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres),genres};
+}
+function extractArtistUserState(genres){
+  const out={};
+  auditSafeArray(genres).forEach(g=>auditSafeArray(g.artists).forEach(a=>{
+    const fields=auditPickUserArtistFields(a);
+    if(Object.keys(fields).length){
+      const key=(a.id||`${g.id||'unknown'}::${auditNormalize(a.name)}`);
+      out[key]={genreId:g.id||'',artistId:a.id||'',artistName:a.name||'',fields};
+    }
+  }));
+  return out;
+}
+function extractSongUserState(genres){
+  const out={};
+  auditSafeArray(genres).forEach(g=>auditSafeArray(g.artists).forEach(a=>auditSafeArray(a.suggestedSongs).forEach((s,idx)=>{
+    const fields=auditPickUserSongFields(s);
+    if(Object.keys(fields).length){
+      const title=auditSongTitle(s)||`song-${idx+1}`;
+      const key=`${g.id||'unknown'}::${a.id||auditNormalize(a.name)}::${auditNormalize(title)}`;
+      out[key]={genreId:g.id||'',artistId:a.id||'',artistName:a.name||'',songTitle:title,fields};
+    }
+  })));
+  return out;
+}
+function buildUserStateCandidate(data){
+  const genres=auditSafeArray(data&&data.genres);
+  return {
+    generatedAt:auditNow(),
+    source:'candidate:user-state-from-runtime',
+    settings:auditDeepClone(data&&data.settings||{}),
+    weeks:auditDeepClone(data&&data.weeks||[]),
+    activeWeekId:data&&data.activeWeekId||null,
+    completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
+    challenges:auditDeepClone(data&&data.challenges||[]),
+    xpEvents:auditDeepClone(data&&data.xpEvents||[]),
+    artistUserState:extractArtistUserState(genres),
+    songUserState:extractSongUserState(genres)
+  };
+}
+function buildEffectiveLearningSnapshot(data){
+  const genres=auditSafeArray(data&&data.genres).map(genre=>{
+    const resolved=getGenreLearning(genre)||{};
+    return {
+      genreId:genre.id||'',
+      genreName:genre.name||'',
+      source:detectLearningSource(genre),
+      quizSource:detectQuizSource(genre),
+      learning:{
+        birthplace:resolved.birthplace||'',
+        era:resolved.era||'',
+        whatDefinesIt:resolved.whatDefinesIt||'',
+        howToRecognizeIt:auditSafeArray(resolved.howToRecognizeIt),
+        curiousFact:resolved.curiousFact||'',
+        keyListening:resolved.keyListening||''
+      },
+      quiz:auditDeepClone(resolved.quiz||[])
+    };
+  });
+  return {generatedAt:auditNow(),source:'effective:getGenreLearning(runtime-genre)',genreCount:genres.length,genres};
+}
+function buildLearningSourceMap(data){
+  return auditSafeArray(data&&data.genres).map(genre=>({
+    genreId:genre.id||'',
+    genreName:genre.name||'',
+    hasCurated:!!CURATED_LEARNING_BY_GENRE[genre.id],
+    hasInternalLearning:!!genre.learning,
+    effectiveSource:detectLearningSource(genre),
+    quizSource:detectQuizSource(genre),
+    curatedQuestionCount:CURATED_LEARNING_BY_GENRE[genre.id]?.quiz?.length||0,
+    internalQuestionCount:genre.learning?.quiz?.length||0,
+    effectiveQuestionCount:getGenreLearning(genre)?.quiz?.length||0
+  }));
+}
+function auditMakeResult(){return {ok:true,errors:[],warnings:[],stats:{},details:[]};}
+function auditPush(res,severity,item){
+  if(severity==='error'){res.ok=false;res.errors.push(item);} else res.warnings.push(item);
+}
+function validateCatalogShape(data){
+  const res=auditMakeResult();
+  const genres=auditSafeArray(data&&data.genres);
+  res.stats={genreCount:genres.length,artistCount:auditCountArtists(genres),songCount:auditCountSongs(genres)};
+  if(!data)auditPush(res,'error',{message:'data no existe'});
+  if(!Array.isArray(data&&data.genres))auditPush(res,'error',{message:'data.genres no es array'});
+  genres.forEach((g,gi)=>{
+    if(!g.id)auditPush(res,'error',{genreIndex:gi,message:'Género sin id'});
+    if(!g.name)auditPush(res,'error',{genreId:g.id,genreIndex:gi,message:'Género sin name'});
+    if(!Array.isArray(g.artists))auditPush(res,'error',{genreId:g.id,genreName:g.name,message:'Género sin artists array'});
+    ['description','originContext','parentFamily'].forEach(k=>{if(!g[k])auditPush(res,'warning',{genreId:g.id,genreName:g.name,field:k,message:`Campo de género vacío: ${k}`});});
+    auditSafeArray(g.artists).forEach((a,ai)=>{
+      if(!a.id)auditPush(res,'error',{genreId:g.id,artistIndex:ai,artistName:a.name,message:'Artista sin id'});
+      if(!a.name)auditPush(res,'error',{genreId:g.id,artistIndex:ai,artistId:a.id,message:'Artista sin name'});
+      if(!a.role)auditPush(res,'warning',{genreId:g.id,artistId:a.id,artistName:a.name,message:'Artista sin role'});
+      if(!Array.isArray(a.suggestedSongs))auditPush(res,'warning',{genreId:g.id,artistId:a.id,artistName:a.name,message:'Artista sin suggestedSongs array'});
+    });
+  });
+  return res;
+}
+function validateDuplicateGenres(data){
+  const res=auditMakeResult();
+  const byId={},byName={};
+  auditSafeArray(data&&data.genres).forEach(g=>{
+    const id=g.id||'';
+    const nm=auditNormalize(g.name);
+    if(id){byId[id]=byId[id]||[];byId[id].push(g.name||id);}
+    if(nm){byName[nm]=byName[nm]||[];byName[nm].push({id:g.id,name:g.name});}
+  });
+  res.details={duplicateGenreIds:Object.entries(byId).filter(([k,v])=>v.length>1),duplicateGenreNames:Object.entries(byName).filter(([k,v])=>v.length>1)};
+  res.stats={duplicateIdCount:res.details.duplicateGenreIds.length,duplicateNameCount:res.details.duplicateGenreNames.length};
+  if(res.stats.duplicateIdCount||res.stats.duplicateNameCount){res.ok=false;res.errors.push({message:'Hay géneros duplicados por id o nombre normalizado',details:res.details});}
+  return res;
+}
+function validateArtistIntegrity(data){
+  const res=auditMakeResult();
+  const validRoles=['core','variation','wildcard'];
+  auditSafeArray(data&&data.genres).forEach(g=>{
+    const ids={},names={},roles={core:0,variation:0,wildcard:0,other:0};
+    auditSafeArray(g.artists).forEach(a=>{
+      const id=a.id||'';const nm=auditNormalize(a.name);
+      if(id){ids[id]=ids[id]||[];ids[id].push(a.name||id);}
+      if(nm){names[nm]=names[nm]||[];names[nm].push({id:a.id,name:a.name});}
+      if(validRoles.includes(a.role))roles[a.role]++; else roles.other++;
+    });
+    const dupIds=Object.entries(ids).filter(([k,v])=>v.length>1);
+    const dupNames=Object.entries(names).filter(([k,v])=>v.length>1);
+    if(dupIds.length||dupNames.length)auditPush(res,'error',{genreId:g.id,genreName:g.name,message:'Artistas duplicados dentro del género',duplicateIds:dupIds,duplicateNames:dupNames});
+    if(auditSafeArray(g.artists).length!==8||roles.core!==4||roles.variation!==3||roles.wildcard!==1)auditPush(res,'warning',{genreId:g.id,genreName:g.name,totalArtists:auditSafeArray(g.artists).length,roles,message:'Distribución de artistas distinta de la regla 4 core / 3 variation / 1 wildcard'});
+  });
+  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length};
+  return res;
+}
+function validateSongIntegrity(data){
+  const res=auditMakeResult();
+  auditSafeArray(data&&data.genres).forEach(g=>{
+    const genreSongs={};
+    auditSafeArray(g.artists).forEach(a=>{
+      const songs=auditSafeArray(a.suggestedSongs);
+      const artistSongs={};
+      if(songs.length!==3)auditPush(res,'warning',{genreId:g.id,genreName:g.name,artistId:a.id,artistName:a.name,songCount:songs.length,message:'Artista con número de canciones distinto de 3'});
+      songs.forEach((s,idx)=>{
+        const title=auditSongTitle(s);
+        const norm=auditNormalize(title);
+        if(!title)auditPush(res,'warning',{genreId:g.id,artistId:a.id,artistName:a.name,songIndex:idx,message:'Canción sin título'});
+        if(norm){artistSongs[norm]=artistSongs[norm]||[];artistSongs[norm].push(title);genreSongs[norm]=genreSongs[norm]||[];genreSongs[norm].push({artistId:a.id,artistName:a.name,title});}
+      });
+      Object.entries(artistSongs).filter(([k,v])=>v.length>1).forEach(([k,v])=>auditPush(res,'error',{genreId:g.id,artistId:a.id,artistName:a.name,message:'Canción duplicada dentro del artista',titleKey:k,items:v}));
+    });
+    Object.entries(genreSongs).filter(([k,v])=>v.length>1).forEach(([k,v])=>auditPush(res,'warning',{genreId:g.id,genreName:g.name,message:'Canción repetida dentro del género',titleKey:k,items:v}));
+  });
+  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length};
+  return res;
+}
+function validateSuspiciousSongTitles(data){
+  const res=auditMakeResult();
+  const patterns=[/\balbum\b/i,/\bmixtape\b/i,/\bselection(s)?\b/i,/\bdj set\b/i,/\bfull album\b/i,/\bcomplete\b/i,/\bdiscography\b/i,/\bsoundtrack completo\b/i,/\bost completo\b/i,/\bvol\.?\s*\d+/i,/\bvolume\b/i];
+  auditSafeArray(data&&data.genres).forEach(g=>auditSafeArray(g.artists).forEach(a=>auditSafeArray(a.suggestedSongs).forEach((s,idx)=>{
+    const title=auditSongTitle(s);
+    if(patterns.some(rx=>rx.test(title)))auditPush(res,'warning',{genreId:g.id,genreName:g.name,artistId:a.id,artistName:a.name,songIndex:idx,title,message:'Título sospechoso, revisar si es canción real o álbum/mix/set'});
+  })));
+  res.stats={warningCount:res.warnings.length};
+  return res;
+}
+function validateLearningCoverage(data){
+  const res=auditMakeResult();
+  const sourceMap=buildLearningSourceMap(data);
+  res.details=sourceMap;
+  res.stats={
+    total:sourceMap.length,
+    curated:sourceMap.filter(x=>x.effectiveSource==='curated').length,
+    curatedOverInternal:sourceMap.filter(x=>x.effectiveSource==='curated_over_internal').length,
+    internal:sourceMap.filter(x=>x.effectiveSource==='internal').length,
+    fallback:sourceMap.filter(x=>x.effectiveSource==='fallback_generated').length
+  };
+  sourceMap.filter(x=>x.effectiveSource==='fallback_generated').forEach(x=>auditPush(res,'warning',{...x,message:'El género usa learning generado por fallback'}));
+  auditSafeArray(data&&data.genres).forEach(g=>{
+    const l=getGenreLearning(g)||{};
+    ['birthplace','era','whatDefinesIt','curiousFact','keyListening'].forEach(k=>{if(!l[k])auditPush(res,'warning',{genreId:g.id,genreName:g.name,field:k,message:`Learning efectivo sin ${k}`});});
+    if(!Array.isArray(l.howToRecognizeIt)||!l.howToRecognizeIt.length)auditPush(res,'warning',{genreId:g.id,genreName:g.name,field:'howToRecognizeIt',message:'Learning efectivo sin howToRecognizeIt'});
+  });
+  return res;
+}
+function validateQuizIntegrity(data){
+  const res=auditMakeResult();
+  auditSafeArray(data&&data.genres).forEach(g=>{
+    const quiz=(getGenreLearning(g)||{}).quiz||[];
+    if(quiz.length!==3)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionCount:quiz.length,message:'Quiz efectivo con número de preguntas distinto de 3'});
+    quiz.forEach((q,idx)=>{
+      if(!q.question)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin texto'});
+      if(!Array.isArray(q.options)||q.options.length<2)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin options válidas'});
+      if(!q.correct)auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin correct'});
+      if(Array.isArray(q.options)&&q.correct&&!q.options.includes(q.correct))auditPush(res,'error',{genreId:g.id,genreName:g.name,questionIndex:idx,correct:q.correct,options:q.options,message:'La respuesta correct no está dentro de options'});
+      if(!q.explanation)auditPush(res,'warning',{genreId:g.id,genreName:g.name,questionIndex:idx,message:'Pregunta sin explanation'});
+    });
+  });
+  res.stats={errorCount:res.errors.length,warningCount:res.warnings.length};
+  return res;
+}
+function validateLearningPriorityConflicts(data){
+  const res=auditMakeResult();
+  const both=buildLearningSourceMap(data).filter(x=>x.hasCurated&&x.hasInternalLearning);
+  res.details=both;
+  res.stats={genresWithBoth:both.length};
+  both.forEach(x=>auditPush(res,'warning',{...x,recommendation:'Mantener curated como fuente efectiva salvo decisión manual contraria',message:'Género con curated + internal learning'}));
+  return res;
+}
+function validateUserFieldsInsideCatalog(data){
+  const res=auditMakeResult();
+  const artists=[],songs=[];
+  auditSafeArray(data&&data.genres).forEach(g=>auditSafeArray(g.artists).forEach(a=>{
+    const af=auditPickUserArtistFields(a);
+    if(Object.keys(af).length)artists.push({genreId:g.id,genreName:g.name,artistId:a.id,artistName:a.name,fields:af});
+    auditSafeArray(a.suggestedSongs).forEach((s,idx)=>{
+      const sf=auditPickUserSongFields(s);
+      if(Object.keys(sf).length)songs.push({genreId:g.id,genreName:g.name,artistId:a.id,artistName:a.name,songIndex:idx,songTitle:auditSongTitle(s),fields:sf});
+    });
+  }));
+  res.details={artistsWithUserFields:artists,songsWithUserFields:songs};
+  res.stats={artistsWithUserFields:artists.length,songsWithUserFields:songs.length,totalUserFieldsDetected:artists.reduce((n,x)=>n+Object.keys(x.fields).length,0)+songs.reduce((n,x)=>n+Object.keys(x.fields).length,0)};
+  if(res.stats.totalUserFieldsDetected)auditPush(res,'warning',{message:'Hay progreso/campos de usuario mezclados dentro del catálogo',stats:res.stats});
+  return res;
+}
+function validateWeekReferences(data){
+  const res=auditMakeResult();
+  const genreIds=new Set(auditSafeArray(data&&data.genres).map(g=>g.id));
+  const weeks=auditSafeArray(data&&data.weeks);
+  const weekIds=new Set(weeks.map(w=>w.id));
+  if(data&&data.activeWeekId&&!weekIds.has(data.activeWeekId))auditPush(res,'error',{activeWeekId:data.activeWeekId,message:'activeWeekId no existe dentro de weeks'});
+  weeks.forEach(w=>{
+    if(w.genreId&&!genreIds.has(w.genreId))auditPush(res,'error',{weekId:w.id,genreId:w.genreId,message:'Semana referencia un genreId inexistente'});
+    if(w.learningQuiz){Object.entries(w.learningQuiz).forEach(([userKey,q])=>{if(q&&q.genreId&&!genreIds.has(q.genreId))auditPush(res,'warning',{weekId:w.id,userKey,genreId:q.genreId,message:'learningQuiz referencia un genreId inexistente'});});}
+  });
+  res.stats={weekCount:weeks.length,errorCount:res.errors.length,warningCount:res.warnings.length};
+  return res;
+}
+function validateChallengeReferences(data){
+  const res=auditMakeResult();
+  const genres=auditSafeArray(data&&data.genres);
+  const genreIds=new Set(genres.map(g=>g.id));
+  const artistIds=new Set();
+  genres.forEach(g=>auditSafeArray(g.artists).forEach(a=>artistIds.add(a.id)));
+  const validUsers=['u1','u2'];
+  auditSafeArray(data&&data.challenges).forEach(c=>{
+    if(c.genreId&&!genreIds.has(c.genreId))auditPush(res,'error',{challengeId:c.id,genreId:c.genreId,message:'Reto referencia genreId inexistente'});
+    if(c.artistId&&!artistIds.has(c.artistId))auditPush(res,'warning',{challengeId:c.id,artistId:c.artistId,message:'Reto referencia artistId no encontrado en catálogo'});
+    ['fromUser','toUser','completedBy'].forEach(k=>{if(c[k]&&!validUsers.includes(c[k]))auditPush(res,'warning',{challengeId:c.id,field:k,value:c[k],message:'Reto con userKey no esperado'});});
+  });
+  res.stats={challengeCount:auditSafeArray(data&&data.challenges).length,errorCount:res.errors.length,warningCount:res.warnings.length};
+  return res;
+}
+function validateXpConsistency(data){
+  const res=auditMakeResult();
+  const validUsers=['u1','u2'];
+  auditSafeArray(data&&data.xpEvents).forEach((ev,idx)=>{
+    if(!ev.type)auditPush(res,'warning',{eventIndex:idx,message:'XP event sin type'});
+    if(ev.userKey&&!validUsers.includes(ev.userKey))auditPush(res,'warning',{eventIndex:idx,userKey:ev.userKey,message:'XP event con userKey no esperado'});
+    if(ev.points!==undefined&&typeof ev.points!=='number')auditPush(res,'warning',{eventIndex:idx,points:ev.points,message:'XP event con points no numérico'});
+  });
+  res.stats={xpEventCount:auditSafeArray(data&&data.xpEvents).length,warningCount:res.warnings.length};
+  return res;
+}
+function validateUpgradeInjectionRisk(data){
+  const res=auditMakeResult();
+  const before=auditDeepClone(data||{});
+  const upgraded=upgradeLibraryData(auditDeepClone(data||{}));
+  const beforeGenres=auditSafeArray(before.genres);
+  const afterGenres=auditSafeArray(upgraded.genres);
+  const beforeGenreIds=new Set(beforeGenres.map(g=>g.id));
+  const addedGenres=afterGenres.filter(g=>!beforeGenreIds.has(g.id)).map(g=>({id:g.id,name:g.name}));
+  const beforeArtistByGenre={};
+  beforeGenres.forEach(g=>{beforeArtistByGenre[g.id]=new Set(auditSafeArray(g.artists).map(a=>(a.id||auditNormalize(a.name))));});
+  const addedArtistsByGenre=[];
+  afterGenres.forEach(g=>{
+    const beforeSet=beforeArtistByGenre[g.id]||new Set();
+    const added=auditSafeArray(g.artists).filter(a=>!beforeSet.has(a.id||auditNormalize(a.name))).map(a=>({id:a.id,name:a.name,role:a.role}));
+    if(added.length)addedArtistsByGenre.push({genreId:g.id,genreName:g.name,added});
+  });
+  res.details={addedGenres,addedArtistsByGenre};
+  res.stats={beforeGenreCount:beforeGenres.length,afterGenreCount:afterGenres.length,addedGenreCount:addedGenres.length,genresWithAddedArtists:addedArtistsByGenre.length,addedArtistCount:addedArtistsByGenre.reduce((n,x)=>n+x.added.length,0)};
+  if(res.stats.addedGenreCount||res.stats.addedArtistCount)auditPush(res,'warning',{message:'upgradeLibraryData todavía modificaría el catálogo si se aplicara de nuevo',stats:res.stats,details:res.details});
+  return res;
+}
+function generateSystemAuditReport(data){
+  const report={
+    generatedAt:auditNow(),
+    version:'diagnostic-v1-read-only',
+    summary:{
+      genreCount:auditSafeArray(data&&data.genres).length,
+      artistCount:auditCountArtists(data&&data.genres),
+      songCount:auditCountSongs(data&&data.genres),
+      weekCount:auditSafeArray(data&&data.weeks).length,
+      challengeCount:auditSafeArray(data&&data.challenges).length,
+      xpEventCount:auditSafeArray(data&&data.xpEvents).length
+    },
+    catalog:validateCatalogShape(data),
+    duplicateGenres:validateDuplicateGenres(data),
+    artists:validateArtistIntegrity(data),
+    songs:validateSongIntegrity(data),
+    suspiciousSongs:validateSuspiciousSongTitles(data),
+    learning:validateLearningCoverage(data),
+    quizzes:validateQuizIntegrity(data),
+    learningPriority:validateLearningPriorityConflicts(data),
+    userFields:validateUserFieldsInsideCatalog(data),
+    weeks:validateWeekReferences(data),
+    challenges:validateChallengeReferences(data),
+    xp:validateXpConsistency(data),
+    upgradeRisk:validateUpgradeInjectionRisk(data)
+  };
+  report.summary.totalErrors=Object.values(report).filter(v=>v&&typeof v==='object'&&Array.isArray(v.errors)).reduce((sum,v)=>sum+v.errors.length,0);
+  report.summary.totalWarnings=Object.values(report).filter(v=>v&&typeof v==='object'&&Array.isArray(v.warnings)).reduce((sum,v)=>sum+v.warnings.length,0);
+  return report;
+}
+function buildAuditBundle(data){
+  return {
+    generatedAt:auditNow(),
+    report:generateSystemAuditReport(data),
+    effectiveCatalog:buildEffectiveCatalogSnapshot(data),
+    staticCatalogCandidate:buildStaticCatalogCandidate(data),
+    effectiveLearning:buildEffectiveLearningSnapshot(data),
+    learningSourceMap:buildLearningSourceMap(data),
+    userStateCandidate:buildUserStateCandidate(data)
+  };
+}
+
 function LearningSummaryCard({genre}){
   const l=getGenreLearning(genre);
   if(!l)return null;
@@ -12057,8 +12482,9 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   </div>;
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onForceLibraryUpgrade}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate}){
   const [form,setForm]=useState({...settings});
+  const [auditSummary,setAuditSummary]=useState(null);
   useEffect(()=>setForm({...settings}),[settings]);
   return(
     <div>
@@ -12093,6 +12519,27 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onForceLi
           Si ves menos géneros de los esperados en este navegador, fuerza la migración segura. Añade los géneros, artistas, canciones y fichas Aprende que falten sin borrar semanas, valoraciones ni historial.
         </p>
         <button className="btn btn-primary" onClick={onForceLibraryUpgrade}>Actualizar biblioteca a la última versión</button>
+      </div>
+
+      <div className="card" style={{marginBottom:12}}>
+        <h2 style={{marginBottom:6}}>Diagnóstico avanzado, solo lectura</h2>
+        <p className="muted" style={{fontSize:12,marginBottom:12}}>
+          Herramientas de auditoría para congelar el estado efectivo antes de refactorizar. No modifican catálogo, progreso, Firebase ni localStorage.
+        </p>
+        <div className="row" style={{marginBottom:12}}>
+          <button className="btn btn-primary" onClick={()=>{const r=onGenerateAudit();setAuditSummary(r.summary);}}>Generar informe</button>
+          <button className="btn" onClick={onExportAudit}>⬇ Informe completo</button>
+          <button className="btn" onClick={onExportEffectiveCatalog}>⬇ Catálogo efectivo</button>
+          <button className="btn" onClick={onExportLearningSnapshot}>⬇ Learning/tests efectivos</button>
+          <button className="btn" onClick={onExportStaticCatalogCandidate}>⬇ Catálogo limpio candidato</button>
+          <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato</button>
+        </div>
+        {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
+          <div className="learning-box-title">Resumen último informe</div>
+          <div>Géneros: <b>{auditSummary.genreCount}</b> · Artistas: <b>{auditSummary.artistCount}</b> · Canciones: <b>{auditSummary.songCount}</b></div>
+          <div>Semanas: <b>{auditSummary.weekCount}</b> · Retos: <b>{auditSummary.challengeCount}</b> · XP events: <b>{auditSummary.xpEventCount}</b></div>
+          <div style={{marginTop:6}}>Errores: <b style={{color:auditSummary.totalErrors?'var(--danger)':'var(--green)'}}>{auditSummary.totalErrors}</b> · Warnings: <b style={{color:auditSummary.totalWarnings?'var(--warning)':'var(--green)'}}>{auditSummary.totalWarnings}</b></div>
+        </div>}
       </div>
 
       <div className="card">
@@ -12516,6 +12963,30 @@ function App(){
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download='musiclab_backup.json';a.click();URL.revokeObjectURL(url);
   }
+  function generateAudit(){
+    return generateSystemAuditReport(data);
+  }
+
+  function exportAuditReport(){
+    auditDownloadJson('musiclab_audit_report.json',generateSystemAuditReport(data));
+  }
+
+  function exportEffectiveCatalog(){
+    auditDownloadJson('musiclab_effective_catalog_snapshot.json',buildEffectiveCatalogSnapshot(data));
+  }
+
+  function exportLearningSnapshot(){
+    auditDownloadJson('musiclab_effective_learning_snapshot.json',buildEffectiveLearningSnapshot(data));
+  }
+
+  function exportStaticCatalogCandidate(){
+    auditDownloadJson('musiclab_static_catalog_candidate.json',buildStaticCatalogCandidate(data));
+  }
+
+  function exportUserStateCandidate(){
+    auditDownloadJson('musiclab_user_state_candidate.json',buildUserStateCandidate(data));
+  }
+
 
   function importData(e){
     const file=e.target.files[0];if(!file)return;
@@ -12583,7 +13054,7 @@ function App(){
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
         {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
         {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate}/>}
       </div>
 
       {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
