@@ -303,11 +303,11 @@ function getUserKeyFromEmail(email){
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
 const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-4-static-active-editable-overrides';
 const CATALOG_EDIT_ARCHITECTURE_VERSION='catalog-edit-refactor-v1-1-overrides-changelog-audit-scoped';
-const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-0-candidate-inactive';
-const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-3-static-catalog-editable-overrides-audit-scoped';
-const APP_ARCHITECTURE_VERSION='app-architecture-v1-12-static-catalog-editable-overrides-audit-scoped';
+const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-1-candidate-active';
+const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-catalog-editable-overrides-user-state-active';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-13-static-catalog-editable-overrides-user-state-active';
 const USE_STATIC_MUSIC_CATALOG=true;
-const USE_USER_STATE_CANDIDATE=false;
+const USE_USER_STATE_CANDIDATE=true;
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -343,11 +343,11 @@ const USE_USER_STATE_CANDIDATE=false;
    Current catalog route:
    - static-music-catalog-active-editable-overrides
    - MUSIC_CATALOG is the active catalog read source.
-   - USER_STATE_CANDIDATE is still inactive.
+   - USER_STATE_CANDIDATE is active as the user-state read route.
 
    Important rule: Phase Q1.2 keeps MUSIC_CATALOG as the base read source, but the effective
    catalog can now be extended or modified through persisted catalogOverrides,
-   customCatalogItems and catalogChangeLog. USER_STATE_CANDIDATE remains inactive
+   customCatalogItems and catalogChangeLog. USER_STATE_CANDIDATE is active as read route
    and editorial fixes are still out of scope.
    ============================================================ */
 
@@ -366,11 +366,11 @@ const USE_USER_STATE_CANDIDATE=false;
 
    Current user-state candidate type:
    - runtime-derived-user-state-candidate
-   - inactive
+   - active read route
    - extracted from the effective runtime data object
 
-   Important rule: Phase O does NOT activate a separated persistence model yet.
-   It only proves that all current non-catalog state can be isolated and audited
+   Important rule: Phase Q2 activates the separated user-state read route without migrating persistence yet.
+   It keeps all current non-catalog state isolated and audited
    before MUSIC_CATALOG is activated in a later phase.
    ============================================================ */
 
@@ -381,7 +381,7 @@ const USE_USER_STATE_CANDIDATE=false;
    - getRuntimeGenres(data) returns MUSIC_CATALOG because
      USE_STATIC_MUSIC_CATALOG is true.
    - getRuntimeUserState(data) still returns the current effective
-     user-state snapshot because USE_USER_STATE_CANDIDATE is false.
+     user-state snapshot because USE_USER_STATE_CANDIDATE is true.
 
    INACTIVE CANDIDATE ROUTES:
    - MUSIC_CATALOG can become the catalog source later.
@@ -42821,16 +42821,21 @@ function buildUserStateCandidate(data){
   const candidate={
     generatedAt:auditNow(),
     version:USER_STATE_ARCHITECTURE_VERSION,
-    source:'runtime:data-user-state',
-    active:false,
+    source:USE_USER_STATE_CANDIDATE?'runtime:USER_STATE_CANDIDATE_ACTIVE':'runtime:data-user-state',
+    active:USE_USER_STATE_CANDIDATE,
     candidateType:'runtime-derived-user-state-candidate',
-    candidateStatus:'inactive, validation-only',
+    candidateStatus:USE_USER_STATE_CANDIDATE?'active runtime user-state source, validation enabled':'inactive, validation-only',
     settings:auditDeepClone(data&&data.settings||{}),
     weeks:auditDeepClone(data&&data.weeks||[]),
     activeWeekId:data&&data.activeWeekId||null,
     completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
     challenges:auditDeepClone(data&&data.challenges||[]),
     xpEvents:auditDeepClone(data&&data.xpEvents||[]),
+    catalogEditState:{
+      catalogOverrides:auditDeepClone(data&&data.catalogOverrides||{}),
+      customCatalogItems:auditDeepClone(data&&data.customCatalogItems||{}),
+      catalogChangeLog:auditDeepClone(data&&data.catalogChangeLog||[])
+    },
     catalogEmbeddedUserState:{
       artistUserState:extractArtistUserState(genres),
       songUserState:extractSongUserState(genres)
@@ -42842,6 +42847,9 @@ function buildUserStateCandidate(data){
     completedGenreCount:auditSafeArray(candidate.completedGenreIds).length,
     challengeCount:auditSafeArray(candidate.challenges).length,
     xpEventCount:auditSafeArray(candidate.xpEvents).length,
+    catalogChangeLogCount:auditSafeArray(candidate.catalogEditState&&candidate.catalogEditState.catalogChangeLog).length,
+    catalogOverridesKeyCount:Object.keys(candidate.catalogEditState&&candidate.catalogEditState.catalogOverrides||{}).length,
+    customCatalogGenreCount:auditSafeArray(candidate.catalogEditState&&candidate.catalogEditState.customCatalogItems&&candidate.catalogEditState.customCatalogItems.genres).length,
     catalogArtistUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.artistUserState||{}).length,
     catalogSongUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.songUserState||{}).length
   };
@@ -42866,6 +42874,11 @@ function buildEffectiveUserStateSnapshot(data){
     completedGenreIds:auditDeepClone(data&&data.completedGenreIds||[]),
     challenges:auditDeepClone(data&&data.challenges||[]),
     xpEvents:auditDeepClone(data&&data.xpEvents||[]),
+    catalogEditState:{
+      catalogOverrides:auditDeepClone(data&&data.catalogOverrides||{}),
+      customCatalogItems:auditDeepClone(data&&data.customCatalogItems||{}),
+      catalogChangeLog:auditDeepClone(data&&data.catalogChangeLog||[])
+    },
     catalogEmbeddedUserState:{
       artistUserState:extractArtistUserState(genres),
       songUserState:extractSongUserState(genres)
@@ -42883,6 +42896,7 @@ function compareEffectiveUserStateWithCandidate(data){
     'completedGenreIds',
     'challenges',
     'xpEvents',
+    'catalogEditState',
     'catalogEmbeddedUserState'
   ];
   const matchedSections=[];
@@ -42894,12 +42908,12 @@ function compareEffectiveUserStateWithCandidate(data){
   });
   const stats={
     version:USER_STATE_ARCHITECTURE_VERSION,
-    active:false,
-    candidateActive:false,
-    activeUserStateSource:'data runtime object',
+    active:USE_USER_STATE_CANDIDATE,
+    candidateActive:USE_USER_STATE_CANDIDATE,
+    activeUserStateSource:USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE via getRuntimeUserState(data)':'data runtime object',
     candidateSource:'buildUserStateCandidate(data)',
     candidateType:'runtime-derived-user-state-candidate',
-    candidateStatus:'inactive, validation-only',
+    candidateStatus:USE_USER_STATE_CANDIDATE?'active runtime user-state source, validation enabled':'inactive, validation-only',
     comparedSectionCount:sections.length,
     matchedSectionCount:matchedSections.length,
     mismatchedSectionCount:mismatchedSections.length,
@@ -42912,6 +42926,8 @@ function compareEffectiveUserStateWithCandidate(data){
     candidateChallengeCount:auditSafeArray(candidate.challenges).length,
     effectiveXpEventCount:auditSafeArray(effective.xpEvents).length,
     candidateXpEventCount:auditSafeArray(candidate.xpEvents).length,
+    effectiveCatalogChangeLogCount:auditSafeArray(effective.catalogEditState&&effective.catalogEditState.catalogChangeLog).length,
+    candidateCatalogChangeLogCount:auditSafeArray(candidate.catalogEditState&&candidate.catalogEditState.catalogChangeLog).length,
     effectiveCatalogArtistUserStateCount:Object.keys(effective.catalogEmbeddedUserState.artistUserState||{}).length,
     candidateCatalogArtistUserStateCount:Object.keys(candidate.catalogEmbeddedUserState.artistUserState||{}).length,
     effectiveCatalogSongUserStateCount:Object.keys(effective.catalogEmbeddedUserState.songUserState||{}).length,
@@ -42934,16 +42950,19 @@ function describeUserStateArchitecture(data){
     warnings:[],
     stats:{
       version:USER_STATE_ARCHITECTURE_VERSION,
-      activeSource:'data runtime object',
+      activeSource:USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE via getRuntimeUserState(data)':'data runtime object',
       candidateSource:'buildUserStateCandidate(data)',
-      candidateStatus:'inactive, validation-only, runtime-derived',
+      candidateStatus:USE_USER_STATE_CANDIDATE?'active runtime user-state source, validation enabled':'inactive, validation-only, runtime-derived',
       candidateType:'runtime-derived-user-state-candidate',
-      candidateActive:false,
+      candidateActive:USE_USER_STATE_CANDIDATE,
       settingsKeyCount:candidate.stats.settingsKeyCount,
       weekCount:candidate.stats.weekCount,
       completedGenreCount:candidate.stats.completedGenreCount,
       challengeCount:candidate.stats.challengeCount,
       xpEventCount:candidate.stats.xpEventCount,
+      catalogChangeLogCount:candidate.stats.catalogChangeLogCount,
+      catalogOverridesKeyCount:candidate.stats.catalogOverridesKeyCount,
+      customCatalogGenreCount:candidate.stats.customCatalogGenreCount,
       catalogArtistUserStateCount:candidate.stats.catalogArtistUserStateCount,
       catalogSongUserStateCount:candidate.stats.catalogSongUserStateCount,
       equivalenceOk:equivalence.ok,
@@ -42952,9 +42971,9 @@ function describeUserStateArchitecture(data){
     },
     details:{
       controlledNotices:[
-        'User state candidate is runtime-derived and inactive.',
-        'Phase O does not change persistence or activate a split data model.',
-        'The candidate is intended to prove that non-catalog state can be isolated before MUSIC_CATALOG activation.'
+        USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE is runtime-derived and active as the app user-state read route.':'User state candidate is runtime-derived and inactive.',
+        USE_USER_STATE_CANDIDATE?'Phase Q2 activates the user-state read route without changing Firestore/localStorage schema.':'Phase O does not change persistence or activate a split data model.',
+        'The candidate proves that non-catalog state can be isolated while data remains the persistence object.'
       ],
       stateSections:[
         'settings',
@@ -42963,6 +42982,7 @@ function describeUserStateArchitecture(data){
         'completedGenreIds',
         'challenges',
         'xpEvents',
+        'catalogEditState',
         'catalogEmbeddedUserState'
       ],
       intendedSeparation:{
@@ -42970,10 +42990,10 @@ function describeUserStateArchitecture(data){
         userState:'USER_STATE_CANDIDATE should own settings, weeks, completion, challenges, XP and user-specific flags.'
       },
       invariants:[
-        'The app still reads and saves the existing data object.',
-        'No Firestore/localStorage schema migration is activated in Phase O.',
-        'No catalog, learning, XP, week or challenge content is edited in Phase O.',
-        'MUSIC_CATALOG remains inactive.'
+        'The app still saves the existing data object as the persistence container.',
+        'No Firestore/localStorage schema migration is activated in Phase Q2.',
+        'No catalog, learning, XP, week or challenge content is edited in Phase Q2.',
+        'MUSIC_CATALOG remains active with editable overlays; USER_STATE_CANDIDATE is active as read route.'
       ],
       equivalenceStats:equivalence.stats
     }
@@ -43523,8 +43543,8 @@ function describeRuntimeAccessArchitecture(data){
     warnings:[],
     stats:{
       version:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-      phase:'Q1',
-      status:'static catalog read route active; user-state route still runtime-based',
+      phase:'Q2',
+      status:'static editable catalog route active; USER_STATE_CANDIDATE read route active',
       useStaticMusicCatalog:USE_STATIC_MUSIC_CATALOG,
       useUserStateCandidate:USE_USER_STATE_CANDIDATE,
       activeCatalogRoute:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG + editable overlays':'data.genres',
@@ -43536,14 +43556,14 @@ function describeRuntimeAccessArchitecture(data){
     },
     details:{
       newAccessors:['getRuntimeGenres(data)','getRuntimeUserState(data)'],
-      activeFlags:['USE_STATIC_MUSIC_CATALOG=true'],
-      inactiveFlags:['USE_USER_STATE_CANDIDATE=false'],
+      activeFlags:['USE_STATIC_MUSIC_CATALOG=true','USE_USER_STATE_CANDIDATE=true'],
+      inactiveFlags:[],
       invariants:[
-        'Catalog reads are active through MUSIC_CATALOG in Phase Q1.',
-        'getRuntimeGenres(data) returns MUSIC_CATALOG while USE_STATIC_MUSIC_CATALOG is true.',
-        'getRuntimeUserState(data) returns the current effective user-state snapshot while USE_USER_STATE_CANDIDATE is false.',
-        'USER_STATE_CANDIDATE remains a validated candidate, not the active persistence model.',
-        'Firestore and localStorage schemas are not migrated in Phase Q1.',
+        'Catalog reads are active through MUSIC_CATALOG + editable overlays in Phase Q2.',
+        'getRuntimeGenres(data) returns MUSIC_CATALOG + catalogOverrides/customCatalogItems while USE_STATIC_MUSIC_CATALOG is true.',
+        'getRuntimeUserState(data) returns USER_STATE_CANDIDATE while USE_USER_STATE_CANDIDATE is true.',
+        'USER_STATE_CANDIDATE is active as the runtime read route, but data remains the persistence model.',
+        'Firestore and localStorage schemas are not migrated in Phase Q2.',
         'data.genres remains available as legacy/persistence source for comparison until cleanup.'
       ],
       equivalenceStats:equivalence.stats
@@ -43716,6 +43736,7 @@ function generateSystemAuditReport(data){
     },
     summary:{
       activeCatalogSource:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG + catalogOverrides/customCatalogItems':'data.genres',
+      activeUserStateSource:USE_USER_STATE_CANDIDATE?'USER_STATE_CANDIDATE':'data runtime object',
       legacyCatalogSource:'data.genres',
       genreCount:activeGenresForReport.length,
       artistCount:auditCountArtists(activeGenresForReport),
