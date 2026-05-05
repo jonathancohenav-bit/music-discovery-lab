@@ -301,11 +301,11 @@ function getUserKeyFromEmail(email){
 }
 
 const LEARNING_ARCHITECTURE_VERSION='learning-refactor-v1-5-legacy-isolated';
-const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-2-static-candidate-inactive';
+const CATALOG_ARCHITECTURE_VERSION='catalog-refactor-v1-3-static-active-read-source';
 const USER_STATE_ARCHITECTURE_VERSION='user-state-refactor-v1-0-candidate-inactive';
-const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-0-dual-mode-inactive';
-const APP_ARCHITECTURE_VERSION='app-architecture-v1-9-dual-runtime-access-inactive';
-const USE_STATIC_MUSIC_CATALOG=false;
+const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-1-static-catalog-active-user-state-inactive';
+const APP_ARCHITECTURE_VERSION='app-architecture-v1-10-static-catalog-active-user-state-runtime';
+const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=false;
 
 /* ============================================================
@@ -330,23 +330,23 @@ const USE_USER_STATE_CANDIDATE=false;
 /* ============================================================
    MUSIC CATALOG ARCHITECTURE STATUS
 
-   ACTIVE SOURCE:
-   - data.genres
+   ACTIVE SOURCE IN PHASE Q1:
+   - MUSIC_CATALOG through getRuntimeGenres(data)
 
-   STATIC CANDIDATE / VALIDATION ONLY:
-   - MUSIC_CATALOG
-   - buildMusicCatalogCandidate(data)
-   - buildStaticCatalogCandidate(data)
-   - compareEffectiveCatalogWithCandidate(data)
+   LEGACY / VALIDATION SOURCE:
+   - data.genres remains present in the runtime data object and persistence
+     layer for comparison/backward compatibility only.
+   - buildMusicCatalogCandidate(data), buildStaticCatalogCandidate(data) and
+     compareEffectiveCatalogWithCandidate(data) remain audit helpers.
 
-   Current catalog candidate type:
-   - static-music-catalog-candidate
-   - inactive
-   - extracted from the previously validated effective runtime catalog.
+   Current catalog route:
+   - static-music-catalog-active-read-source
+   - MUSIC_CATALOG is the active catalog read source.
+   - USER_STATE_CANDIDATE is still inactive.
 
-   Important rule: Phase N creates a real static MUSIC_CATALOG block, but
-   does NOT activate it as the app source yet. The UI still reads data.genres.
-   Editorial fixes remain out of scope.
+   Important rule: Phase Q1 activates only the catalog read route. It does not
+   migrate persistence, does not activate USER_STATE_CANDIDATE, and does not
+   perform editorial fixes.
    ============================================================ */
 
 /* ============================================================
@@ -375,19 +375,19 @@ const USE_USER_STATE_CANDIDATE=false;
 /* ============================================================
    RUNTIME ACCESS ARCHITECTURE STATUS
 
-   ACTIVE ROUTE IN PHASE P:
-   - getRuntimeGenres(data) exists, but returns data.genres because
-     USE_STATIC_MUSIC_CATALOG is false.
-   - getRuntimeUserState(data) exists, but returns the current effective
+   ACTIVE ROUTE IN PHASE Q1:
+   - getRuntimeGenres(data) returns MUSIC_CATALOG because
+     USE_STATIC_MUSIC_CATALOG is true.
+   - getRuntimeUserState(data) still returns the current effective
      user-state snapshot because USE_USER_STATE_CANDIDATE is false.
 
    INACTIVE CANDIDATE ROUTES:
    - MUSIC_CATALOG can become the catalog source later.
    - USER_STATE_CANDIDATE can become the user-state source later.
 
-   Important rule: Phase P only introduces a controlled dual-access layer.
-   It does not activate MUSIC_CATALOG, does not activate USER_STATE_CANDIDATE,
-   does not change persistence, and does not change UI behaviour.
+   Important rule: Phase Q1 activates only the catalog read route. It does not
+   activate USER_STATE_CANDIDATE, does not change persistence schema, and does
+   not perform catalog editorial cleanup.
    ============================================================ */
 
 /* ============================================================
@@ -43215,56 +43215,60 @@ function compareEffectiveCatalogWithCandidate(data){
   return res;
 }
 function describeCatalogArchitecture(data){
-  const genres=auditSafeArray(data&&data.genres);
+  const legacyGenres=auditSafeArray(data&&data.genres);
   const candidate=buildMusicCatalogCandidate(data);
   const candidateGenres=auditSafeArray(candidate&&candidate.genres);
+  const activeGenres=auditSafeArray(getRuntimeGenres(data));
   const equivalence=compareEffectiveCatalogWithCandidate(data);
-  const catalogClarification={
-    candidateType:'static-music-catalog-candidate',
-    staticCatalogBlockExists:true,
-    staticCatalogBlockName:'MUSIC_CATALOG',
-    candidateActive:false,
-    activeCatalogSource:'data.genres',
-    candidateBuilder:'buildMusicCatalogCandidate(data) -> MUSIC_CATALOG',
-    status:'static candidate prepared, inactive, validation-only',
-    explanation:'Phase N creates a definitive static MUSIC_CATALOG candidate block, but keeps it inactive so equivalence can be audited before future activation.'
-  };
+  const activeMatchesStatic=stableAuditStringifyForCatalog(activeGenres.map(normalizeStaticGenreForCatalog))===stableAuditStringifyForCatalog(candidateGenres.map(normalizeStaticGenreForCatalog));
+  const ok=equivalence.ok&&activeMatchesStatic;
+  const errors=[...(equivalence.errors||[])];
+  if(!activeMatchesStatic)errors.push({message:'Active catalog route does not match MUSIC_CATALOG static source in Phase Q1'});
   return {
-    ok:equivalence.ok,
-    errors:equivalence.errors,
+    ok,
+    errors,
     warnings:[],
     stats:{
       version:CATALOG_ARCHITECTURE_VERSION,
-      activeSource:'data.genres',
-      candidateSource:'buildMusicCatalogCandidate(data)',
-      candidateStatus:'inactive, validation-only, static-block',
-      candidateType:catalogClarification.candidateType,
-      staticCatalogBlockExists:true,
+      phase:'Q1',
+      activeSource:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG via getRuntimeGenres(data)':'data.genres',
+      legacyRuntimeSource:'data.genres',
+      candidateSource:'MUSIC_CATALOG / buildMusicCatalogCandidate(data)',
+      candidateStatus:USE_STATIC_MUSIC_CATALOG?'active read source, validation still enabled':'inactive, validation-only',
+      candidateType:'static-music-catalog',
+      staticCatalogBlockExists:typeof MUSIC_CATALOG!=='undefined'&&Array.isArray(MUSIC_CATALOG),
       staticCatalogBlockName:'MUSIC_CATALOG',
-      candidateActive:false,
-      runtimeGenres:genres.length,
+      candidateActive:USE_STATIC_MUSIC_CATALOG,
+      legacyRuntimeGenres:legacyGenres.length,
+      activeGenres:activeGenres.length,
       candidateGenres:candidateGenres.length,
-      runtimeArtists:auditCountArtists(genres),
+      legacyRuntimeArtists:auditCountArtists(legacyGenres),
+      activeArtists:auditCountArtists(activeGenres),
       candidateArtists:auditCountArtists(candidateGenres),
-      runtimeSongs:auditCountSongs(genres),
+      legacyRuntimeSongs:auditCountSongs(legacyGenres),
+      activeSongs:auditCountSongs(activeGenres),
       candidateSongs:auditCountSongs(candidateGenres),
       equivalenceOk:equivalence.ok,
+      activeMatchesStatic,
       matchedGenreCount:equivalence.stats.matchedGenreCount,
       mismatchedGenreCount:equivalence.stats.mismatchedGenreCount,
       missingGenreCount:equivalence.stats.missingGenreCount,
       extraGenreCount:equivalence.stats.extraGenreCount
     },
     details:{
-      clarification:catalogClarification,
-      controlledNotices:[
-        'Catalog candidate is now a real static MUSIC_CATALOG block, but remains inactive.',
-        'This is intentional for Phase N: it proves static catalog equivalence without changing the active app catalog source.'
+      intendedFinalState:'MUSIC_CATALOG is now the active catalog read source; data.genres is retained as legacy/persistence comparison source.',
+      activeReadFunction:'getRuntimeGenres(data)',
+      protectedLegacy:['data.genres','upgradeLibraryData','PHASE top-ups','INITIAL_GENRES'],
+      notes:[
+        'Phase Q1 activates only catalog reads through getRuntimeGenres(data).',
+        'The static catalog remains equivalent to the previously effective data.genres catalog.',
+        'User state remains runtime-based; USER_STATE_CANDIDATE is not active in Q1.',
+        'Persistence schema is not migrated in Q1, so data.genres is still kept for compatibility and audit comparison.'
       ],
       invariants:[
-        'The UI continues to read the active catalog from data.genres.',
-        'MUSIC_CATALOG is inactive and must not be used as app source yet.',
-        'MUSIC_CATALOG was extracted from a previously validated effective runtime catalog snapshot.',
-        'No editorial fixes are performed in Phase N.',
+        'getRuntimeGenres(data) must return MUSIC_CATALOG while USE_STATIC_MUSIC_CATALOG is true.',
+        'MUSIC_CATALOG must remain 100% equivalent to data.genres before editorial cleanup.',
+        'No editorial fixes are performed in Phase Q1.',
         'Known dataset issues remain intentionally visible in the audit report for a later editorial-cleanup phase.'
       ],
       knownOutOfScope:[
@@ -43278,7 +43282,6 @@ function describeCatalogArchitecture(data){
     }
   };
 }
-
 
 function getRuntimeGenres(data){
   if(USE_STATIC_MUSIC_CATALOG && typeof MUSIC_CATALOG!=='undefined' && Array.isArray(MUSIC_CATALOG)){
@@ -43309,7 +43312,7 @@ function compareRuntimeAccessWithCurrent(data){
   });
   const stats={
     version:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-    active:false,
+    active:!!(USE_STATIC_MUSIC_CATALOG||USE_USER_STATE_CANDIDATE),
     dualModeIntroduced:true,
     useStaticMusicCatalog:USE_STATIC_MUSIC_CATALOG,
     useUserStateCandidate:USE_USER_STATE_CANDIDATE,
@@ -43329,7 +43332,7 @@ function compareRuntimeAccessWithCurrent(data){
   };
   res.stats=stats;
   res.details={matchedUserStateSections,mismatchedUserStateSections,userStateSections};
-  if(!genresMatch)auditPush(res,'error',{message:'Runtime genre accessor differs from current data.genres while dual mode is inactive'});
+  if(!genresMatch)auditPush(res,'error',{message:'Runtime genre accessor differs from current data.genres / MUSIC_CATALOG equivalence baseline'});
   mismatchedUserStateSections.forEach(item=>auditPush(res,'error',item));
   return res;
 }
@@ -43341,8 +43344,8 @@ function describeRuntimeAccessArchitecture(data){
     warnings:[],
     stats:{
       version:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-      phase:'P',
-      status:'dual access layer introduced, inactive candidates, current behaviour preserved',
+      phase:'Q1',
+      status:'static catalog read route active; user-state route still runtime-based',
       useStaticMusicCatalog:USE_STATIC_MUSIC_CATALOG,
       useUserStateCandidate:USE_USER_STATE_CANDIDATE,
       activeCatalogRoute:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG':'data.genres',
@@ -43354,14 +43357,15 @@ function describeRuntimeAccessArchitecture(data){
     },
     details:{
       newAccessors:['getRuntimeGenres(data)','getRuntimeUserState(data)'],
-      inactiveFlags:['USE_STATIC_MUSIC_CATALOG=false','USE_USER_STATE_CANDIDATE=false'],
+      activeFlags:['USE_STATIC_MUSIC_CATALOG=true'],
+      inactiveFlags:['USE_USER_STATE_CANDIDATE=false'],
       invariants:[
-        'UI behaviour must remain unchanged in Phase P.',
-        'getRuntimeGenres(data) returns data.genres while USE_STATIC_MUSIC_CATALOG is false.',
+        'Catalog reads are active through MUSIC_CATALOG in Phase Q1.',
+        'getRuntimeGenres(data) returns MUSIC_CATALOG while USE_STATIC_MUSIC_CATALOG is true.',
         'getRuntimeUserState(data) returns the current effective user-state snapshot while USE_USER_STATE_CANDIDATE is false.',
-        'MUSIC_CATALOG remains a validated static candidate, not the active source.',
         'USER_STATE_CANDIDATE remains a validated candidate, not the active persistence model.',
-        'Firestore and localStorage schemas are not migrated in Phase P.'
+        'Firestore and localStorage schemas are not migrated in Phase Q1.',
+        'data.genres remains available as legacy/persistence source for comparison until cleanup.'
       ],
       equivalenceStats:equivalence.stats
     }
@@ -43426,6 +43430,8 @@ function validateArchitectureAuditPresence(report){
 }
 
 function generateSystemAuditReport(data){
+  const activeGenresForReport=auditSafeArray(getRuntimeGenres(data));
+  const legacyGenresForReport=auditSafeArray(data&&data.genres);
   const report={
     generatedAt:auditNow(),
     version:APP_ARCHITECTURE_VERSION,
@@ -43437,9 +43443,14 @@ function generateSystemAuditReport(data){
       runtimeAccess:RUNTIME_ACCESS_ARCHITECTURE_VERSION
     },
     summary:{
-      genreCount:auditSafeArray(data&&data.genres).length,
-      artistCount:auditCountArtists(data&&data.genres),
-      songCount:auditCountSongs(data&&data.genres),
+      activeCatalogSource:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG':'data.genres',
+      legacyCatalogSource:'data.genres',
+      genreCount:activeGenresForReport.length,
+      artistCount:auditCountArtists(activeGenresForReport),
+      songCount:auditCountSongs(activeGenresForReport),
+      legacyGenreCount:legacyGenresForReport.length,
+      legacyArtistCount:auditCountArtists(legacyGenresForReport),
+      legacySongCount:auditCountSongs(legacyGenresForReport),
       weekCount:auditSafeArray(data&&data.weeks).length,
       challengeCount:auditSafeArray(data&&data.challenges).length,
       xpEventCount:auditSafeArray(data&&data.xpEvents).length
@@ -44865,12 +44876,13 @@ function App(){
     const value=Number(amount)||0;
     if(!userKey||!type||!refId||value<=0)return;
     const currentData=data||{};
+    const activeGenresForStats=getRuntimeGenres(currentData);
     const events=Array.isArray(currentData.xpEvents)?currentData.xpEvents:[];
     const idx=events.findIndex(e=>e&&e.userKey===userKey&&e.refId===refId);
     const currentAmount=idx>=0?(Number(events[idx].amount)||0):0;
     if(value<=currentAmount)return;
     const delta=value-currentAmount;
-    const beforeStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],userKey,currentData.genres||[],events);
+    const beforeStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],userKey,activeGenresForStats,events);
     let nextEvents;
     if(idx>=0){
       nextEvents=[...events];
@@ -44878,7 +44890,7 @@ function App(){
     }else{
       nextEvents=[...events,{id:genId(),userKey,type,amount:value,label:label||'XP ganado',refId,meta,createdAt:new Date().toISOString()}];
     }
-    const afterStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],userKey,currentData.genres||[],nextEvents);
+    const afterStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],userKey,activeGenresForStats,nextEvents);
     update(prev=>({...prev,xpEvents:nextEvents}));
     // El award de XP solo se ejecuta como consecuencia de una acción local del usuario en esta sesión.
     // Firestore sincroniza xpEvents, pero el listener no llama a awardXp ni dispara toasts.
@@ -45004,7 +45016,10 @@ function App(){
   }
 
   const safeData=data||{settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[],challenges:[],xpEvents:[]};
-  const {settings,genres,weeks,activeWeekId,completedGenreIds,challenges=[],xpEvents=[]}=safeData;
+  const runtimeGenres=useMemo(()=>getRuntimeGenres(safeData),[safeData]);
+  const runtimeUserState=useMemo(()=>getRuntimeUserState(safeData),[safeData]);
+  const effectiveData=useMemo(()=>({...safeData,...runtimeUserState,genres:runtimeGenres}),[safeData,runtimeUserState,runtimeGenres]);
+  const {settings,genres,weeks,activeWeekId,completedGenreIds,challenges=[],xpEvents=[]}=effectiveData;
   const u1=settings.user1||'Jonathan';
   const u2=settings.user2||'Lucy';
   const currentUserKey=getUserKeyFromEmail(authUser&&authUser.email)||'u1';
@@ -45146,11 +45161,12 @@ function App(){
   }
 
   function closeWeek(){
-    const currentData=data||{};
-    const beforeStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],currentUserKey,currentData.genres||[],currentData.xpEvents||[]);
+    const currentData=effectiveData||data||{};
+    const activeGenresForStats=getRuntimeGenres(currentData);
+    const beforeStats=getUserGamificationStats(currentData.weeks||[],currentData.challenges||[],currentUserKey,activeGenresForStats,currentData.xpEvents||[]);
     const nextWeeks=(currentData.weeks||[]).map(w=>w.id===activeWeek.id?{...w,status:'completed',rating:weekRating,insights:buildCloseWeekInsightsSnapshot(activeWeek,currentData.settings?.user1||'Jonathan',currentData.settings?.user2||'Lucy')}:w);
     const nextCompletedGenreIds=[...(currentData.completedGenreIds||[]),activeWeek.genreId];
-    const afterStats=getUserGamificationStats(nextWeeks,currentData.challenges||[],currentUserKey,currentData.genres||[],currentData.xpEvents||[]);
+    const afterStats=getUserGamificationStats(nextWeeks,currentData.challenges||[],currentUserKey,activeGenresForStats,currentData.xpEvents||[]);
     const xpDelta=Math.max(0,(Number(afterStats.xp)||0)-(Number(beforeStats.xp)||0));
     update(prev=>({
       ...prev,
