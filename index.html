@@ -308,6 +308,7 @@ const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-c
 const APP_ARCHITECTURE_VERSION='app-architecture-v1-13-static-catalog-editable-overrides-user-state-active';
 const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=true;
+
 const APP_LOGIC_MAP={
   map:'APP_LOGIC_MAP_V0_1',
   version:'app-logic-map-v0-1-sections-only',
@@ -346,199 +347,36 @@ const APP_COMPONENT_MAP={
 };
 window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
 
-const APPLICATION_LOGIC_INVENTORY={
-  inventory:'APPLICATION_LOGIC_INVENTORY_V0_1',
-  version:'application-logic-inventory-v0-1-runtime-responsibility-map',
-  generatedFrom:'R2.3',
-  runtimeImpact:'none',
-  description:'Inventario estructurado de la lógica actual por sección. No ejecuta lógica candidata, no controla navegación, no modifica render, auditoría principal, catálogo, estado de usuario, Firebase ni localStorage. Sirve para preparar Candidate Application Logic y futuras auditorías de equivalencia.',
-  migrationGoal:'Crear una Candidate Application Logic separada que pueda compararse contra la lógica runtime existente antes de activar flags por sección.',
-  activationStrategy:{
-    currentRuntime:'existing-jsx-conditional-render-and-existing-inline-handlers',
-    candidateRuntime:'inactive',
-    plannedGlobalFlag:'USE_APPLICATION_LOGIC_CANDIDATE',
-    plannedGranularFlags:[
-      'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',
-      'USE_PROFILE_VIEW_MODEL_CANDIDATE',
-      'USE_RANKINGS_VIEW_MODEL_CANDIDATE',
-      'USE_HISTORY_VIEW_MODEL_CANDIDATE',
-      'USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE',
-      'USE_CHALLENGES_VIEW_MODEL_CANDIDATE',
-      'USE_LIBRARY_ACTIONS_CANDIDATE',
-      'USE_ACTIVE_WEEK_ACTIONS_CANDIDATE'
-    ],
-    defaultMode:'legacy-runtime-active-candidate-inactive',
-    auditBeforeActivation:true
-  },
-  sections:[
-    {
-      sectionId:'dashboard',
-      componentName:'DashboardTab',
-      purpose:'Vista resumen del estado global: semana activa, avance acumulado, métricas comparadas, XP, niveles, top géneros y top artistas.',
-      reads:['getRuntimeGenres(data)','getRuntimeUserState(data)','weeks','activeWeek','completedWeeks','completedGenreIds','challenges','xpEvents','settings','genreRankings','artistRankings'],
-      writes:[],
-      derivedCalculations:['completed weeks count','active week summary','listened genres count','pending genres count','Jonathan/Lucy average ratings','rating difference','current streak','match/coincidence metrics','largest divergence','XP totals by user','level and next level progress','badges count','top genres','top artists','weekly progress'],
-      actionsTriggered:['generate random active week','manual genre selection','navigate to Semana activa'],
-      candidateViewModel:'getDashboardViewModelCandidate(data)',
-      candidateActions:[],
-      equivalenceAudit:'compareDashboardViewModel(data)',
-      legacyTouchpoints:['DashboardTab currently receives precomputed props and runtime arrays from App','some metrics may be calculated before render in App-level useMemo blocks'],
-      migrationRisk:'medium',
-      migrationPriority:1,
-      reason:'Mostly read-only, but many derived metrics must match exactly before candidate activation.'
-    },
-    {
-      sectionId:'perfil',
-      componentName:'ProfileTab',
-      purpose:'Vista de progresión individual: XP, niveles, mascotas, próxima evolución, insignias, estadísticas, favoritos y retos completados.',
-      reads:['settings','weeks','completedWeeks','xpEvents','challenges','activeWeek','getRuntimeGenres(data)','user-specific listening state','artist ratings and favorites'],
-      writes:[],
-      derivedCalculations:['XP total per user','current level','next level threshold','level progress percentage','current mascot','next mascot evolution','earned badges','locked badges','songs listened per user','100 percent weeks','completed challenges','favorite artists','favorite genres'],
-      actionsTriggered:['switch viewed profile user'],
-      candidateViewModel:'getProfileViewModelCandidate(data,userKey)',
-      candidateActions:[],
-      equivalenceAudit:'compareProfileViewModel(data)',
-      legacyTouchpoints:['XP/level/mascot helpers are still shared with runtime UI','favorite state may be read from active/completed week structures'],
-      migrationRisk:'medium-high',
-      migrationPriority:2,
-      reason:'Read-only UI, but XP, levels, mascot evolution and favorites are sensitive product rules.'
-    },
-    {
-      sectionId:'rankings',
-      componentName:'RankingsTab',
-      purpose:'Vista analítica de rankings derivados de semanas, ratings, escuchas, coincidencias y diferencias entre usuarios.',
-      reads:['weeks','completedWeeks','genreRankings','artistRankings','settings','getRuntimeGenres(data)','ratings by user','listening completion state'],
-      writes:[],
-      derivedCalculations:['top genres','top artists','average scores','rating gaps','coincidence ranking','divergence ranking','listening metrics by user','comparative metrics'],
-      actionsTriggered:[],
-      candidateViewModel:'getRankingsViewModelCandidate(data)',
-      candidateActions:[],
-      equivalenceAudit:'compareRankingsViewModel(data)',
-      legacyTouchpoints:['rankings may be precomputed in App-level memo logic before being passed into RankingsTab'],
-      migrationRisk:'medium',
-      migrationPriority:3,
-      reason:'Read-only derived analytics; good candidate after Dashboard/Profile.'
-    },
-    {
-      sectionId:'historial',
-      componentName:'HistorialTab',
-      purpose:'Vista histórica de semanas completadas y detalle de géneros, artistas, canciones, ratings, comentarios y resultados.',
-      reads:['weeks','completedWeeks','getRuntimeGenres(data)','settings','artist ratings','week comments','song listening state','quiz/week completion data'],
-      writes:['delete week','clear artist rating via confirmation flow'],
-      derivedCalculations:['completed weeks list','week detail payload','genre names and metadata','artist/song summaries','user ratings and comments','historical listening completion'],
-      actionsTriggered:['open week detail modal','delete week','clear rating'],
-      candidateViewModel:'getHistoryViewModelCandidate(data)',
-      candidateActions:['deleteWeekCandidate','clearArtistRatingCandidate'],
-      equivalenceAudit:'compareHistoryViewModel(data)',
-      legacyTouchpoints:['historical weeks may reference genre ids resolved through current effective catalog','delete/clear actions still mutate existing data shape'],
-      migrationRisk:'medium-high',
-      migrationPriority:4,
-      reason:'Mostly read-only, but includes destructive actions and historical resolution against mutable catalog.'
-    },
-    {
-      sectionId:'retos',
-      componentName:'RetosTab',
-      purpose:'Gestión de retos pendientes/completados asociados a géneros, canciones o acciones, con posible impacto en XP.',
-      reads:['challenges','weeks','activeWeek','completedWeeks','xpEvents','settings','getRuntimeGenres(data)'],
-      writes:['challenge completion state','challenge result/notes','xpEvents when challenge grants XP'],
-      derivedCalculations:['pending challenge count','completed challenge count','challenge eligibility','challenge genre context','challenge result summary','XP granted by challenge'],
-      actionsTriggered:['complete challenge','collapse/expand challenge details','generate challenge context'],
-      candidateViewModel:'getChallengeViewModelCandidate(data)',
-      candidateActions:['completeChallengeCandidate'],
-      equivalenceAudit:'compareChallengeViewModel(data)',
-      legacyTouchpoints:['challenge completion can interact with XP event history','pending challenge count also appears in nav badge'],
-      migrationRisk:'high',
-      migrationPriority:5,
-      reason:'Contains product actions and XP side effects. Should migrate after read-only view models.'
-    },
-    {
-      sectionId:'semana',
-      componentName:'SemanaTab',
-      purpose:'Workspace principal de semana activa: escucha por usuario, artistas, canciones, favoritos, Spotify, Aprende, quiz, cierre de semana y progreso.',
-      reads:['activeWeek','weeks','completedGenreIds','getRuntimeGenres(data)','LEARNING_CONTENT','QUIZZES','user listening progress','artist ratings','favorites','quiz answers/results','settings','currentUserKey'],
-      writes:['song listened state','artist listened state','artist ratings','artist favorites','quiz completion/results','active week close','completedGenreIds','weeks history','xpEvents'],
-      derivedCalculations:['active genre payload','artist cards','song chips per user','weekly listening progress','learning panel payload','quiz state','completion percentage','close-week readiness','Spotify search URL'],
-      actionsTriggered:['generate week','manual genre select','toggle artist heard','toggle song listened','rate artist','favorite artist','complete quiz','close active week','open Spotify search'],
-      candidateViewModel:'getActiveWeekViewModelCandidate(data)',
-      candidateActions:['toggleSongListenedCandidate','toggleArtistHeardCandidate','toggleArtistFavoriteCandidate','completeQuizCandidate','closeActiveWeekCandidate'],
-      equivalenceAudit:'compareActiveWeekViewModel(data)',
-      legacyTouchpoints:['activeWeek structure','XP event de-duplication','favorite summary issue pending','quiz state shape','learning/test resolution fallback paths'],
-      migrationRisk:'very-high',
-      migrationPriority:6,
-      reason:'Most critical interactive section. Do not activate candidate logic until Dashboard/Profile/Rankings/History patterns are proven.'
-    },
-    {
-      sectionId:'biblioteca',
-      componentName:'BibliotecaTab',
-      purpose:'Exploración y edición del catálogo efectivo: géneros, artistas, canciones, roles, fichas Aprende, tests, imports y restauración.',
-      reads:['getRuntimeGenres(data)','MUSIC_CATALOG','catalogOverrides','customCatalogItems','catalogChangeLog','LEARNING_CONTENT','QUIZZES','settings'],
-      writes:['catalogOverrides','customCatalogItems','catalogChangeLog','created genres','edited genres','deleted genres','created artists','edited artists','deleted artists','created songs','edited songs','deleted songs','imports'],
-      derivedCalculations:['effective catalog view','genre filters/search','artist/song counts','role labels','learning preview','test preview','catalog edit forms','override resolution'],
-      actionsTriggered:['create genre','edit genre','delete genre','create artist','edit artist','delete artist','create song','edit song','delete song','import catalog items','restore original library'],
-      candidateViewModel:'getLibraryViewModelCandidate(data)',
-      candidateActions:['createGenreCandidate','editGenreCandidate','deleteGenreCandidate','createArtistCandidate','editArtistCandidate','deleteArtistCandidate','createSongCandidate','editSongCandidate','deleteSongCandidate','importCatalogCandidate','resetOriginalLibraryCandidate'],
-      equivalenceAudit:'compareLibraryViewModel(data)',
-      legacyTouchpoints:['effective catalog is already routed through MUSIC_CATALOG + overrides + custom items','edits must preserve user progress and non-catalog state'],
-      migrationRisk:'very-high',
-      migrationPriority:7,
-      reason:'Catalog editing is high risk because it mutates persistent structures and must not destroy user state.'
-    },
-    {
-      sectionId:'ajustes',
-      componentName:'AjustesTab',
-      purpose:'Configuración, backups, imports, resets, biblioteca original, diagnósticos y exportaciones de arquitectura/candidatos.',
-      reads:['settings','audit summary','architecture constants','effective catalog snapshots','learning/test snapshots','user state candidate','app logic maps'],
-      writes:['settings','backup import data','reset all data','reset original library','force library upgrade'],
-      derivedCalculations:['audit report summary','export payloads','backup payload','diagnostic snapshots'],
-      actionsTriggered:['save settings','export backup','import backup','force library upgrade','reset original library','generate audit','export audit','export effective catalog','export learning snapshot','export static catalog candidate','export user state candidate','export app logic canary','export app logic map','export component map','export application logic inventory','reset all'],
-      candidateViewModel:'getSettingsDiagnosticsViewModelCandidate(data)',
-      candidateActions:['saveSettingsCandidate','importBackupCandidate','resetAllCandidate','resetOriginalLibraryCandidate','forceLibraryUpgradeCandidate'],
-      equivalenceAudit:'compareSettingsDiagnosticsViewModel(data)',
-      legacyTouchpoints:['generateSystemAuditReport remains primary audit path','import/reset actions are destructive and must remain legacy until separately audited'],
-      migrationRisk:'high',
-      migrationPriority:8,
-      reason:'Contains destructive operations and diagnostics. Keep legacy active until candidate actions are fully audited.'
-    }
-  ],
-  nextCandidateShell:{
-    plannedVersion:'candidate-application-logic-shell-v0-1',
-    firstCandidateSelector:'getDashboardViewModelCandidate(data)',
-    firstEquivalenceAudit:'compareDashboardViewModel(data)',
-    activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',
-    activationDefault:false
-  }
-};
-window.__MUSICLAB_APPLICATION_LOGIC_INVENTORY_V0_1=APPLICATION_LOGIC_INVENTORY;
-
-
 /* ============================================================
-   APPLICATION LOGIC CODE DEPENDENCY AUDIT - R2.3B
+   APPLICATION LOGIC CLEAN CODE DEPENDENCY AUDIT - R2.3C
 
    Purpose:
-   - Runtime/static source audit extracted from the actual in-page Babel script.
-   - This is not a manual product inventory. It scans the current HTML script text
-     for component declarations, props, JSX usage, data references and mutation-like
-     functions.
+   - Clean runtime/static source audit extracted from the actual in-page Babel script.
+   - Separates product/runtime logic from diagnostic tooling, export helpers and persistence.
+   - This is still a static source scan, not semantic equivalence.
    - It does not control navigation, render, data persistence, Firebase, localStorage,
      catalog, learning, quizzes, XP or user state.
    ============================================================ */
-const APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT_VERSION='application-logic-code-dependency-audit-v0-1-runtime-source-scan';
+const APPLICATION_LOGIC_CLEAN_CODE_AUDIT_VERSION='application-logic-clean-code-audit-v0-1-runtime-source-classified';
 
-function getApplicationScriptSourceText(){
+const APPLICATION_LOGIC_AUDIT_TOOLING_NAMES=[
+  'getCleanApplicationScriptSourceText','countOccurrencesInText','escapeRegexForAudit','extractBalancedBlockFromIndex',
+  'extractFunctionInfoFromSource','extractDestructuredProps','extractJsxUsageProps','extractHookStateNames',
+  'extractReferencedTokens','extractCalledFunctions','extractNamedFunctionsFromSource','analyzeComponentFromSource',
+  'analyzeFunctionSideEffectsFromSource','classifyApplicationFunctionForAudit','isAuditToolingFunctionForCleanAudit',
+  'isDiagnosticExportFunctionForCleanAudit','isPersistenceFunctionForCleanAudit','isApplicationComponentFunctionForCleanAudit',
+  'buildCleanAuditSectionSummary','summarizeCleanAuditForMigration','buildApplicationLogicCleanCodeAudit'
+];
+const APPLICATION_LOGIC_DIAGNOSTIC_EXPORT_NAMES=['auditDownloadJson','generateAudit','exportAuditReport','exportEffectiveCatalog','exportLearningSnapshot','exportStaticCatalogCandidate','exportUserStateCandidate','exportAppLogicCanary','exportAppLogicMap','exportAppComponentMap','exportApplicationLogicCleanCodeAudit','generateSystemAuditReport'];
+const APPLICATION_LOGIC_PERSISTENCE_NAMES=['loadData','saveData','importData','exportData','signIn','signOutNow','wipeAllNow','resetAll','resetLibrary','resetLibraryNow','forceLibraryUpgrade','prepareEditableCatalogData','upgradeLibraryData','updateCatalogInData','resetCatalogCustomizationsInData'];
+
+function getCleanApplicationScriptSourceText(){
   const scripts=Array.from(document.querySelectorAll('script[type="text/babel"]'));
   const main=scripts.find(sc=>(sc.textContent||'').includes('function App('))||scripts[0];
   return main?(main.textContent||''):'';
 }
-
-function countOccurrencesInText(text,needle){
-  if(!text||!needle)return 0;
-  return (text.match(new RegExp(escapeRegexForAudit(needle),'g'))||[]).length;
-}
-
-function escapeRegexForAudit(text){
-  return String(text).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-}
-
+function countOccurrencesInText(text,needle){if(!text||!needle)return 0;return (text.match(new RegExp(escapeRegexForAudit(needle),'g'))||[]).length;}
+function escapeRegexForAudit(text){return String(text).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 function extractBalancedBlockFromIndex(source,openBraceIndex){
   if(openBraceIndex<0||source[openBraceIndex]!=='{')return '';
   let depth=0;
@@ -552,13 +390,11 @@ function extractBalancedBlockFromIndex(source,openBraceIndex){
   }
   return '';
 }
-
 function extractFunctionInfoFromSource(source,functionName){
   const marker='function '+functionName;
   const start=source.indexOf(marker);
-  if(start<0)return {name:functionName,exists:false};
+  if(start<0)return {name:functionName,exists:false,signatureRaw:'',bodyLength:0,body:''};
   const parenStart=source.indexOf('(',start);
-  if(parenStart<0)return {name:functionName,exists:true,signatureRaw:'',body:''};
   let depth=0,parenEnd=-1;
   for(let i=parenStart;i<source.length;i++){
     const ch=source[i];
@@ -573,30 +409,25 @@ function extractFunctionInfoFromSource(source,functionName){
   const body=extractBalancedBlockFromIndex(source,braceStart);
   return {name:functionName,exists:true,signatureRaw,bodyLength:body.length,body};
 }
-
 function extractDestructuredProps(signatureRaw){
   if(!signatureRaw)return [];
   const t=signatureRaw.trim();
   if(!(t.startsWith('{')&&t.endsWith('}')))return [];
   return t.slice(1,-1).split(',').map(x=>x.trim()).filter(Boolean).map(x=>x.split(':')[0].split('=')[0].trim()).filter(Boolean);
 }
-
 function extractJsxUsageProps(source,componentName){
   const props=[];
-  const blocks=[];
   const rx=new RegExp('<'+escapeRegexForAudit(componentName)+'\\s+([\\s\\S]*?)(?:/?>)','g');
   let m;
   while((m=rx.exec(source))){
     const raw=m[1]||'';
     if(raw.includes('function ')||raw.length>5000)continue;
-    blocks.push(raw.trim().slice(0,1200));
     const prx=/([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*(?:\{|"|')/g;
     let p;
     while((p=prx.exec(raw)))props.push(p[1]);
   }
-  return {props:Array.from(new Set(props)),jsxBlocks:blocks};
+  return Array.from(new Set(props));
 }
-
 function extractHookStateNames(body){
   const out=[];
   const rx=/const\s*\[\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*,\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\]\s*=\s*useState/g;
@@ -604,167 +435,84 @@ function extractHookStateNames(body){
   while((m=rx.exec(body||'')))out.push({state:m[1],setter:m[2]});
   return out;
 }
-
 function extractReferencedTokens(body,tokens){
   const found=[];
   const text=body||'';
-  tokens.forEach(t=>{
-    if(new RegExp('(^|[^A-Za-z0-9_$])'+escapeRegexForAudit(t)+'([^A-Za-z0-9_$]|$)').test(text))found.push(t);
-  });
+  tokens.forEach(t=>{if(new RegExp('(^|[^A-Za-z0-9_$])'+escapeRegexForAudit(t)+'([^A-Za-z0-9_$]|$)').test(text))found.push(t);});
   return found;
 }
-
-function extractCalledFunctions(body){
+function extractCalledFunctions(body,allowedNames){
   const calls=[];
+  const allowed=allowedNames?new Set(allowedNames):null;
   const rx=/\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
   const ignore=new Set(['if','for','while','switch','catch','function','return','const','let','new','typeof','Math','Array','Object','String','Number','Boolean','Date','JSON','parseInt','parseFloat','encodeURIComponent','alert','confirm']);
   let m;
   while((m=rx.exec(body||''))){
     const name=m[1];
-    if(!ignore.has(name))calls.push(name);
+    if(ignore.has(name))continue;
+    if(allowed&&!allowed.has(name))continue;
+    calls.push(name);
   }
   return Array.from(new Set(calls)).sort();
 }
-
-function analyzeComponentFromSource(source,componentName){
+function extractNamedFunctionsFromSource(source){const names=[];const rx=/\bfunction\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;let m;while((m=rx.exec(source)))names.push(m[1]);return Array.from(new Set(names));}
+function isAuditToolingFunctionForCleanAudit(name){return APPLICATION_LOGIC_AUDIT_TOOLING_NAMES.includes(name)||/^extract/.test(name)||/^analyze/.test(name)||/^buildApplicationLogic.*Audit/.test(name)||name.includes('CleanCodeAudit')||name.includes('CodeDependencyAudit');}
+function isDiagnosticExportFunctionForCleanAudit(name){return APPLICATION_LOGIC_DIAGNOSTIC_EXPORT_NAMES.includes(name)||(/^export/.test(name)&&name!=='exportData')||name==='auditDownloadJson';}
+function isPersistenceFunctionForCleanAudit(name){return APPLICATION_LOGIC_PERSISTENCE_NAMES.includes(name);}
+function isApplicationComponentFunctionForCleanAudit(name){return Array.isArray(APP_COMPONENT_MAP&&APP_COMPONENT_MAP.components)&&APP_COMPONENT_MAP.components.some(c=>c.componentName===name);}
+function analyzeComponentFromSource(source,componentName,allFunctionNames){
   const fn=extractFunctionInfoFromSource(source,componentName);
-  const jsx=extractJsxUsageProps(source,componentName);
   const body=fn.body||'';
-  const importantTokens=['data','settings','weeks','activeWeek','completedWeeks','completedGenreIds','challenges','xpEvents','genres','genreRankings','artistRankings','catalogOverrides','customCatalogItems','catalogChangeLog','MUSIC_CATALOG','LEARNING_CONTENT','QUIZZES','currentUserKey','update','setData','setConfirm','auditDownloadJson','generateSystemAuditReport','getRuntimeGenres','getRuntimeUserState','buildEffectiveCatalogSnapshot','buildEffectiveLearningSnapshot','buildUserStateCandidate'];
-  return {
-    componentName,
-    exists:!!fn.exists,
-    signatureRaw:fn.signatureRaw||'',
-    declaredProps:extractDestructuredProps(fn.signatureRaw||''),
-    passedPropsFromApp:jsx.props,
-    jsxUsageCount:jsx.jsxBlocks.length,
-    localState:extractHookStateNames(body),
-    hookCounts:{
-      useState:countOccurrencesInText(body,'useState('),
-      useMemo:countOccurrencesInText(body,'useMemo('),
-      useEffect:countOccurrencesInText(body,'useEffect('),
-      useCallback:countOccurrencesInText(body,'useCallback('),
-      useRef:countOccurrencesInText(body,'useRef(')
-    },
-    referencedImportantTokens:extractReferencedTokens(body,importantTokens),
-    calledFunctions:extractCalledFunctions(body).slice(0,80),
-    mutationSignals:{
-      callsUpdate:body.includes('update('),
-      callsSetData:body.includes('setData('),
-      callsSetConfirm:body.includes('setConfirm('),
-      callsAuditDownloadJson:body.includes('auditDownloadJson(')
-    },
-    bodyLength:fn.bodyLength||0,
-    extractionConfidence:fn.exists?'high':'missing'
-  };
+  const importantTokens=['data','settings','weeks','activeWeek','completedWeeks','completedGenreIds','challenges','xpEvents','genres','genreRankings','artistRankings','catalogOverrides','customCatalogItems','catalogChangeLog','MUSIC_CATALOG','LEARNING_CONTENT','QUIZZES','currentUserKey','update','setData','setConfirm','generateSystemAuditReport','getRuntimeGenres','getRuntimeUserState','buildEffectiveCatalogSnapshot','buildEffectiveLearningSnapshot','buildUserStateCandidate'];
+  return {componentName,exists:!!fn.exists,declaredProps:extractDestructuredProps(fn.signatureRaw||''),passedPropsFromApp:extractJsxUsageProps(source,componentName),localState:extractHookStateNames(body),hookCounts:{useState:countOccurrencesInText(body,'useState('),useMemo:countOccurrencesInText(body,'useMemo('),useEffect:countOccurrencesInText(body,'useEffect('),useCallback:countOccurrencesInText(body,'useCallback('),useRef:countOccurrencesInText(body,'useRef(')},referencedImportantTokens:extractReferencedTokens(body,importantTokens),calledAppFunctions:extractCalledFunctions(body,allFunctionNames).filter(n=>!isAuditToolingFunctionForCleanAudit(n)).slice(0,60),mutationSignals:{callsUpdate:body.includes('update('),callsSetData:body.includes('setData('),callsSetConfirm:body.includes('setConfirm('),callsAuditDownloadJson:body.includes('auditDownloadJson(')},bodyLength:fn.bodyLength||0,category:'applicationComponent',extractionConfidence:fn.exists?'high':'missing'};
 }
-
-function extractNamedFunctionsFromSource(source){
-  const names=[];
-  const rx=/\bfunction\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
-  let m;
-  while((m=rx.exec(source)))names.push(m[1]);
-  return Array.from(new Set(names));
-}
-
-function analyzeFunctionSideEffectsFromSource(source,functionName){
+function analyzeFunctionSideEffectsFromSource(source,functionName,allFunctionNames){
   const fn=extractFunctionInfoFromSource(source,functionName);
   const body=fn.body||'';
-  const dataKeys=['weeks','activeWeek','completedGenreIds','challenges','xpEvents','settings','genres','catalogOverrides','customCatalogItems','catalogChangeLog','activeWeekId','completedGenreIds','quiz','ratings','comments'];
+  const dataKeys=['weeks','activeWeek','completedGenreIds','challenges','xpEvents','settings','genres','catalogOverrides','customCatalogItems','catalogChangeLog','activeWeekId','quiz','ratings','comments'];
   const runtimeAccessors=['getRuntimeGenres','getRuntimeUserState','buildEffectiveCatalogSnapshot','buildEffectiveLearningSnapshot','buildStaticCatalogCandidate','buildUserStateCandidate','generateSystemAuditReport','auditDownloadJson','updateCatalogInData','prepareEditableCatalogData','upgradeLibraryData'];
-  const mutates=body.includes('update(')||body.includes('setData(')||body.includes('setConfirm(')||body.includes('setTab(')||body.includes('setActive')||body.includes('setSelected')||body.includes('setProfile')||body.includes('setForm(');
-  return {
-    functionName,
-    signatureRaw:fn.signatureRaw||'',
-    bodyLength:fn.bodyLength||0,
-    mutationLike:mutates,
-    mutationSignals:{
-      update:body.includes('update('),
-      setData:body.includes('setData('),
-      setConfirm:body.includes('setConfirm('),
-      auditDownloadJson:body.includes('auditDownloadJson('),
-      localStorage:body.includes('localStorage'),
-      firebaseSetDoc:body.includes('setDoc('),
-      firebaseOnSnapshot:body.includes('onSnapshot(')
-    },
-    referencedDataKeys:extractReferencedTokens(body,dataKeys),
-    referencedRuntimeAccessors:extractReferencedTokens(body,runtimeAccessors),
-    calledFunctions:extractCalledFunctions(body).slice(0,60)
-  };
+  const mutationSignals={update:body.includes('update('),setData:body.includes('setData('),setConfirm:body.includes('setConfirm('),setTab:body.includes('setTab('),setLocalState:/\bset[A-Z][A-Za-z0-9_$]*\s*\(/.test(body),auditDownloadJson:body.includes('auditDownloadJson('),localStorage:body.includes('localStorage'),firebaseSetDoc:body.includes('setDoc('),firebaseOnSnapshot:body.includes('onSnapshot(')};
+  return {functionName,signatureRaw:fn.signatureRaw||'',bodyLength:fn.bodyLength||0,mutationLike:mutationSignals.update||mutationSignals.setData||mutationSignals.setConfirm||mutationSignals.setTab,mutationSignals,referencedDataKeys:extractReferencedTokens(body,dataKeys),referencedRuntimeAccessors:extractReferencedTokens(body,runtimeAccessors),calledAppFunctions:extractCalledFunctions(body,allFunctionNames).filter(n=>!isAuditToolingFunctionForCleanAudit(n)).slice(0,60)};
 }
-
-function compareManualInventoryWithCodeAudit(manualInventory,codeComponents){
-  const sections=auditSafeArray(manualInventory&&manualInventory.sections);
-  return sections.map(section=>{
-    const component=codeComponents.find(c=>c.componentName===section.componentName);
-    const combinedTokens=[...(component?.declaredProps||[]),...(component?.passedPropsFromApp||[]),...(component?.referencedImportantTokens||[]),...(component?.calledFunctions||[])].join(' ').toLowerCase();
-    const reads=auditSafeArray(section.reads);
-    const confirmedReads=reads.filter(r=>combinedTokens.includes(String(r).replace('(data)','').replace(/[^A-Za-z0-9_$]/g,'').toLowerCase())||combinedTokens.includes(String(r).split('(')[0].toLowerCase()));
-    return {
-      sectionId:section.sectionId,
-      componentName:section.componentName,
-      componentExists:!!component?.exists,
-      declaredPropsCount:(component?.declaredProps||[]).length,
-      passedPropsFromAppCount:(component?.passedPropsFromApp||[]).length,
-      manualReadsCount:reads.length,
-      confirmedManualReadsApprox:confirmedReads,
-      unconfirmedManualReadsApprox:reads.filter(r=>!confirmedReads.includes(r)),
-      manualWritesCount:auditSafeArray(section.writes).length,
-      componentMutationSignals:component?.mutationSignals||null,
-      confidence:component?.exists?'medium-static-regex':'missing-component'
-    };
+function classifyApplicationFunctionForAudit(functionInfo){
+  const name=functionInfo.functionName;
+  if(isApplicationComponentFunctionForCleanAudit(name))return 'applicationComponent';
+  if(isAuditToolingFunctionForCleanAudit(name))return 'auditToolingFunction';
+  if(isDiagnosticExportFunctionForCleanAudit(name))return 'diagnosticExportFunction';
+  if(isPersistenceFunctionForCleanAudit(name)||functionInfo.mutationSignals.localStorage||functionInfo.mutationSignals.firebaseSetDoc||functionInfo.mutationSignals.firebaseOnSnapshot)return 'persistenceOrBackupFunction';
+  if(functionInfo.mutationSignals.update||functionInfo.mutationSignals.setData||functionInfo.mutationSignals.setConfirm||functionInfo.mutationSignals.setTab)return 'productMutationFunction';
+  if(functionInfo.referencedDataKeys.length||functionInfo.referencedRuntimeAccessors.length)return 'applicationReadOrSelectorFunction';
+  return 'supportFunction';
+}
+function buildCleanAuditSectionSummary(components,productMutationFunctions){
+  return APP_COMPONENT_MAP.components.map(c=>{
+    const component=components.find(x=>x.componentName===c.componentName);
+    const likelyMutations=productMutationFunctions.filter(fn=>{const n=fn.functionName.toLowerCase();if(c.sectionId==='semana')return ['week','song','artist','quiz'].some(k=>n.includes(k));if(c.sectionId==='retos')return n.includes('challenge');if(c.sectionId==='historial')return n.includes('week')||n.includes('rating');if(c.sectionId==='biblioteca')return n.includes('catalog')||n.includes('library')||n.includes('genre')||n.includes('artist');if(c.sectionId==='ajustes')return ['reset','import','export','wipe','save'].some(k=>n.includes(k));return false;}).map(fn=>fn.functionName);
+    return {sectionId:c.sectionId,componentName:c.componentName,declaredProps:component?.declaredProps||[],passedPropsFromApp:component?.passedPropsFromApp||[],localState:component?.localState||[],hookCounts:component?.hookCounts||{},referencedImportantTokens:component?.referencedImportantTokens||[],probableReadOnly:!(component?.mutationSignals?.callsUpdate||component?.mutationSignals?.callsSetData||component?.mutationSignals?.callsSetConfirm),relatedProductMutationsApprox:likelyMutations,candidateViewModelPriority:c.sectionId==='dashboard'?1:c.sectionId==='perfil'?2:c.sectionId==='rankings'?3:c.sectionId==='historial'?4:null,evidence:'extracted-from-runtime-source',confidence:component?.exists?'medium-high-static-scan':'missing'};
   });
 }
-
-function buildApplicationLogicCodeDependencyAudit(){
-  const source=getApplicationScriptSourceText();
-  const componentNames=auditSafeArray(APP_COMPONENT_MAP&&APP_COMPONENT_MAP.components).map(c=>c.componentName);
-  const components=componentNames.map(name=>analyzeComponentFromSource(source,name));
-  const allFunctionNames=extractNamedFunctionsFromSource(source);
-  const sideEffects=allFunctionNames.map(name=>analyzeFunctionSideEffectsFromSource(source,name));
-  const mutationLikeFunctions=sideEffects.filter(f=>f.mutationLike||f.mutationSignals.localStorage||f.mutationSignals.firebaseSetDoc||f.mutationSignals.firebaseOnSnapshot);
-  const exportFunctions=sideEffects.filter(f=>f.mutationSignals.auditDownloadJson||/^export/i.test(f.functionName)||f.functionName.includes('Export'));
-  const runtimeAccessFunctions=sideEffects.filter(f=>f.referencedRuntimeAccessors.length>0||['getRuntimeGenres','getRuntimeUserState'].includes(f.functionName));
-  return {
-    audit:'APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT_V0_1',
-    version:APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT_VERSION,
-    generatedAt:new Date().toISOString(),
-    baseAppVersion:APP_ARCHITECTURE_VERSION,
-    runtimeImpact:'none',
-    source:'runtime-babel-script-text-regex-scan',
-    sourceStats:{
-      characters:source.length,
-      functionDeclarations:allFunctionNames.length,
-      componentDeclarationsFound:components.filter(c=>c.exists).length,
-      mutationLikeFunctions:mutationLikeFunctions.length,
-      exportFunctions:exportFunctions.length,
-      runtimeAccessFunctions:runtimeAccessFunctions.length
-    },
-    appLogicMap:APP_LOGIC_MAP,
-    componentMap:APP_COMPONENT_MAP,
-    manualInventory:APPLICATION_LOGIC_INVENTORY,
-    components,
-    mutationLikeFunctions,
-    exportFunctions,
-    runtimeAccessFunctions,
-    comparisonAgainstR23Inventory:compareManualInventoryWithCodeAudit(APPLICATION_LOGIC_INVENTORY,components),
-    limitations:[
-      'Static regex scan of the current in-page Babel script, not a full AST parser.',
-      'Confirms declarations, props, function calls and token references visible in source text.',
-      'Does not prove semantic equivalence yet; it prepares the next candidate view model audit.'
-    ],
-    nextStep:{
-      phase:'R2.4 Candidate Application Logic Shell',
-      onlyAfter:'Review this code dependency audit and use DashboardTab/App prop extraction to build getDashboardViewModelCandidate(data).',
-      firstCandidate:'getDashboardViewModelCandidate(data)',
-      firstComparison:'compareDashboardViewModel(data)',
-      activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',
-      activationDefault:false
-    }
-  };
+function summarizeCleanAuditForMigration(classifiedFunctions,components){
+  const productMutationFunctions=classifiedFunctions.filter(f=>f.category==='productMutationFunction');
+  const readOrSelectorFunctions=classifiedFunctions.filter(f=>f.category==='applicationReadOrSelectorFunction');
+  return {firstSafeCandidate:'getDashboardViewModelCandidate(data)',firstSafeReason:'DashboardTab is read-only at component level and exposes many derived metrics through props/useMemo; it is a good first view-model candidate.',readOnlyComponents:components.filter(c=>!(c.mutationSignals.callsUpdate||c.mutationSignals.callsSetData||c.mutationSignals.callsSetConfirm)).map(c=>c.componentName),highRiskActionNames:productMutationFunctions.filter(f=>['weeks','activeWeek','completedGenreIds','challenges','xpEvents','catalogOverrides','customCatalogItems','catalogChangeLog'].some(k=>f.referencedDataKeys.includes(k))).map(f=>f.functionName),productMutationCount:productMutationFunctions.length,readOrSelectorCount:readOrSelectorFunctions.length,recommendedNextPhase:'R2.4 Candidate Application Logic Shell, with dashboard candidate only, inactive by default.'};
 }
-window.__MUSICLAB_BUILD_APPLICATION_LOGIC_CODE_DEPENDENCY_AUDIT=buildApplicationLogicCodeDependencyAudit;
-
+function buildApplicationLogicCleanCodeAudit(){
+  const source=getCleanApplicationScriptSourceText();
+  const componentNames=APP_COMPONENT_MAP.components.map(c=>c.componentName);
+  const allFunctionNames=extractNamedFunctionsFromSource(source);
+  const components=componentNames.map(name=>analyzeComponentFromSource(source,name,allFunctionNames));
+  const sideEffects=allFunctionNames.map(name=>analyzeFunctionSideEffectsFromSource(source,name,allFunctionNames));
+  const classifiedFunctions=sideEffects.map(info=>({...info,category:classifyApplicationFunctionForAudit(info)}));
+  const auditToolingFunctions=classifiedFunctions.filter(f=>f.category==='auditToolingFunction');
+  const diagnosticExportFunctions=classifiedFunctions.filter(f=>f.category==='diagnosticExportFunction');
+  const persistenceOrBackupFunctions=classifiedFunctions.filter(f=>f.category==='persistenceOrBackupFunction');
+  const productMutationFunctions=classifiedFunctions.filter(f=>f.category==='productMutationFunction');
+  const applicationReadOrSelectorFunctions=classifiedFunctions.filter(f=>f.category==='applicationReadOrSelectorFunction');
+  const supportFunctions=classifiedFunctions.filter(f=>f.category==='supportFunction');
+  const sectionSummaries=buildCleanAuditSectionSummary(components,productMutationFunctions);
+  return {audit:'APPLICATION_LOGIC_CLEAN_CODE_AUDIT_V0_1',version:APPLICATION_LOGIC_CLEAN_CODE_AUDIT_VERSION,generatedAt:new Date().toISOString(),baseAppVersion:APP_ARCHITECTURE_VERSION,runtimeImpact:'none',source:'runtime-babel-script-text-classified-clean-scan',sourceStats:{characters:source.length,functionDeclarations:allFunctionNames.length,componentDeclarationsFound:components.filter(c=>c.exists).length,auditToolingFunctions:auditToolingFunctions.length,diagnosticExportFunctions:diagnosticExportFunctions.length,persistenceOrBackupFunctions:persistenceOrBackupFunctions.length,productMutationFunctions:productMutationFunctions.length,applicationReadOrSelectorFunctions:applicationReadOrSelectorFunctions.length,supportFunctions:supportFunctions.length},classificationRules:{auditTooling:'scanner/analyzer helpers separated from application logic',diagnosticExport:'audit/export helpers separated from product runtime actions',persistenceOrBackup:'localStorage, Firebase, import/export/reset and backup flows isolated',productMutation:'functions with update/setData/setConfirm/setTab signals that are not audit or persistence tooling',applicationReadOrSelector:'functions reading app data/runtime accessors without direct mutation signals'},appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP,realAppComponents:components,usableForMigration:{sectionSummaries,productMutationFunctions:productMutationFunctions.map(f=>({functionName:f.functionName,signatureRaw:f.signatureRaw,referencedDataKeys:f.referencedDataKeys,referencedRuntimeAccessors:f.referencedRuntimeAccessors,calledAppFunctions:f.calledAppFunctions,mutationSignals:f.mutationSignals})),applicationReadOrSelectorFunctions:applicationReadOrSelectorFunctions.map(f=>({functionName:f.functionName,signatureRaw:f.signatureRaw,referencedDataKeys:f.referencedDataKeys,referencedRuntimeAccessors:f.referencedRuntimeAccessors,calledAppFunctions:f.calledAppFunctions})),migrationSummary:summarizeCleanAuditForMigration(classifiedFunctions,components)},diagnosticExportFunctions:diagnosticExportFunctions.map(f=>({functionName:f.functionName,category:f.category,bodyLength:f.bodyLength})),persistenceOrBackupFunctions:persistenceOrBackupFunctions.map(f=>({functionName:f.functionName,category:f.category,referencedDataKeys:f.referencedDataKeys,mutationSignals:f.mutationSignals})),auditToolingFunctions:auditToolingFunctions.map(f=>({functionName:f.functionName,category:f.category,bodyLength:f.bodyLength})),supportFunctions:supportFunctions.map(f=>({functionName:f.functionName,category:f.category,bodyLength:f.bodyLength})),limitations:['Static source scan, not a full AST parser.','Separates audit tooling from product/application runtime, reducing the R2.3B false-positive problem.','Does not prove semantic equivalence yet; it identifies inputs for candidate view models and future comparison audits.'],nextStep:{phase:'R2.4 Candidate Application Logic Shell',firstCandidate:'getDashboardViewModelCandidate(data)',firstComparison:'compareDashboardViewModel(data)',activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',activationDefault:false}};
+}
+window.__MUSICLAB_BUILD_APPLICATION_LOGIC_CLEAN_CODE_AUDIT=buildApplicationLogicCleanCodeAudit;
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -45476,7 +45224,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   </div>;
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportAppLogicMap,onExportAppComponentMap,onExportApplicationLogicInventory,onExportApplicationLogicCodeDependencyAudit}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportAppLogicMap,onExportAppComponentMap,onExportApplicationLogicCleanCodeAudit}){
   const [form,setForm]=useState({...settings});
   const [auditSummary,setAuditSummary]=useState(null);
   useEffect(()=>setForm({...settings}),[settings]);
@@ -45532,40 +45280,27 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
           <button className="btn" onClick={onExportStaticCatalogCandidate}>⬇ Catálogo limpio candidato</button>
           <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato</button>
         </div>
-        <div className="learning-box" data-r2-canary-jsx="true" style={{fontSize:12,marginBottom:12}}>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
           <div className="learning-box-title">R2 Canary · lógica de aplicación</div>
           <p className="muted" style={{fontSize:12,marginBottom:10}}>
             Export mínimo para validar que podemos añadir una sección aislada de lógica de aplicación sin impacto en runtime, auditoría principal, catálogo, progreso, Firebase ni localStorage.
           </p>
           <button className="btn" onClick={onExportAppLogicCanary}>⬇ Exportar App Logic Canary</button>
         </div>
-        <div className="learning-box" data-r2-app-logic-map-jsx="true" style={{fontSize:12,marginBottom:12}}>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
           <div className="learning-box-title">R2.1 · App Logic Map mínimo</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>
-            Mapa descriptivo de secciones de la app. No controla navegación, render, auditoría principal, catálogo, progreso, Firebase ni localStorage.
-          </p>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>Export descriptivo de las secciones principales declaradas de la app. No controla navegación ni render.</p>
           <button className="btn" onClick={onExportAppLogicMap}>⬇ Exportar App Logic Map R2.1</button>
         </div>
-        <div className="learning-box" data-r2-component-map-jsx="true" style={{fontSize:12,marginBottom:12}}>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
           <div className="learning-box-title">R2.2 · Component Map mínimo</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>
-            Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación, render, auditoría principal, catálogo, progreso, Firebase ni localStorage.
-          </p>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>Export descriptivo de la relación entre secciones principales y componentes React actuales.</p>
           <button className="btn" onClick={onExportAppComponentMap}>⬇ Exportar Component Map R2.2</button>
         </div>
-        <div className="learning-box" data-r2-application-logic-inventory-jsx="true" style={{fontSize:12,marginBottom:12}}>
-          <div className="learning-box-title">R2.3 · Application Logic Inventory</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>
-            Inventario real de responsabilidades por sección: lecturas, escrituras, cálculos derivados, acciones, riesgos, candidatos necesarios y prioridad de migración. No activa lógica candidata.
-          </p>
-          <button className="btn" onClick={onExportApplicationLogicInventory}>⬇ Exportar Application Logic Inventory R2.3</button>
-        </div>
-        <div className="learning-box" data-r2-3b-code-dependency-audit-jsx="true" style={{fontSize:12,marginBottom:12}}>
-          <div className="learning-box-title">R2.3B · Code Dependency Audit real</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>
-            Auditoría estática generada desde el script real cargado en runtime: componentes, props declaradas, props pasadas desde App, funciones mutation-like, exports y referencias a datos críticos. No activa lógica nueva.
-          </p>
-          <button className="btn" onClick={onExportApplicationLogicCodeDependencyAudit}>⬇ Exportar Code Dependency Audit R2.3B</button>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
+          <div className="learning-box-title">R2.3C · Clean Code Dependency Audit</div>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>Escaneo clasificado del código runtime: separa lógica real de producto, persistencia/backups, exports de diagnóstico y tooling de auditoría. Reduce el ruido del scanner anterior y prepara la futura Candidate Application Logic.</p>
+          <button className="btn" onClick={onExportApplicationLogicCleanCodeAudit}>⬇ Exportar Clean Code Dependency Audit R2.3C</button>
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
@@ -45823,6 +45558,7 @@ function App(){
   const u2=settings.user2||'Lucy';
   const currentUserKey=getUserKeyFromEmail(authUser&&authUser.email)||'u1';
   const pendingChallengeCount=challengePendingForUser(challenges,currentUserKey);
+
   const forceLibraryUpgrade=useCallback(()=>{
     setData(prev=>{
       if(!prev)return prev;
@@ -46030,6 +45766,7 @@ function App(){
   function exportUserStateCandidate(){
     auditDownloadJson('musiclab_user_state_candidate.json',buildUserStateCandidate(data));
   }
+
   function exportAppLogicCanary(){
     auditDownloadJson('musiclab_app_logic_canary.json',{
       canary:'APP_LOGIC_CANARY_V1',
@@ -46063,20 +45800,8 @@ function App(){
     });
   }
 
-  function exportApplicationLogicInventory(){
-    auditDownloadJson('musiclab_application_logic_inventory_r2_3.json',{
-      inventory:'APPLICATION_LOGIC_INVENTORY_V0_1',
-      generatedAt:new Date().toISOString(),
-      baseAppVersion:APP_ARCHITECTURE_VERSION,
-      runtimeImpact:'none',
-      source:'APPLICATION_LOGIC_INVENTORY',
-      appLogicMap:APP_LOGIC_MAP,
-      componentMap:APP_COMPONENT_MAP,
-      applicationLogicInventory:APPLICATION_LOGIC_INVENTORY
-    });
-  }
-  function exportApplicationLogicCodeDependencyAudit(){
-    auditDownloadJson('musiclab_application_logic_code_dependency_audit_r2_3b.json',buildApplicationLogicCodeDependencyAudit());
+  function exportApplicationLogicCleanCodeAudit(){
+    auditDownloadJson('musiclab_application_logic_clean_code_audit_r2_3c.json',buildApplicationLogicCleanCodeAudit());
   }
   function importData(e){
     const file=e.target.files[0];if(!file)return;
@@ -46153,7 +45878,7 @@ function App(){
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
         {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
         {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportAppLogicMap={exportAppLogicMap} onExportAppComponentMap={exportAppComponentMap} onExportApplicationLogicInventory={exportApplicationLogicInventory} onExportApplicationLogicCodeDependencyAudit={exportApplicationLogicCodeDependencyAudit}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportAppLogicMap={exportAppLogicMap} onExportAppComponentMap={exportAppComponentMap} onExportApplicationLogicCleanCodeAudit={exportApplicationLogicCleanCodeAudit}/>}
       </div>
 
       {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
