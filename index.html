@@ -308,65 +308,97 @@ const RUNTIME_ACCESS_ARCHITECTURE_VERSION='runtime-access-refactor-v1-4-static-c
 const APP_ARCHITECTURE_VERSION='app-architecture-v1-13-static-catalog-editable-overrides-user-state-active';
 const USE_STATIC_MUSIC_CATALOG=true;
 const USE_USER_STATE_CANDIDATE=true;
-/* ============================================================
-   APPLICATION LOGIC / DASHBOARD CANDIDATE - R3.3
 
-   Purpose:
-   - Keeps Candidate Application Logic inactive.
-   - Builds compact Dashboard candidate and legacy snapshots.
-   - Adds formal field-level Dashboard equivalence audit.
-   - Flags remain false. No render, navigation, catalog, learning, quizzes,
-     XP, Firebase, localStorage, user state or persistence behavior is changed.
-   ============================================================ */
+
 const APP_LOGIC_MAP={
-  map:'APP_LOGIC_MAP_V0_1',version:'app-logic-map-v0-1-sections-only',generatedFrom:'R3.3-support',runtimeImpact:'none',
-  sections:['dashboard','semana','rankings','historial','biblioteca','retos','perfil','ajustes'].map(id=>({id,label:id,activeRuntimeSource:'existing-tab-condition'}))
-};
-const APP_COMPONENT_MAP={
-  map:'APP_COMPONENT_MAP_V0_1',version:'app-component-map-v0-1-tabs-only',generatedFrom:'R3.3-support',runtimeImpact:'none',
-  components:[
-    ['dashboard','DashboardTab'],['semana','SemanaTab'],['rankings','RankingsTab'],['historial','HistorialTab'],['biblioteca','BibliotecaTab'],['retos','RetosTab'],['perfil','ProfileTab'],['ajustes','AjustesTab']
-  ].map(([sectionId,componentName])=>({sectionId,componentName,componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'}))
+  map:'APP_LOGIC_MAP_V0_1',
+  version:'app-logic-map-v0-1-sections-only',
+  generatedFrom:'R6.2-active-week-candidate-active-test',
+  runtimeImpact:'none',
+  description:'Mapa descriptivo mínimo de secciones de la aplicación. No controla navegación ni render.',
+  sections:[
+    {id:'dashboard',label:'Dashboard',role:'overview',activeRuntimeSource:'existing-tab-condition'},
+    {id:'semana',label:'Semana activa',role:'active-week-workspace',activeRuntimeSource:'existing-tab-condition'},
+    {id:'rankings',label:'Rankings',role:'analytics',activeRuntimeSource:'existing-tab-condition'},
+    {id:'historial',label:'Historial',role:'completed-weeks-history',activeRuntimeSource:'existing-tab-condition'},
+    {id:'biblioteca',label:'Biblioteca',role:'catalog-explorer-editor',activeRuntimeSource:'existing-tab-condition'},
+    {id:'retos',label:'Retos',role:'challenges',activeRuntimeSource:'existing-tab-condition'},
+    {id:'perfil',label:'Perfil',role:'user-progression',activeRuntimeSource:'existing-tab-condition'},
+    {id:'ajustes',label:'Ajustes',role:'settings-diagnostics',activeRuntimeSource:'existing-tab-condition'}
+  ]
 };
 window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP;
+
+const APP_COMPONENT_MAP={
+  map:'APP_COMPONENT_MAP_V0_1',
+  version:'app-component-map-v0-1-tabs-only',
+  generatedFrom:'R6.2-active-week-candidate-active-test',
+  runtimeImpact:'none',
+  description:'Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación ni render.',
+  components:[
+    {sectionId:'dashboard',componentName:'DashboardTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'semana',componentName:'SemanaTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'rankings',componentName:'RankingsTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'historial',componentName:'HistorialTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'biblioteca',componentName:'BibliotecaTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'retos',componentName:'RetosTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'perfil',componentName:'ProfileTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'},
+    {sectionId:'ajustes',componentName:'AjustesTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'}
+  ]
+};
 window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
 
-const USE_APPLICATION_LOGIC_CANDIDATE=false;
-const USE_DASHBOARD_VIEW_MODEL_CANDIDATE=false;
-const DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION='dashboard-view-model-candidate-v0-2-compact-comparable-snapshot';
-const DASHBOARD_COMPARABLE_SNAPSHOT_VERSION='dashboard-comparable-snapshot-r3-2-compact-legacy-and-candidate';
-const DASHBOARD_EQUIVALENCE_AUDIT_VERSION='dashboard-equivalence-audit-r3-3-field-level-activation-readiness';
-const CANDIDATE_APPLICATION_LOGIC={
-  shell:'CANDIDATE_APPLICATION_LOGIC_SHELL_V0_1',
-  version:'candidate-application-logic-shell-v0-4-dashboard-equivalence-audit-inactive',
-  generatedFrom:'R3.3',status:'candidate-inactive-dashboard-equivalence-audit-ready',runtimeImpact:'none',
-  activation:{globalFlag:'USE_APPLICATION_LOGIC_CANDIDATE',globalFlagValue:USE_APPLICATION_LOGIC_CANDIDATE,firstGranularFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',firstGranularFlagValue:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,defaultMode:'legacy-runtime-active-candidate-inactive',activationRequiresAudit:true},
-  firstTarget:{sectionId:'dashboard',componentName:'DashboardTab',candidateViewModel:'getDashboardViewModelCandidate(data)',legacySnapshot:'getDashboardLegacySnapshot(data)',equivalenceAudit:'buildDashboardEquivalenceAuditExport(data)'},
-  nonGoals:['does-not-render-dashboard-from-candidate','does-not-change-navigation','does-not-change-product-actions','does-not-change-persistence','does-not-change-catalog-learning-tests-or-user-state','does-not-export-full-weeks-or-full-song-trees-in-dashboard-snapshot'],
-  nextStep:{phase:'R3.4 Dashboard Guarded Render Flag',objective:'Prepare Dashboard render to optionally consume candidate data behind USE_DASHBOARD_VIEW_MODEL_CANDIDATE, still false by default.',then:'R3.5 can test true only if R3.3 equivalence remains clean.'}
-};
-window.__MUSICLAB_CANDIDATE_APPLICATION_LOGIC_SHELL_V0_1=CANDIDATE_APPLICATION_LOGIC;
+/* ============================================================
+   APPLICATION LOGIC CANDIDATE / AUDIT - R6.2
 
-function buildDashboardViewModelRuntimeInputs(data){
-  const base=data||{};
-  const fallback={settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[],challenges:[],xpEvents:[]};
-  const safeData={...fallback,...base,settings:{...fallback.settings,...(base.settings||{})}};
-  const runtimeGenres=typeof getRuntimeGenres==='function'?getRuntimeGenres(safeData):(safeData.genres||[]);
-  const runtimeUserState=typeof getRuntimeUserState==='function'?getRuntimeUserState(safeData):safeData;
-  const effectiveData={...safeData,...runtimeUserState,genres:runtimeGenres};
-  const settings=effectiveData.settings||fallback.settings;
-  const genres=Array.isArray(effectiveData.genres)?effectiveData.genres:[];
-  const weeks=Array.isArray(effectiveData.weeks)?effectiveData.weeks:[];
-  const activeWeekId=effectiveData.activeWeekId||null;
-  const completedGenreIds=Array.isArray(effectiveData.completedGenreIds)?effectiveData.completedGenreIds:[];
-  const challenges=Array.isArray(effectiveData.challenges)?effectiveData.challenges:[];
-  const xpEvents=Array.isArray(effectiveData.xpEvents)?effectiveData.xpEvents:[];
-  const u1=settings.user1||'Jonathan';
-  const u2=settings.user2||'Lucy';
-  const activeWeek=weeks.find(w=>w&&w.id===activeWeekId)||null;
-  const completedWeeks=weeks.filter(w=>w&&w.status==='completed');
-  return {settings,u1,u2,genres,weeks,activeWeekId,activeWeek,completedWeeks,completedGenreIds,challenges,xpEvents,effectiveData};
-}
+   Efficient plan:
+   - One global Application Logic Candidate.
+   - One Application Logic Audit/export.
+   - Dashboard remains active behind its granular flag.
+   - R4.2 activated the read-only batch candidates for Perfil,
+     Rankings and Historial behind their granular flags.
+   - R5.2 activated Retos candidate view model and action handlers
+     behind granular flags after R5.1 equivalence validation.
+   - R6.2 activates Semana activa candidate view model and action handlers
+     behind granular flags for guarded runtime validation.
+   - Biblioteca and Ajustes remain legacy.
+   ============================================================ */
+const USE_APPLICATION_LOGIC_CANDIDATE=false;
+const USE_DASHBOARD_VIEW_MODEL_CANDIDATE=true;
+const USE_PROFILE_VIEW_MODEL_CANDIDATE=true;
+const USE_RANKINGS_VIEW_MODEL_CANDIDATE=true;
+const USE_HISTORY_VIEW_MODEL_CANDIDATE=true;
+const USE_CHALLENGES_VIEW_MODEL_CANDIDATE=true;
+const USE_CHALLENGES_ACTIONS_CANDIDATE=true;
+const USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE=true;
+const USE_ACTIVE_WEEK_ACTIONS_CANDIDATE=true;
+const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-test';
+const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r6-2-active-week-candidate-active-test';
+const DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION='dashboard-view-model-candidate-v0-2-compact-comparable-snapshot';
+const DASHBOARD_EQUIVALENCE_AUDIT_VERSION='dashboard-equivalence-audit-r3-3-field-level-activation-readiness';
+
+const APPLICATION_LOGIC_CANDIDATE={
+  candidate:'APPLICATION_LOGIC_CANDIDATE_V1',
+  version:APPLICATION_LOGIC_CANDIDATE_VERSION,
+  generatedFrom:'R6.2',
+  status:'candidate-partial-dashboard-readonly-challenges-active-active-week-active-test',
+  runtimeImpact:'guarded-by-flags',
+  flags:{global:USE_APPLICATION_LOGIC_CANDIDATE,dashboard:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,perfil:USE_PROFILE_VIEW_MODEL_CANDIDATE,rankings:USE_RANKINGS_VIEW_MODEL_CANDIDATE,historial:USE_HISTORY_VIEW_MODEL_CANDIDATE,retos:USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE,semana:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,biblioteca:false,ajustes:false},
+  sections:{
+    dashboard:{sectionId:'dashboard',componentName:'DashboardTab',status:'candidate-active-under-guarded-render-test',selector:'getDashboardViewModelCandidate(data)',legacySnapshot:'getDashboardLegacySnapshot(data)',equivalenceAudit:'buildDashboardEquivalenceAudit(data)',renderProps:'getDashboardRenderPropsCandidate(data, handlers)',activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',activationReady:true},
+    perfil:{sectionId:'perfil',componentName:'ProfileTab',status:'candidate-active-under-guarded-render-test',selector:'getProfileViewModelCandidate(data)',legacySnapshot:'getProfileLegacySnapshot(data)',equivalenceAudit:'buildProfileEquivalenceAudit(data)',renderProps:'getProfileRenderPropsCandidate(data)',activationFlag:'USE_PROFILE_VIEW_MODEL_CANDIDATE',activationReady:true},
+    rankings:{sectionId:'rankings',componentName:'RankingsTab',status:'candidate-active-under-guarded-render-test',selector:'getRankingsViewModelCandidate(data)',legacySnapshot:'getRankingsLegacySnapshot(data)',equivalenceAudit:'buildRankingsEquivalenceAudit(data)',renderProps:'getRankingsRenderPropsCandidate(data)',activationFlag:'USE_RANKINGS_VIEW_MODEL_CANDIDATE',activationReady:true},
+    historial:{sectionId:'historial',componentName:'HistorialTab',status:'candidate-active-under-guarded-render-test',selector:'getHistoryViewModelCandidate(data)',legacySnapshot:'getHistoryLegacySnapshot(data)',equivalenceAudit:'buildHistoryEquivalenceAudit(data)',renderProps:'getHistoryRenderPropsCandidate(data, handlers)',activationFlag:'USE_HISTORY_VIEW_MODEL_CANDIDATE',activationReady:true},
+    retos:{sectionId:'retos',componentName:'RetosTab',status:'candidate-active-under-guarded-render-test',selector:'getChallengesViewModelCandidate(data)',legacySnapshot:'getChallengesLegacySnapshot(data)',equivalenceAudit:'buildChallengesEquivalenceAudit(data)',renderProps:'getChallengesRenderPropsCandidate(data, handlers)',actionHandlers:'getChallengesActionHandlersCandidate(handlers)',activationFlag:'USE_CHALLENGES_VIEW_MODEL_CANDIDATE + USE_CHALLENGES_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['createChallenge','updateChallenge','deleteChallenge','generateGenreChallenge']},
+    semana:{sectionId:'semana',componentName:'SemanaTab',status:'candidate-active-under-guarded-render-test',selector:'getActiveWeekViewModelCandidate(data)',legacySnapshot:'getActiveWeekLegacySnapshot(data)',equivalenceAudit:'buildActiveWeekEquivalenceAudit(data)',renderProps:'getActiveWeekRenderPropsCandidate(data, handlers)',actionHandlers:'getActiveWeekActionHandlersCandidate(handlers)',activationFlag:'USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE + USE_ACTIVE_WEEK_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['generateWeek','randomGenre','toggleArtistHeard','toggleSong','updateArtist','updateLearningQuiz','closeWeek']},
+    biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'mapped-not-implemented',plannedSelector:'getLibraryViewModelCandidate(data)',plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','resetLibrary']},
+    ajustes:{sectionId:'ajustes',componentName:'AjustesTab',status:'mapped-not-implemented',plannedSelector:'getSettingsViewModelCandidate(data)',plannedActions:['exportData','importData','generateSystemAuditReport','resetAll']}
+  },
+  nextStep:{phase:'R6.2 Semana Activa Activation Test',objective:'Semana activa candidate view model and action handlers are active behind granular flags. Validate visual and action-flow equivalence.',then:'If R6.2 validates, proceed to R7 Biblioteca Candidate Logic.'}
+};
+window.__MUSICLAB_APPLICATION_LOGIC_CANDIDATE_V1=APPLICATION_LOGIC_CANDIDATE;
+
+function buildDashboardViewModelRuntimeInputs(data){const base=data||{};const fallback={settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[],challenges:[],xpEvents:[]};const safeData={...fallback,...base,settings:{...fallback.settings,...(base.settings||{})}};const runtimeGenres=typeof getRuntimeGenres==='function'?getRuntimeGenres(safeData):(safeData.genres||[]);const runtimeUserState=typeof getRuntimeUserState==='function'?getRuntimeUserState(safeData):safeData;const effectiveData={...safeData,...runtimeUserState,genres:runtimeGenres};const settings=effectiveData.settings||fallback.settings;const genres=Array.isArray(effectiveData.genres)?effectiveData.genres:[];const weeks=Array.isArray(effectiveData.weeks)?effectiveData.weeks:[];const activeWeekId=effectiveData.activeWeekId||null;const completedGenreIds=Array.isArray(effectiveData.completedGenreIds)?effectiveData.completedGenreIds:[];const challenges=Array.isArray(effectiveData.challenges)?effectiveData.challenges:[];const xpEvents=Array.isArray(effectiveData.xpEvents)?effectiveData.xpEvents:[];const u1=settings.user1||'Jonathan';const u2=settings.user2||'Lucy';const activeWeek=weeks.find(w=>w&&w.id===activeWeekId)||null;const completedWeeks=weeks.filter(w=>w&&w.status==='completed');return {settings,u1,u2,genres,weeks,activeWeekId,activeWeek,completedWeeks,completedGenreIds,challenges,xpEvents,effectiveData};}
 function compactDashboardNumber(value,digits=2){return typeof value==='number'&&isFinite(value)?Number(value.toFixed(digits)):value;}
 function buildDashboardGenreRankingsCandidate(completedWeeks){return (completedWeeks||[]).map(w=>{const r=w.rating||{};const s1=parseFloat(r.scoreU1);const s2=parseFloat(r.scoreU2);const scores=[s1,s2].filter(s=>!isNaN(s));const avg=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null;return {weekId:w.id,genreId:w.genreId,name:w.genreName,family:w.genreFamily,scoreU1:isNaN(s1)?null:s1,scoreU2:isNaN(s2)?null:s2,avg,weekNum:w.weekNum};}).filter(g=>g.avg!==null).sort((a,b)=>b.avg-a.avg);}
 function buildDashboardArtistRankingsCandidate(completedWeeks){const all=[];(completedWeeks||[]).forEach(w=>(w.artists||[]).forEach(a=>{const avg=typeof calcArtistAvg==='function'?calcArtistAvg(a):null;if(avg!==null)all.push({name:a.name,genreName:w.genreName,scoreU1:isNaN(parseFloat(a.scoreU1))?null:parseFloat(a.scoreU1),scoreU2:isNaN(parseFloat(a.scoreU2))?null:parseFloat(a.scoreU2),avg});}));return all.sort((a,b)=>b.avg-a.avg);}
@@ -375,22 +407,235 @@ function summarizeDashboardWeekCandidate(w){if(!w)return null;const r=w.rating||
 function compactDashboardProgress(progress){if(!progress)return null;return {listenedSongs:progress.listenedSongs,totalSongs:progress.totalSongs,listenedArtists:progress.listenedArtists,totalArtists:progress.totalArtists,songPct:progress.songPct,artistPct:progress.artistPct};}
 function compactDashboardComparison(comparison){const c=comparison||{};return {agreement:c.agreement??null,avgDiff:compactDashboardNumber(c.avgDiff??null,2),totalPairs:c.totalPairs||0,topDivergence:Array.isArray(c.divergences)&&c.divergences[0]?{name:c.divergences[0].name,diff:compactDashboardNumber(c.divergences[0].diff,2),u1:c.divergences[0].u1,u2:c.divergences[0].u2}:null,divergenceCount:Array.isArray(c.divergences)?c.divergences.length:0};}
 function compactDashboardGamification(stats){if(!stats)return null;return {totalXp:stats.totalXp,level:stats.level,currentLevelXp:stats.currentLevelXp,nextLevelXp:stats.nextLevelXp,progressPct:stats.progressPct,songsHeard:stats.songsHeard,completedWeeks:stats.completedWeeks,badgesCount:Array.isArray(stats.badges)?stats.badges.length:0,mascot:stats.mascot?{name:stats.mascot.name,icon:stats.mascot.icon}:null,nextMascot:stats.nextMascot?{name:stats.nextMascot.name,icon:stats.nextMascot.icon}:null};}
-function buildDashboardCompactSnapshot(data,source){const inputs=buildDashboardViewModelRuntimeInputs(data);const {weeks,completedWeeks,activeWeek,u1,u2,genres,completedGenreIds,challenges,xpEvents}=inputs;const genreRankings=buildDashboardGenreRankingsCandidate(completedWeeks);const artistRankings=buildDashboardArtistRankingsCandidate(completedWeeks);const avgU1=calculateDashboardAverageCandidate(completedWeeks,'scoreU1');const avgU2=calculateDashboardAverageCandidate(completedWeeks,'scoreU2');const famCount={};completedWeeks.forEach(w=>{famCount[w.genreFamily]=(famCount[w.genreFamily]||0)+1;});const topFamEntry=Object.entries(famCount).sort((a,b)=>b[1]-a[1])[0]||null;const activeProgress=typeof getWeekSongProgress==='function'?getWeekSongProgress(activeWeek):null;const streak=typeof getCurrentStreak==='function'?getCurrentStreak(completedWeeks):null;const comparison=typeof getComparisonInsights==='function'?getComparisonInsights(completedWeeks):null;const xpU1=typeof getUserGamificationStats==='function'?getUserGamificationStats(weeks,challenges,'u1',genres,xpEvents):null;const xpU2=typeof getUserGamificationStats==='function'?getUserGamificationStats(weeks,challenges,'u2',genres,xpEvents):null;const latestWeeks=[...completedWeeks].reverse().slice(0,4).map(summarizeDashboardWeekCandidate);return {source,sectionId:'dashboard',status:source==='candidate'?'implemented-inactive':'legacy-runtime-snapshot',runtimeImpact:'none',active:source==='candidate'?USE_DASHBOARD_VIEW_MODEL_CANDIDATE:true,activationFlag:source==='candidate'?'USE_DASHBOARD_VIEW_MODEL_CANDIDATE':null,activationFlagValue:source==='candidate'?USE_DASHBOARD_VIEW_MODEL_CANDIDATE:null,inputs:{weeksCount:weeks.length,completedWeeksCount:completedWeeks.length,hasActiveWeek:!!activeWeek,activeWeekId:inputs.activeWeekId,genresCount:genres.length,completedGenreIdsCount:completedGenreIds.length,challengesCount:challenges.length,xpEventsCount:xpEvents.length,u1,u2},dashboardPropsSummary:{weeksCount:weeks.length,completedWeeksCount:completedWeeks.length,activeWeek:summarizeDashboardWeekCandidate(activeWeek),completedGenreIdsCount:completedGenreIds.length,challengesCount:challenges.length,xpEventsCount:xpEvents.length,genreRankingsCount:genreRankings.length,artistRankingsCount:artistRankings.length},metrics:{completedWeeks:completedWeeks.length,listenedGenres:(completedGenreIds||[]).length,pendingGenres:genres.length-(completedGenreIds||[]).length,libraryTotal:genres.length,avgU1:compactDashboardNumber(avgU1,2),avgU2:compactDashboardNumber(avgU2,2),avgDifference:(avgU1!==null&&avgU2!==null)?compactDashboardNumber(Math.abs(avgU1-avgU2),2):null,topFamily:topFamEntry?{name:topFamEntry[0],count:topFamEntry[1]}:null,streak,comparison:compactDashboardComparison(comparison),activeProgress:compactDashboardProgress(activeProgress),xpU1:compactDashboardGamification(xpU1),xpU2:compactDashboardGamification(xpU2)},rankings:{topGenres:genreRankings.slice(0,5).map(g=>({weekId:g.weekId,genreId:g.genreId,name:g.name,family:g.family,scoreU1:g.scoreU1,scoreU2:g.scoreU2,avg:compactDashboardNumber(g.avg,2),weekNum:g.weekNum})),topArtists:artistRankings.slice(0,5).map(a=>({name:a.name,genreName:a.genreName,scoreU1:a.scoreU1,scoreU2:a.scoreU2,avg:compactDashboardNumber(a.avg,2)}))},latestWeeks,dashboardEntryFlow:{hasActiveWeek:!!activeWeek,primaryAction:activeWeek?'go-to-active-week':'create-or-manually-select-week',noActiveWeekActions:['onGenerate -> randomGenre','onManualSelect -> setManualGenreSelect(true)+setTab(semana)'],activeWeekActions:['onGoSemana -> setTab(semana)'],renderStillUsesLegacyProps:true}};}
-function getDashboardViewModelCandidate(data){return {candidate:'DASHBOARD_VIEW_MODEL_CANDIDATE_V0_2_COMPACT',version:DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION,...buildDashboardCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:true,notes:['Dashboard candidate is implemented and inactive.','The snapshot is compact and does not dump full week, artist or song trees.','The Dashboard component is not rendered from this object yet.']};}
+function buildDashboardCompactSnapshot(data,source){const inputs=buildDashboardViewModelRuntimeInputs(data);const {weeks,completedWeeks,activeWeek,u1,u2,genres,completedGenreIds,challenges,xpEvents}=inputs;const genreRankings=buildDashboardGenreRankingsCandidate(completedWeeks);const artistRankings=buildDashboardArtistRankingsCandidate(completedWeeks);const avgU1=calculateDashboardAverageCandidate(completedWeeks,'scoreU1');const avgU2=calculateDashboardAverageCandidate(completedWeeks,'scoreU2');const famCount={};completedWeeks.forEach(w=>{famCount[w.genreFamily]=(famCount[w.genreFamily]||0)+1;});const topFamEntry=Object.entries(famCount).sort((a,b)=>b[1]-a[1])[0]||null;const activeProgress=typeof getWeekSongProgress==='function'?getWeekSongProgress(activeWeek):null;const streak=typeof getCurrentStreak==='function'?getCurrentStreak(completedWeeks):null;const comparison=typeof getComparisonInsights==='function'?getComparisonInsights(completedWeeks):null;const xpU1=typeof getUserGamificationStats==='function'?getUserGamificationStats(weeks,challenges,'u1',genres,xpEvents):null;const xpU2=typeof getUserGamificationStats==='function'?getUserGamificationStats(weeks,challenges,'u2',genres,xpEvents):null;const latestWeeks=[...completedWeeks].reverse().slice(0,4).map(summarizeDashboardWeekCandidate);return {source,sectionId:'dashboard',status:source==='candidate'?(USE_DASHBOARD_VIEW_MODEL_CANDIDATE?'implemented-active-under-test':'implemented-inactive'):'legacy-runtime-snapshot',runtimeImpact:'none',active:source==='candidate'?USE_DASHBOARD_VIEW_MODEL_CANDIDATE:true,activationFlag:source==='candidate'?'USE_DASHBOARD_VIEW_MODEL_CANDIDATE':null,activationFlagValue:source==='candidate'?USE_DASHBOARD_VIEW_MODEL_CANDIDATE:null,inputs:{weeksCount:weeks.length,completedWeeksCount:completedWeeks.length,hasActiveWeek:!!activeWeek,activeWeekId:inputs.activeWeekId,genresCount:genres.length,completedGenreIdsCount:completedGenreIds.length,challengesCount:challenges.length,xpEventsCount:xpEvents.length,u1,u2},dashboardPropsSummary:{weeksCount:weeks.length,completedWeeksCount:completedWeeks.length,activeWeek:summarizeDashboardWeekCandidate(activeWeek),completedGenreIdsCount:completedGenreIds.length,challengesCount:challenges.length,xpEventsCount:xpEvents.length,genreRankingsCount:genreRankings.length,artistRankingsCount:artistRankings.length},metrics:{completedWeeks:completedWeeks.length,listenedGenres:(completedGenreIds||[]).length,pendingGenres:genres.length-(completedGenreIds||[]).length,libraryTotal:genres.length,avgU1:compactDashboardNumber(avgU1,2),avgU2:compactDashboardNumber(avgU2,2),avgDifference:(avgU1!==null&&avgU2!==null)?compactDashboardNumber(Math.abs(avgU1-avgU2),2):null,topFamily:topFamEntry?{name:topFamEntry[0],count:topFamEntry[1]}:null,streak,comparison:compactDashboardComparison(comparison),activeProgress:compactDashboardProgress(activeProgress),xpU1:compactDashboardGamification(xpU1),xpU2:compactDashboardGamification(xpU2)},rankings:{topGenres:genreRankings.slice(0,5).map(g=>({weekId:g.weekId,genreId:g.genreId,name:g.name,family:g.family,scoreU1:g.scoreU1,scoreU2:g.scoreU2,avg:compactDashboardNumber(g.avg,2),weekNum:g.weekNum})),topArtists:artistRankings.slice(0,5).map(a=>({name:a.name,genreName:a.genreName,scoreU1:a.scoreU1,scoreU2:a.scoreU2,avg:compactDashboardNumber(a.avg,2)}))},latestWeeks,dashboardEntryFlow:{hasActiveWeek:!!activeWeek,primaryAction:activeWeek?'go-to-active-week':'create-or-manually-select-week',noActiveWeekActions:['onGenerate -> randomGenre','onManualSelect -> setManualGenreSelect(true)+setTab(semana)'],activeWeekActions:['onGoSemana -> setTab(semana)'],renderStillUsesLegacyProps:!USE_DASHBOARD_VIEW_MODEL_CANDIDATE}};}
+function getDashboardViewModelCandidate(data){return {candidate:'DASHBOARD_VIEW_MODEL_CANDIDATE_V0_2_COMPACT',version:DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION,...buildDashboardCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_DASHBOARD_VIEW_MODEL_CANDIDATE,notes:['Dashboard candidate is implemented and inactive while flag is false.','The snapshot is compact and does not dump full week, artist or song trees.']};}
 function getDashboardLegacySnapshot(data){return {snapshot:'DASHBOARD_LEGACY_SNAPSHOT_V0_1_COMPACT',version:'dashboard-legacy-snapshot-v0-1-current-runtime-props-and-derived-metrics',...buildDashboardCompactSnapshot(data,'legacy'),evidence:'Mirrors the current DashboardTab inputs and derived calculations from the legacy render path. It is a read-only snapshot and does not execute UI flows.'};}
 function stableDashboardComparableValue(value){if(Array.isArray(value))return value.map(stableDashboardComparableValue);if(value&&typeof value==='object')return Object.keys(value).sort().reduce((acc,k)=>{acc[k]=stableDashboardComparableValue(value[k]);return acc;},{});return value;}
 function compareDashboardCompactObjects(candidate,legacy){const fields=['inputs','dashboardPropsSummary','metrics','rankings','latestWeeks','dashboardEntryFlow'];const matches=[];const diffs=[];fields.forEach(field=>{const c=stableDashboardComparableValue(candidate[field]);const l=stableDashboardComparableValue(legacy[field]);const same=JSON.stringify(c)===JSON.stringify(l);if(same)matches.push(field);else diffs.push({field,candidate:c,legacy:l});});return {matches,diffs,matchCount:matches.length,diffCount:diffs.length,totalCompared:fields.length,allMatched:diffs.length===0};}
 function flattenDashboardAuditObject(value,prefix='',out={}){if(Array.isArray(value)){if(!value.length){out[prefix||'root']=[];return out;}value.forEach((item,i)=>flattenDashboardAuditObject(item,prefix+'['+i+']',out));return out;}if(value&&typeof value==='object'){const keys=Object.keys(value).sort();if(!keys.length){out[prefix||'root']={};return out;}keys.forEach(k=>flattenDashboardAuditObject(value[k],prefix?prefix+'.'+k:k,out));return out;}out[prefix||'root']=value;return out;}
 function getDashboardAuditSeverity(path){if(/^inputs\./.test(path)||/^metrics\.(avgU1|avgU2|avgDifference|completedWeeks|listenedGenres|pendingGenres|libraryTotal|activeProgress|xpU1|xpU2)/.test(path)||/^dashboardPropsSummary\./.test(path))return 'critical';if(/^rankings\./.test(path)||/^dashboardEntryFlow\./.test(path)||/^metrics\.(topFamily|streak|comparison)/.test(path))return 'high';if(/^latestWeeks\./.test(path))return 'medium';return 'low';}
 function buildDashboardFieldLevelEquivalence(candidate,legacy){const fields=['inputs','dashboardPropsSummary','metrics','rankings','latestWeeks','dashboardEntryFlow'];const results=[];fields.forEach(field=>{const cFlat=flattenDashboardAuditObject(stableDashboardComparableValue(candidate[field]),field);const lFlat=flattenDashboardAuditObject(stableDashboardComparableValue(legacy[field]),field);const paths=Array.from(new Set([...Object.keys(cFlat),...Object.keys(lFlat)])).sort();paths.forEach(path=>{const inCandidate=Object.prototype.hasOwnProperty.call(cFlat,path);const inLegacy=Object.prototype.hasOwnProperty.call(lFlat,path);const candidateValue=inCandidate?cFlat[path]:undefined;const legacyValue=inLegacy?lFlat[path]:undefined;const matched=inCandidate&&inLegacy&&JSON.stringify(candidateValue)===JSON.stringify(legacyValue);results.push({path,field,severity:getDashboardAuditSeverity(path),status:matched?'match':(!inCandidate?'missing-in-candidate':(!inLegacy?'missing-in-legacy':'diff')),matched,candidateValue,legacyValue});});});const diffs=results.filter(r=>!r.matched);const bySeverity=diffs.reduce((acc,r)=>{acc[r.severity]=(acc[r.severity]||0)+1;return acc;},{});const matchedCount=results.filter(r=>r.matched).length;return {fieldCount:fields.length,comparedPaths:results.length,matchedCount,diffCount:diffs.length,criticalDiffCount:bySeverity.critical||0,highDiffCount:bySeverity.high||0,mediumDiffCount:bySeverity.medium||0,lowDiffCount:bySeverity.low||0,allMatched:diffs.length===0,fields,results,diffs};}
-function compareDashboardViewModel(data){const candidate=getDashboardViewModelCandidate(data);const legacy=getDashboardLegacySnapshot(data);const compact=compareDashboardCompactObjects(candidate,legacy);const fieldLevel=buildDashboardFieldLevelEquivalence(candidate,legacy);const accepted=fieldLevel.criticalDiffCount===0&&fieldLevel.highDiffCount===0&&fieldLevel.diffCount===0&&!USE_DASHBOARD_VIEW_MODEL_CANDIDATE;return {comparison:'DASHBOARD_EQUIVALENCE_AUDIT_R3_3',version:DASHBOARD_EQUIVALENCE_AUDIT_VERSION,sectionId:'dashboard',status:accepted?'equivalent-ready-for-guarded-flag-prep':'not-equivalent-or-needs-review',candidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,runtimeImpact:'none',legacyRuntimeStillActive:true,compactComparison:compact,fieldLevel,acceptanceCriteria:{requiresCandidateInactive:true,candidateInactive:!USE_DASHBOARD_VIEW_MODEL_CANDIDATE,requiresNoCriticalDiffs:true,requiresNoHighDiffs:true,requiresNoDiffsForR3_4:true,criticalDiffCount:fieldLevel.criticalDiffCount,highDiffCount:fieldLevel.highDiffCount,totalDiffCount:fieldLevel.diffCount,passed:accepted},activationReadiness:{readyForR3_4GuardedRenderFlag:accepted,reason:accepted?'Candidate and legacy Dashboard snapshots match field-by-field for the compact audit scope. R3.4 can prepare a guarded render flag, still false by default.':'Differences or active candidate flag detected. Review before preparing activation wiring.'},limitations:['This compares data snapshots, not pixel-perfect rendered JSX.','Dashboard visual branches still need manual runtime validation when the guarded render flag is introduced.','Semana, Biblioteca, Perfil, Rankings, Historial, Retos and Ajustes are not activated by this audit.']};}
-function buildCandidateApplicationLogicShellExport(data){return {shell:'CANDIDATE_APPLICATION_LOGIC_SHELL_V0_1',generatedAt:new Date().toISOString(),baseAppVersion:APP_ARCHITECTURE_VERSION,runtimeImpact:'none',flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE},candidateApplicationLogic:CANDIDATE_APPLICATION_LOGIC,dashboardCandidate:getDashboardViewModelCandidate(data),dashboardLegacySnapshot:getDashboardLegacySnapshot(data),dashboardEquivalenceAudit:compareDashboardViewModel(data),nextStep:CANDIDATE_APPLICATION_LOGIC.nextStep};}
-window.__MUSICLAB_BUILD_CANDIDATE_APPLICATION_LOGIC_SHELL_EXPORT=buildCandidateApplicationLogicShellExport;
-function buildDashboardComparableSnapshotExport(data){const candidate=getDashboardViewModelCandidate(data);const legacy=getDashboardLegacySnapshot(data);const comparison=compareDashboardCompactObjects(candidate,legacy);return {export:'DASHBOARD_COMPARABLE_SNAPSHOT_R3_2',version:DASHBOARD_COMPARABLE_SNAPSHOT_VERSION,generatedAt:new Date().toISOString(),baseAppVersion:APP_ARCHITECTURE_VERSION,runtimeImpact:'none',flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE},candidate,legacy,comparisonPreview:{...comparison,interpretation:comparison.allMatched?'Candidate and legacy compact snapshots currently match structurally for the compared Dashboard fields.':'Candidate and legacy compact snapshots have differences that R3.3 must review before activation.'},payloadPolicy:{compact:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,reason:'Dashboard audit should compare metrics and summaries, not dump the full week/song tree.'},nextStep:{phase:'R3.3 Dashboard Equivalence Audit',objective:'Compare compact candidate and legacy Dashboard snapshots field-by-field before any activation.',then:'R3.4 prepares a guarded Dashboard render flag, still false by default.'}};}
-window.__MUSICLAB_BUILD_DASHBOARD_COMPARABLE_SNAPSHOT_EXPORT=buildDashboardComparableSnapshotExport;
-function buildDashboardEquivalenceAuditExport(data){const candidate=getDashboardViewModelCandidate(data);const legacy=getDashboardLegacySnapshot(data);const audit=compareDashboardViewModel(data);return {export:'DASHBOARD_EQUIVALENCE_AUDIT_R3_3',version:DASHBOARD_EQUIVALENCE_AUDIT_VERSION,generatedAt:new Date().toISOString(),baseAppVersion:APP_ARCHITECTURE_VERSION,runtimeImpact:'none',flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE},candidateSummary:{candidate:candidate.candidate,version:candidate.version,status:candidate.status,active:candidate.active,inputs:candidate.inputs},legacySummary:{snapshot:legacy.snapshot,version:legacy.version,status:legacy.status,active:legacy.active,inputs:legacy.inputs},audit,payloadPolicy:{compact:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,fieldLevelDiffValuesIncluded:true},decision:audit.activationReadiness,nextStep:CANDIDATE_APPLICATION_LOGIC.nextStep};}
-window.__MUSICLAB_BUILD_DASHBOARD_EQUIVALENCE_AUDIT_EXPORT=buildDashboardEquivalenceAuditExport;
+function buildDashboardEquivalenceAudit(data){const candidate=getDashboardViewModelCandidate(data);const legacy=getDashboardLegacySnapshot(data);const compact=compareDashboardCompactObjects(candidate,legacy);const fieldLevel=buildDashboardFieldLevelEquivalence(candidate,legacy);const equivalent=fieldLevel.criticalDiffCount===0&&fieldLevel.highDiffCount===0&&fieldLevel.diffCount===0;const candidateActive=!!USE_DASHBOARD_VIEW_MODEL_CANDIDATE;const status=equivalent?(candidateActive?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review';return {comparison:'DASHBOARD_EQUIVALENCE_AUDIT_R3_5',version:DASHBOARD_EQUIVALENCE_AUDIT_VERSION,sectionId:'dashboard',status,candidateActive,runtimeImpact:candidateActive?'dashboard-render-uses-candidate-only':'none',legacyRuntimeStillActive:!candidateActive,compactComparison:compact,fieldLevel,acceptanceCriteria:{requiresNoCriticalDiffs:true,requiresNoHighDiffs:true,requiresNoDiffsForActivationTest:true,criticalDiffCount:fieldLevel.criticalDiffCount,highDiffCount:fieldLevel.highDiffCount,totalDiffCount:fieldLevel.diffCount,passed:equivalent},activationStatus:{dashboardCandidateActive:candidateActive,dashboardCandidateEquivalent:equivalent,readyForDashboardTrueTest:equivalent&&!candidateActive,readyForDashboardClosure:equivalent&&candidateActive,visualValidationRequired:candidateActive,reason:equivalent?(candidateActive?'Dashboard candidate is active and data-equivalent to legacy for the compact audit scope. Perform visual validation; if the UI matches, Dashboard can be closed.':'Candidate and legacy Dashboard snapshots match field-by-field. The guarded render flag can be tested in true.'): 'Differences detected. Revert or review before closure.'},limitations:['Compares data snapshots, not pixel-perfect rendered JSX.','R3.5 requires manual visual validation of Dashboard in browser.','Only Dashboard render is activated; Semana, Biblioteca, Perfil, Rankings, Historial, Retos and Ajustes remain legacy.']};}
+function getDashboardRenderPropsCandidate(data,handlers={}){const inputs=buildDashboardViewModelRuntimeInputs(data);return {weeks:inputs.weeks,completedWeeks:inputs.completedWeeks,activeWeek:inputs.activeWeek,u1:inputs.u1,u2:inputs.u2,genreRankings:buildDashboardGenreRankingsCandidate(inputs.completedWeeks),artistRankings:buildDashboardArtistRankingsCandidate(inputs.completedWeeks),genres:inputs.genres,completedGenreIds:inputs.completedGenreIds,challenges:inputs.challenges,xpEvents:inputs.xpEvents,onGenerate:handlers.onGenerate,onGoSemana:handlers.onGoSemana,onManualSelect:handlers.onManualSelect};}
+window.__MUSICLAB_GET_DASHBOARD_RENDER_PROPS_CANDIDATE=getDashboardRenderPropsCandidate;
 
+/* ============================================================
+   READ-ONLY APPLICATION LOGIC CANDIDATES - R4
+   Perfil, Rankings and Historial are separate structured read-only modules.
+   They are implemented, audited and kept inactive behind granular flags.
+   ============================================================ */
+function compactReadOnlyNumber(value,digits=2){return typeof value==='number'&&isFinite(value)?Number(value.toFixed(digits)):value;}
+function buildReadOnlyRuntimeInputs(data){return buildDashboardViewModelRuntimeInputs(data);}
+function stableReadOnlyComparableValue(value){return stableDashboardComparableValue(value);}
+function flattenReadOnlyAuditObject(value,prefix='',out={}){return flattenDashboardAuditObject(value,prefix,out);}
+function buildGenericReadOnlyEquivalence(sectionId,candidate,legacy,fields){const results=[];fields.forEach(field=>{const cFlat=flattenReadOnlyAuditObject(stableReadOnlyComparableValue(candidate[field]),field);const lFlat=flattenReadOnlyAuditObject(stableReadOnlyComparableValue(legacy[field]),field);const paths=Array.from(new Set([...Object.keys(cFlat),...Object.keys(lFlat)])).sort();paths.forEach(path=>{const inCandidate=Object.prototype.hasOwnProperty.call(cFlat,path);const inLegacy=Object.prototype.hasOwnProperty.call(lFlat,path);const candidateValue=inCandidate?cFlat[path]:undefined;const legacyValue=inLegacy?lFlat[path]:undefined;const matched=inCandidate&&inLegacy&&JSON.stringify(candidateValue)===JSON.stringify(legacyValue);results.push({path,field,status:matched?'match':(!inCandidate?'missing-in-candidate':(!inLegacy?'missing-in-legacy':'diff')),matched,candidateValue,legacyValue});});});const diffs=results.filter(r=>!r.matched);return {sectionId,fields,comparedPaths:results.length,matchedCount:results.filter(r=>r.matched).length,diffCount:diffs.length,allMatched:diffs.length===0,results,diffs};}
+function compactProfileStatsForCandidate(stats){if(!stats)return null;return {xp:stats.xp,level:stats.level,current:stats.current,needed:stats.needed,progressPct:stats.needed?Math.min(100,Math.round((stats.current/stats.needed)*100)):0,avatar:stats.avatar,avatarName:stats.avatarName||null,songs:stats.songs,genresCompleted:stats.genresCompleted,favs:stats.favs,tests:stats.tests,avgTest:compactReadOnlyNumber(stats.avgTest,2),completedChallenges:stats.completedChallenges,challengeWins:stats.challengeWins,artistsCompleted:stats.artistsCompleted,badgesCount:Array.isArray(stats.badges)?stats.badges.length:0,badgeIds:Array.isArray(stats.badges)?stats.badges.map(b=>b.id).filter(Boolean).sort():[],nextMascot:stats.nextMascot?{min:stats.nextMascot.min,name:stats.nextMascot.name,icon:stats.nextMascot.icon}:null};}
+function buildProfileCompactSnapshot(data,source){const inputs=buildReadOnlyRuntimeInputs(data);const userProfiles=['u1','u2'].map(userKey=>{const stats=getUserGamificationStats(inputs.weeks,inputs.challenges,userKey,inputs.genres,inputs.xpEvents);const earnedIds=new Set((stats.badges||[]).map(b=>b.id));const locked=ACHIEVEMENT_DEFS.filter(b=>!earnedIds.has(b.id));return {userKey,name:userKey==='u1'?inputs.u1:inputs.u2,stats:compactProfileStatsForCandidate(stats),achievementState:{earnedCount:earnedIds.size,totalCount:ACHIEVEMENT_DEFS.length,nextBadge:locked[0]?{id:locked[0].id,label:locked[0].label,icon:locked[0].icon}:null}};});return {source,sectionId:'perfil',status:source==='candidate'?(USE_PROFILE_VIEW_MODEL_CANDIDATE?'implemented-active-under-test':'implemented-inactive-read-only'):'legacy-runtime-snapshot',active:source==='candidate'?USE_PROFILE_VIEW_MODEL_CANDIDATE:true,activationFlag:source==='candidate'?'USE_PROFILE_VIEW_MODEL_CANDIDATE':null,inputs:{weeksCount:inputs.weeks.length,challengesCount:inputs.challenges.length,genresCount:inputs.genres.length,xpEventsCount:inputs.xpEvents.length,u1:inputs.u1,u2:inputs.u2},viewModel:{users:userProfiles,currentUserDefault:'runtime-currentUserKey',tabs:['u1','u2']}};}
+function getProfileViewModelCandidate(data){return {candidate:'PROFILE_VIEW_MODEL_CANDIDATE_V0_1',version:'profile-view-model-candidate-v0-1-read-only-structured',...buildProfileCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_PROFILE_VIEW_MODEL_CANDIDATE};}
+function getProfileLegacySnapshot(data){return {snapshot:'PROFILE_LEGACY_SNAPSHOT_V0_1',version:'profile-legacy-snapshot-v0-1-current-runtime-props-and-derived-stats',...buildProfileCompactSnapshot(data,'legacy')};}
+function buildProfileEquivalenceAudit(data){const candidate=getProfileViewModelCandidate(data);const legacy=getProfileLegacySnapshot(data);const fieldLevel=buildGenericReadOnlyEquivalence('perfil',candidate,legacy,['inputs','viewModel']);const equivalent=fieldLevel.diffCount===0;return {comparison:'PROFILE_EQUIVALENCE_AUDIT_R4_2',sectionId:'perfil',status:equivalent?(USE_PROFILE_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_PROFILE_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_PROFILE_VIEW_MODEL_CANDIDATE?'profile-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_PROFILE_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_PROFILE_VIEW_MODEL_CANDIDATE}};}
+function getProfileRenderPropsCandidate(data){const inputs=buildReadOnlyRuntimeInputs(data);return {weeks:inputs.weeks,challenges:inputs.challenges,genres:inputs.genres,xpEvents:inputs.xpEvents,u1:inputs.u1,u2:inputs.u2};}
+function buildRankingsCompactSnapshot(data,source){const inputs=buildReadOnlyRuntimeInputs(data);const genreRankings=buildDashboardGenreRankingsCandidate(inputs.completedWeeks);const artistRankings=buildDashboardArtistRankingsCandidate(inputs.completedWeeks);const artU1=[...artistRankings].filter(a=>a.scoreU1!==null).sort((a,b)=>b.scoreU1-a.scoreU1);const artU2=[...artistRankings].filter(a=>a.scoreU2!==null).sort((a,b)=>b.scoreU2-a.scoreU2);const divisiveGenres=genreRankings.filter(g=>g.scoreU1!==null&&g.scoreU2!==null).sort((a,b)=>Math.abs(b.scoreU1-b.scoreU2)-Math.abs(a.scoreU1-a.scoreU2));const famMap={};genreRankings.forEach(g=>{if(g.avg!==null){famMap[g.family]=famMap[g.family]||{sum:0,n:0};famMap[g.family].sum+=g.avg;famMap[g.family].n++;}});const famRank=Object.entries(famMap).filter(([,v])=>v.n>0).sort((a,b)=>(b[1].sum/b[1].n)-(a[1].sum/a[1].n)).map(([name,v])=>({name,avg:compactReadOnlyNumber(v.sum/v.n,2),count:v.n}));const comparison=getComparisonInsights(inputs.completedWeeks);const quizStats=calcQuizStats(inputs.completedWeeks);const xpU1=getUserGamificationStats(inputs.completedWeeks,inputs.challenges,'u1',inputs.genres,inputs.xpEvents);const xpU2=getUserGamificationStats(inputs.completedWeeks,inputs.challenges,'u2',inputs.genres,inputs.xpEvents);return {source,sectionId:'rankings',status:source==='candidate'?(USE_RANKINGS_VIEW_MODEL_CANDIDATE?'implemented-active-under-test':'implemented-inactive-read-only'):'legacy-runtime-snapshot',active:source==='candidate'?USE_RANKINGS_VIEW_MODEL_CANDIDATE:true,activationFlag:source==='candidate'?'USE_RANKINGS_VIEW_MODEL_CANDIDATE':null,inputs:{completedWeeksCount:inputs.completedWeeks.length,challengesCount:inputs.challenges.length,genresCount:inputs.genres.length,xpEventsCount:inputs.xpEvents.length,u1:inputs.u1,u2:inputs.u2},viewModel:{tabs:['genres','artists','families','divisive','match','quiz','xp'],genreRankingsCount:genreRankings.length,artistRankingsCount:artistRankings.length,topGenres:genreRankings.slice(0,12).map(g=>({weekId:g.weekId,genreId:g.genreId,name:g.name,family:g.family,scoreU1:g.scoreU1,scoreU2:g.scoreU2,avg:compactReadOnlyNumber(g.avg,2),weekNum:g.weekNum})),topArtistsJoint:artistRankings.slice(0,12).map(a=>({name:a.name,genreName:a.genreName,scoreU1:a.scoreU1,scoreU2:a.scoreU2,avg:compactReadOnlyNumber(a.avg,2)})),topArtistsU1:artU1.slice(0,12).map(a=>({name:a.name,genreName:a.genreName,scoreU1:a.scoreU1})),topArtistsU2:artU2.slice(0,12).map(a=>({name:a.name,genreName:a.genreName,scoreU2:a.scoreU2})),families:famRank,divisiveGenres:divisiveGenres.slice(0,12).map(g=>({weekId:g.weekId,name:g.name,scoreU1:g.scoreU1,scoreU2:g.scoreU2,diff:compactReadOnlyNumber(Math.abs(g.scoreU1-g.scoreU2),2)})),comparison:{agreement:comparison.agreement??null,totalPairs:comparison.totalPairs||0,closeMatchesCount:Array.isArray(comparison.closeMatches)?comparison.closeMatches.length:0,divergenceCount:Array.isArray(comparison.divergences)?comparison.divergences.length:0},quiz:{u1:{n:quizStats.u1?.n||0,wins:quizStats.u1?.wins||0},u2:{n:quizStats.u2?.n||0,wins:quizStats.u2?.wins||0},ties:quizStats.ties||0,rowsCount:Array.isArray(quizStats.rows)?quizStats.rows.length:0},xp:{u1:compactDashboardGamification(xpU1),u2:compactDashboardGamification(xpU2)}}};}
+function getRankingsViewModelCandidate(data){return {candidate:'RANKINGS_VIEW_MODEL_CANDIDATE_V0_1',version:'rankings-view-model-candidate-v0-1-read-only-structured',...buildRankingsCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_RANKINGS_VIEW_MODEL_CANDIDATE};}
+function getRankingsLegacySnapshot(data){return {snapshot:'RANKINGS_LEGACY_SNAPSHOT_V0_1',version:'rankings-legacy-snapshot-v0-1-current-runtime-props-and-derived-rankings',...buildRankingsCompactSnapshot(data,'legacy')};}
+function buildRankingsEquivalenceAudit(data){const candidate=getRankingsViewModelCandidate(data);const legacy=getRankingsLegacySnapshot(data);const fieldLevel=buildGenericReadOnlyEquivalence('rankings',candidate,legacy,['inputs','viewModel']);const equivalent=fieldLevel.diffCount===0;return {comparison:'RANKINGS_EQUIVALENCE_AUDIT_R4_2',sectionId:'rankings',status:equivalent?(USE_RANKINGS_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_RANKINGS_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_RANKINGS_VIEW_MODEL_CANDIDATE?'rankings-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_RANKINGS_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_RANKINGS_VIEW_MODEL_CANDIDATE}};}
+function getRankingsRenderPropsCandidate(data){const inputs=buildReadOnlyRuntimeInputs(data);return {genreRankings:buildDashboardGenreRankingsCandidate(inputs.completedWeeks),artistRankings:buildDashboardArtistRankingsCandidate(inputs.completedWeeks),completedWeeks:inputs.completedWeeks,challenges:inputs.challenges,genres:inputs.genres,xpEvents:inputs.xpEvents,u1:inputs.u1,u2:inputs.u2};}
+function buildHistoryCompactSnapshot(data,source){const inputs=buildReadOnlyRuntimeInputs(data);const sorted=[...inputs.weeks].sort((a,b)=>(b.weekNum||0)-(a.weekNum||0));const rows=sorted.map(w=>{const r=w.rating||{};const s1=parseFloat(r.scoreU1);const s2=parseFloat(r.scoreU2);const avg=!isNaN(s1)&&!isNaN(s2)?(s1+s2)/2:(!isNaN(s1)?s1:(!isNaN(s2)?s2:null));const listenedCount=(w.artists||[]).filter(a=>a.listened).length;return {id:w.id,weekNum:w.weekNum,genreId:w.genreId,genreName:w.genreName,genreFamily:w.genreFamily,startDate:w.startDate,status:w.status,artistCount:Array.isArray(w.artists)?w.artists.length:0,listenedCount,scoreU1:isNaN(s1)?null:s1,scoreU2:isNaN(s2)?null:s2,avg:compactReadOnlyNumber(avg,2)};});return {source,sectionId:'historial',status:source==='candidate'?(USE_HISTORY_VIEW_MODEL_CANDIDATE?'implemented-active-under-test':'implemented-inactive-read-only'):'legacy-runtime-snapshot',active:source==='candidate'?USE_HISTORY_VIEW_MODEL_CANDIDATE:true,activationFlag:source==='candidate'?'USE_HISTORY_VIEW_MODEL_CANDIDATE':null,inputs:{weeksCount:inputs.weeks.length,completedWeeksCount:inputs.completedWeeks.length,u1:inputs.u1,u2:inputs.u2},viewModel:{empty:rows.length===0,rowsCount:rows.length,rows}};}
+function getHistoryViewModelCandidate(data){return {candidate:'HISTORY_VIEW_MODEL_CANDIDATE_V0_1',version:'history-view-model-candidate-v0-1-read-only-structured',...buildHistoryCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_HISTORY_VIEW_MODEL_CANDIDATE};}
+function getHistoryLegacySnapshot(data){return {snapshot:'HISTORY_LEGACY_SNAPSHOT_V0_1',version:'history-legacy-snapshot-v0-1-current-runtime-props-and-derived-history-rows',...buildHistoryCompactSnapshot(data,'legacy')};}
+function buildHistoryEquivalenceAudit(data){const candidate=getHistoryViewModelCandidate(data);const legacy=getHistoryLegacySnapshot(data);const fieldLevel=buildGenericReadOnlyEquivalence('historial',candidate,legacy,['inputs','viewModel']);const equivalent=fieldLevel.diffCount===0;return {comparison:'HISTORY_EQUIVALENCE_AUDIT_R4_2',sectionId:'historial',status:equivalent?(USE_HISTORY_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_HISTORY_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_HISTORY_VIEW_MODEL_CANDIDATE?'history-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_HISTORY_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_HISTORY_VIEW_MODEL_CANDIDATE}};}
+function getHistoryRenderPropsCandidate(data,handlers={}){const inputs=buildReadOnlyRuntimeInputs(data);return {weeks:inputs.weeks,onDelete:handlers.onDelete,onView:handlers.onView,u1:inputs.u1,u2:inputs.u2};}
+function buildReadOnlyBatchAudit(data){const sections={perfil:{candidate:getProfileViewModelCandidate(data),legacy:getProfileLegacySnapshot(data),equivalence:buildProfileEquivalenceAudit(data)},rankings:{candidate:getRankingsViewModelCandidate(data),legacy:getRankingsLegacySnapshot(data),equivalence:buildRankingsEquivalenceAudit(data)},historial:{candidate:getHistoryViewModelCandidate(data),legacy:getHistoryLegacySnapshot(data),equivalence:buildHistoryEquivalenceAudit(data)}};const summary=Object.keys(sections).map(sectionId=>{const eq=sections[sectionId].equivalence;return {sectionId,status:eq.status,candidateActive:eq.candidateActive,diffCount:eq.fieldLevel.diffCount,matchedCount:eq.fieldLevel.matchedCount,comparedPaths:eq.fieldLevel.comparedPaths,readyForTrueTest:!!(eq.activationStatus&&eq.activationStatus.readyForTrueTest),readyForClosure:!!(eq.activationStatus&&eq.activationStatus.readyForClosure)};});return {batch:'READ_ONLY_VIEW_MODELS_BATCH_R4_2',version:'read-only-view-models-batch-r4-2-profile-rankings-history-active-test',runtimeImpact:'profile-rankings-history-candidate-active-only',flags:{USE_PROFILE_VIEW_MODEL_CANDIDATE,USE_RANKINGS_VIEW_MODEL_CANDIDATE,USE_HISTORY_VIEW_MODEL_CANDIDATE},structuredOrder:['perfil','rankings','historial'],structuredSections:{perfil:sections.perfil,rankings:sections.rankings,historial:sections.historial},summary,allEquivalent:summary.every(s=>s.diffCount===0),allReadyForTrueTest:summary.every(s=>s.readyForTrueTest),allReadyForClosure:summary.every(s=>s.readyForClosure),nextStep:{phase:'R4.2 Read-only Batch Visual Validation',objective:'Perfil, Rankings and Historial candidates are active. Visually validate Perfil, Rankings and Historial; if they match, close this read-only batch.'}};}
+window.__MUSICLAB_BUILD_READ_ONLY_BATCH_AUDIT=buildReadOnlyBatchAudit;
+
+/* ============================================================
+   CHALLENGES / RETOS APPLICATION LOGIC CANDIDATE - R5.1
+   View model, legacy snapshot, equivalence audit and action handler
+   shell are implemented but inactive behind granular flags.
+   ============================================================ */
+function compactChallengeForCandidate(c,genres){
+  const genre=c&&c.genreId?(genres||[]).find(g=>g.id===c.genreId):null;
+  const tracks=getTrackChallengeTracks(c).map((t,i)=>({index:i,artistName:t.artistName||'',songTitle:t.songTitle||''}));
+  const response=c&&c.response?c.response:{};
+  return {
+    id:c?.id||null,
+    type:c?.type||'song',
+    label:challengeTypeLabel(c?.type),
+    status:c?.status||'pending',
+    from:c?.from||null,
+    to:c?.to||null,
+    createdAt:c?.createdAt||null,
+    updatedAt:c?.updatedAt||null,
+    completedAt:c?.completedAt||null,
+    deadline:c?.deadline||'',
+    artistName:c?.artistName||'',
+    songTitle:c?.songTitle||'',
+    spotifyUrl:c?.spotifyUrl||'',
+    genreId:c?.genreId||'',
+    genreName:c?.genreName||genre?.name||'',
+    description:c?.description||'',
+    guessMode:c?.guessMode||'none',
+    senderScore:c?.senderScore??'',
+    senderQualitative:c?.senderQualitative||'',
+    senderFavoriteIndex:c?.senderFavoriteIndex??'',
+    senderRanking:Array.isArray(c?.senderRanking)?c.senderRanking.slice():[],
+    tracks,
+    responseSummary:{
+      hasResponse:!!(c&&c.response),
+      artistName:response.artistName||'',
+      songTitle:response.songTitle||'',
+      qualitative:response.qualitative||'',
+      score:response.score??'',
+      favoriteGuess:response.favoriteGuess??'',
+      rankingGuess:Array.isArray(response.rankingGuess)?response.rankingGuess.slice():[],
+      genreProgress:response.genreProgress?{pct:response.genreProgress.pct??null,done:response.genreProgress.done??null,total:response.genreProgress.total??null}:null
+    },
+    xpPotential:typeof getChallengeTotalXp==='function'?getChallengeTotalXp(c,genres):0,
+    isCompleted:c?.status==='completed'
+  };
+}
+function buildChallengesCompactSnapshot(data,source){
+  const inputs=buildReadOnlyRuntimeInputs(data);
+  const challenges=Array.isArray(inputs.challenges)?inputs.challenges:[];
+  const pending=challenges.filter(c=>c.status!=='completed');
+  const completed=challenges.filter(c=>c.status==='completed');
+  const byType={};
+  challenges.forEach(c=>{const t=c?.type||'unknown';byType[t]=(byType[t]||0)+1;});
+  const byUser={u1:{pendingFor:0,sentBy:0,completedFor:0},u2:{pendingFor:0,sentBy:0,completedFor:0}};
+  challenges.forEach(c=>{
+    if(c.status!=='completed'){
+      if(byUser[c.to])byUser[c.to].pendingFor++;
+      if(byUser[c.from])byUser[c.from].sentBy++;
+    }else{
+      if(byUser[c.to])byUser[c.to].completedFor++;
+    }
+  });
+  return {
+    source,
+    sectionId:'retos',
+    status:source==='candidate'?((USE_CHALLENGES_VIEW_MODEL_CANDIDATE||USE_CHALLENGES_ACTIONS_CANDIDATE)?'implemented-active-under-test':'implemented-inactive-actions-prepared'):'legacy-runtime-snapshot',
+    active:source==='candidate'?!!(USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE):true,
+    activationFlags:source==='candidate'?{USE_CHALLENGES_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_ACTIONS_CANDIDATE}:null,
+    inputs:{challengesCount:challenges.length,pendingCount:pending.length,completedCount:completed.length,genresCount:inputs.genres.length,u1:inputs.u1,u2:inputs.u2,currentUserSource:'runtime-currentUserKey'},
+    viewModel:{
+      empty:challenges.length===0,
+      pendingCount:pending.length,
+      completedCount:completed.length,
+      pendingForU1:pending.filter(c=>c.to==='u1').length,
+      pendingForU2:pending.filter(c=>c.to==='u2').length,
+      sentByU1:pending.filter(c=>c.from==='u1').length,
+      sentByU2:pending.filter(c=>c.from==='u2').length,
+      byType,
+      byUser,
+      challengeTypes:['song','artist','genre','mood','favorite3','ranking3'],
+      rows:challenges.map(c=>compactChallengeForCandidate(c,inputs.genres)).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))
+    },
+    actionModel:{
+      createChallenge:{implemented:true,active:USE_CHALLENGES_ACTIONS_CANDIDATE,legacyHandler:'createChallenge(challenge)',candidateHandler:'createChallengeCandidate(challenge, handlers)'},
+      updateChallenge:{implemented:true,active:USE_CHALLENGES_ACTIONS_CANDIDATE,legacyHandler:'updateChallenge(id, patch)',candidateHandler:'updateChallengeCandidate(id, patch, handlers)'},
+      deleteChallenge:{implemented:true,active:USE_CHALLENGES_ACTIONS_CANDIDATE,legacyHandler:'deleteChallenge(id)',candidateHandler:'deleteChallengeCandidate(id, handlers)'},
+      generateGenreChallenge:{implemented:true,active:USE_CHALLENGES_ACTIONS_CANDIDATE,legacyHandler:'generateWeek(genreId)+setTab(semana)',candidateHandler:'generateGenreChallengeCandidate(genreId, handlers)'},
+      xpAwarding:'delegated-to-existing-updateChallenge-runtime-until-actions-activated'
+    }
+  };
+}
+function getChallengesViewModelCandidate(data){return {candidate:'CHALLENGES_VIEW_MODEL_CANDIDATE_V0_1',version:'challenges-view-model-candidate-v0-2-active-test',...buildChallengesCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_CHALLENGES_VIEW_MODEL_CANDIDATE};}
+function getChallengesLegacySnapshot(data){return {snapshot:'CHALLENGES_LEGACY_SNAPSHOT_V0_1',version:'challenges-legacy-snapshot-v0-1-current-runtime-props-actions-and-derived-state',...buildChallengesCompactSnapshot(data,'legacy')};}
+function buildChallengesEquivalenceAudit(data){
+  const candidate=getChallengesViewModelCandidate(data);
+  const legacy=getChallengesLegacySnapshot(data);
+  const fieldLevel=buildGenericReadOnlyEquivalence('retos',candidate,legacy,['inputs','viewModel','actionModel']);
+  const equivalent=fieldLevel.diffCount===0;
+  return {comparison:'CHALLENGES_EQUIVALENCE_AUDIT_R5_2',sectionId:'retos',status:equivalent?(USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:!!(USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE),runtimeImpact:(USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE)?'retos-render-and-actions-use-candidate':((USE_CHALLENGES_VIEW_MODEL_CANDIDATE||USE_CHALLENGES_ACTIONS_CANDIDATE)?'retos-candidate-partially-active':'none'),fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&!USE_CHALLENGES_ACTIONS_CANDIDATE,readyForClosure:equivalent&&USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE,viewModelFlag:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,actionsFlag:USE_CHALLENGES_ACTIONS_CANDIDATE},limitations:['R5.2 activates Retos view model and action handlers behind granular flags.','Actions remain reversible by setting USE_CHALLENGES_VIEW_MODEL_CANDIDATE and USE_CHALLENGES_ACTIONS_CANDIDATE back to false.','XP award behavior is still delegated to the existing updateChallenge runtime through candidate wrappers, preserving current behavior.']};
+}
+function createChallengeCandidate(challenge,handlers={}){return typeof handlers.onCreateChallenge==='function'?handlers.onCreateChallenge(challenge):null;}
+function updateChallengeCandidate(id,patch,handlers={}){return typeof handlers.onUpdateChallenge==='function'?handlers.onUpdateChallenge(id,patch):null;}
+function deleteChallengeCandidate(id,handlers={}){return typeof handlers.onDeleteChallenge==='function'?handlers.onDeleteChallenge(id):null;}
+function generateGenreChallengeCandidate(genreId,handlers={}){return typeof handlers.onGenerateGenreChallenge==='function'?handlers.onGenerateGenreChallenge(genreId):null;}
+function getChallengesActionHandlersCandidate(handlers={}){return {onCreateChallenge:challenge=>createChallengeCandidate(challenge,handlers),onUpdateChallenge:(id,patch)=>updateChallengeCandidate(id,patch,handlers),onDeleteChallenge:id=>deleteChallengeCandidate(id,handlers),onGenerateGenreChallenge:genreId=>generateGenreChallengeCandidate(genreId,handlers),onToast:handlers.onToast};}
+function getChallengesRenderPropsCandidate(data,handlers={}){const inputs=buildReadOnlyRuntimeInputs(data);const actionHandlers=USE_CHALLENGES_ACTIONS_CANDIDATE?getChallengesActionHandlersCandidate(handlers):handlers;return {challenges:inputs.challenges,genres:inputs.genres,u1:inputs.u1,u2:inputs.u2,currentUserKey:handlers.currentUserKey,onCreateChallenge:actionHandlers.onCreateChallenge,onUpdateChallenge:actionHandlers.onUpdateChallenge,onDeleteChallenge:actionHandlers.onDeleteChallenge,onGenerateGenreChallenge:actionHandlers.onGenerateGenreChallenge,onToast:actionHandlers.onToast};}
+window.__MUSICLAB_BUILD_CHALLENGES_EQUIVALENCE_AUDIT=buildChallengesEquivalenceAudit;
+
+
+
+/* ============================================================
+   ACTIVE WEEK / SEMANA APPLICATION LOGIC CANDIDATE - R6.2
+   Semana activa is the first high-risk workspace candidate.
+   R6.2 activates candidate view model and candidate action wrappers
+   behind granular flags for guarded runtime validation.
+   ============================================================ */
+function compactActiveWeekUserState(obj){const o=obj||{};return {u1:!!o.u1,u2:!!o.u2};}
+function compactActiveWeekSong(song,index){const s=song||{};return {index,title:s.title||'',note:s.note||'',hasSpotifyUrl:!!s.spotifyUrl,listened:!!s.listened,listenedBy:compactActiveWeekUserState(s.listenedBy),favoriteBy:compactActiveWeekUserState(s.favoriteBy)};}
+function compactActiveWeekArtist(artist,index){const a=artist||{};const songs=Array.isArray(a.listenedSongs)?a.listenedSongs:(Array.isArray(a.suggestedSongs)?a.suggestedSongs:[]);return {index,id:a.id||null,name:a.name||'',role:a.role||'',shortDescription:a.shortDescription||'',listened:!!a.listened,listenedBy:compactActiveWeekUserState(a.listenedBy),favU1:!!a.favU1,favU2:!!a.favU2,scoreU1:a.scoreU1||'',scoreU2:a.scoreU2||'',commentU1:a.commentU1||'',commentU2:a.commentU2||'',moodU1:a.moodU1||'',moodU2:a.moodU2||'',situationsU1:a.situationsU1||'',situationsU2:a.situationsU2||'',replayU1:a.replayU1||'',replayU2:a.replayU2||'',songCount:songs.length,listenedSongs:songs.map(compactActiveWeekSong)};}
+function summarizeActiveWeekForCandidate(week){if(!week)return null;const progress=typeof getWeekSongProgress==='function'?getWeekSongProgress(week):null;const quiz=week.learningQuiz||{};return {id:week.id||null,weekNum:week.weekNum||null,startDate:week.startDate||null,status:week.status||null,genreId:week.genreId||null,genreName:week.genreName||null,genreFamily:week.genreFamily||null,artistCount:Array.isArray(week.artists)?week.artists.length:0,progress:progress?{listenedSongs:progress.listenedSongs,totalSongs:progress.totalSongs,listenedArtists:progress.listenedArtists,totalArtists:progress.totalArtists,songPct:progress.songPct,artistPct:progress.artistPct}:null,rating:{scoreU1:week.rating?.scoreU1||'',scoreU2:week.rating?.scoreU2||'',commentU1:week.rating?.commentU1||'',commentU2:week.rating?.commentU2||'',comment:week.rating?.comment||''},quiz:{u1:quiz.u1?{score:quiz.u1.score,total:quiz.u1.total,completed:!!quiz.u1.answeredAt}:null,u2:quiz.u2?{score:quiz.u2.score,total:quiz.u2.total,completed:!!quiz.u2.answeredAt}:null},artists:(week.artists||[]).map(compactActiveWeekArtist)};}
+function getActiveWeekLearningSummaryCandidate(activeWeek,genres){const genreId=activeWeek&&activeWeek.genreId;const genre=(genres||[]).find(g=>g.id===genreId)||null;let learning=null;let quiz=null;try{learning=typeof getGenreLearning==='function'?getGenreLearning(genre):null;}catch(e){learning=null;}try{quiz=learning&&Array.isArray(learning.quiz)?learning.quiz:(QUIZZES&&genreId?QUIZZES[genreId]:null);}catch(e){quiz=null;}return {genreId:genreId||null,hasGenre:!!genre,hasLearning:!!learning,hasQuiz:Array.isArray(quiz),quizQuestionCount:Array.isArray(quiz)?quiz.length:0,learningKeys:learning&&typeof learning==='object'?Object.keys(learning).sort():[]};}
+function buildActiveWeekCompactSnapshot(data,source){const inputs=buildDashboardViewModelRuntimeInputs(data);const activeWeek=inputs.activeWeek;const learning=getActiveWeekLearningSummaryCandidate(activeWeek,inputs.genres);return {source,sectionId:'semana',status:source==='candidate'?((USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE||USE_ACTIVE_WEEK_ACTIONS_CANDIDATE)?'implemented-active-under-test':'implemented-inactive-actions-prepared'):'legacy-runtime-snapshot',active:source==='candidate'?!!(USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE):true,activationFlags:source==='candidate'?{USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,USE_ACTIVE_WEEK_ACTIONS_CANDIDATE}:null,inputs:{weeksCount:inputs.weeks.length,completedWeeksCount:inputs.completedWeeks.length,hasActiveWeek:!!activeWeek,activeWeekId:inputs.activeWeekId,genresCount:inputs.genres.length,completedGenreIdsCount:inputs.completedGenreIds.length,u1:inputs.u1,u2:inputs.u2},viewModel:{manualGenreSelectDefault:'runtime-manualGenreSelect-state',activeWeek:summarizeActiveWeekForCandidate(activeWeek),learning,availableGenreCount:inputs.genres.length,completedGenreIdsCount:inputs.completedGenreIds.length,closeFlow:{weekCloseMode:'runtime-weekCloseMode-state',weekRating:'runtime-weekRating-state',confirmClose:'onConfirmClose handler'},expandedArtist:'runtime-expandedArtist-state'},actions:{randomGenre:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'randomGenre()',candidateHandler:'generateRandomWeekCandidate(handlers)'},generateWeek:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'generateWeek(genreId)',candidateHandler:'selectActiveWeekGenreCandidate(genreId, handlers)'},updateArtist:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'updateArtist(weekId, artId, field, value)',candidateHandler:'updateActiveWeekArtistCandidate(weekId, artId, field, value, handlers)'},toggleArtistHeard:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'toggleArtistHeard(weekId, artId, userKey)',candidateHandler:'toggleActiveWeekArtistHeardCandidate(weekId, artId, userKey, handlers)'},toggleSong:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'toggleSong(weekId, artId, songIdx, userKey)',candidateHandler:'toggleActiveWeekSongCandidate(weekId, artId, songIdx, userKey, handlers)'},saveLearningQuiz:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'updateLearningQuiz(weekId, userKey, result)',candidateHandler:'saveActiveWeekLearningQuizCandidate(weekId, userKey, result, handlers)'},closeWeek:{implemented:true,active:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,legacyHandler:'closeWeek()',candidateHandler:'confirmActiveWeekCloseCandidate(handlers)'}}};}
+function getActiveWeekViewModelCandidate(data){return {candidate:'ACTIVE_WEEK_VIEW_MODEL_CANDIDATE_V0_1',version:'active-week-view-model-candidate-v0-1-structured-inactive',...buildActiveWeekCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE};}
+function getActiveWeekLegacySnapshot(data){return {snapshot:'ACTIVE_WEEK_LEGACY_SNAPSHOT_V0_1',version:'active-week-legacy-snapshot-v0-1-current-runtime-props-and-derived-state',...buildActiveWeekCompactSnapshot(data,'legacy')};}
+function buildActiveWeekEquivalenceAudit(data){const candidate=getActiveWeekViewModelCandidate(data);const legacy=getActiveWeekLegacySnapshot(data);const fieldLevel=buildGenericReadOnlyEquivalence('semana',candidate,legacy,['inputs','viewModel','actions']);const equivalent=fieldLevel.diffCount===0;return {comparison:'ACTIVE_WEEK_EQUIVALENCE_AUDIT_R6_2',sectionId:'semana',status:equivalent?(USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:!!(USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE),runtimeImpact:(USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE)?'semana-render-and-actions-use-candidate':((USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE||USE_ACTIVE_WEEK_ACTIONS_CANDIDATE)?'semana-candidate-partially-active':'none'),fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&!USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,readyForClosure:equivalent&&USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,viewModelFlag:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,actionsFlag:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE},limitations:['R6.2 activates Semana activa candidate render and action handlers behind granular flags.','Legacy handlers are still delegated to internally through candidate action wrappers for controlled activation.','Spotify behavior remains handled by openSpotifyForSong and is not changed by R6.2.']};}
+function generateRandomWeekCandidate(handlers={}){if(typeof handlers.onGenerate==='function')return handlers.onGenerate();}
+function selectActiveWeekGenreCandidate(genreId,handlers={}){if(typeof handlers.onGenreSelect==='function')return handlers.onGenreSelect(genreId);}
+function updateActiveWeekArtistCandidate(weekId,artId,field,value,handlers={}){if(typeof handlers.onUpdateArtist==='function')return handlers.onUpdateArtist(weekId,artId,field,value);}
+function toggleActiveWeekArtistHeardCandidate(weekId,artId,userKey,handlers={}){if(typeof handlers.onToggleArtistHeard==='function')return handlers.onToggleArtistHeard(weekId,artId,userKey);}
+function toggleActiveWeekSongCandidate(weekId,artId,songIdx,userKey,handlers={}){if(typeof handlers.onToggleSong==='function')return handlers.onToggleSong(weekId,artId,songIdx,userKey);}
+function saveActiveWeekLearningQuizCandidate(weekId,userKey,result,handlers={}){if(typeof handlers.onSaveLearningQuiz==='function')return handlers.onSaveLearningQuiz(weekId,userKey,result);}
+function requestActiveWeekCloseCandidate(handlers={}){if(typeof handlers.onCloseWeek==='function')return handlers.onCloseWeek();}
+function confirmActiveWeekCloseCandidate(handlers={}){if(typeof handlers.onConfirmClose==='function')return handlers.onConfirmClose();}
+function clearActiveWeekRatingCandidate(wId,aId,handlers={}){if(typeof handlers.onClearRating==='function')return handlers.onClearRating(wId,aId);}
+function getActiveWeekActionHandlersCandidate(handlers={}){return {...handlers,onGenerate:()=>generateRandomWeekCandidate(handlers),onGenreSelect:(genreId)=>selectActiveWeekGenreCandidate(genreId,handlers),onUpdateArtist:(weekId,artId,field,value)=>updateActiveWeekArtistCandidate(weekId,artId,field,value,handlers),onToggleArtistHeard:(weekId,artId,userKey)=>toggleActiveWeekArtistHeardCandidate(weekId,artId,userKey,handlers),onToggleSong:(weekId,artId,songIdx,userKey)=>toggleActiveWeekSongCandidate(weekId,artId,songIdx,userKey,handlers),onSaveLearningQuiz:(weekId,userKey,result)=>saveActiveWeekLearningQuizCandidate(weekId,userKey,result,handlers),onCloseWeek:()=>requestActiveWeekCloseCandidate(handlers),onConfirmClose:()=>confirmActiveWeekCloseCandidate(handlers),onClearRating:(wId,aId)=>clearActiveWeekRatingCandidate(wId,aId,handlers)};}
+function getActiveWeekRenderPropsCandidate(data,handlers={}){const inputs=buildReadOnlyRuntimeInputs(data);const actionHandlers=USE_ACTIVE_WEEK_ACTIONS_CANDIDATE?getActiveWeekActionHandlersCandidate(handlers):handlers;return {activeWeek:inputs.activeWeek,u1:inputs.u1,u2:inputs.u2,currentUserKey:handlers.currentUserKey,genres:inputs.genres,weeks:inputs.weeks,completedGenreIds:inputs.completedGenreIds,onGenerate:actionHandlers.onGenerate,onManualSelect:actionHandlers.onManualSelect,manualGenreSelect:handlers.manualGenreSelect,setManualGenreSelect:handlers.setManualGenreSelect,onGenreSelect:actionHandlers.onGenreSelect,onUpdateArtist:actionHandlers.onUpdateArtist,onToggleArtistHeard:actionHandlers.onToggleArtistHeard,onToggleSong:actionHandlers.onToggleSong,onCloseWeek:actionHandlers.onCloseWeek,weekCloseMode:handlers.weekCloseMode,setWeekCloseMode:handlers.setWeekCloseMode,weekRating:handlers.weekRating,setWeekRating:handlers.setWeekRating,onConfirmClose:actionHandlers.onConfirmClose,expandedArtist:handlers.expandedArtist,setExpandedArtist:handlers.setExpandedArtist,onClearRating:actionHandlers.onClearRating,onSaveLearningQuiz:actionHandlers.onSaveLearningQuiz,onToast:handlers.onToast};}
+window.__MUSICLAB_GET_ACTIVE_WEEK_RENDER_PROPS_CANDIDATE=getActiveWeekRenderPropsCandidate;
+function buildApplicationLogicAudit(data){
+  const dashboardAudit=buildDashboardEquivalenceAudit(data);
+  const candidate=getDashboardViewModelCandidate(data);
+  const legacy=getDashboardLegacySnapshot(data);
+  const readOnlyBatch=buildReadOnlyBatchAudit(data);
+  const challengesAudit=buildChallengesEquivalenceAudit(data);
+  const challengesCandidate=getChallengesViewModelCandidate(data);
+  const challengesLegacy=getChallengesLegacySnapshot(data);
+  const activeWeekAudit=buildActiveWeekEquivalenceAudit(data);
+  const activeWeekCandidate=getActiveWeekViewModelCandidate(data);
+  const activeWeekLegacy=getActiveWeekLegacySnapshot(data);
+  const sections=Object.keys(APPLICATION_LOGIC_CANDIDATE.sections).map(id=>{
+    const section=APPLICATION_LOGIC_CANDIDATE.sections[id];
+    const batchSection=readOnlyBatch.structuredSections[id];
+    const isChallenges=id==='retos';
+    const isActiveWeek=id==='semana';
+    return {
+      sectionId:id,
+      componentName:section.componentName,
+      status:section.status,
+      activationFlag:section.activationFlag||null,
+      activationReady:!!section.activationReady,
+      candidateImplemented:id==='dashboard'||!!batchSection||isChallenges||isActiveWeek,
+      plannedSelector:section.selector||section.plannedSelector||null,
+      plannedActions:section.plannedActions||[],
+      equivalenceStatus:id==='dashboard'?dashboardAudit.status:(batchSection?batchSection.equivalence.status:(isChallenges?challengesAudit.status:(isActiveWeek?activeWeekAudit.status:null))),
+      diffCount:id==='dashboard'?dashboardAudit.fieldLevel.diffCount:(batchSection?batchSection.equivalence.fieldLevel.diffCount:(isChallenges?challengesAudit.fieldLevel.diffCount:(isActiveWeek?activeWeekAudit.fieldLevel.diffCount:null)))
+    };
+  });
+  return {
+    audit:'APPLICATION_LOGIC_AUDIT_R6_2',
+    version:APPLICATION_LOGIC_AUDIT_VERSION,
+    generatedAt:new Date().toISOString(),
+    baseAppVersion:APP_ARCHITECTURE_VERSION,
+    runtimeImpact:'dashboard-readonly-challenges-and-active-week-candidate-active',
+    flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE,USE_PROFILE_VIEW_MODEL_CANDIDATE,USE_RANKINGS_VIEW_MODEL_CANDIDATE,USE_HISTORY_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_ACTIONS_CANDIDATE,USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,USE_ACTIVE_WEEK_ACTIONS_CANDIDATE},
+    candidate:{...APPLICATION_LOGIC_CANDIDATE,sections},
+    maps:{appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP},
+    spotify:{fix:'SPOTIFY_NATIVE_SEARCH_FIX_R5_1',status:'implemented',expectedBehavior:'play buttons call spotify:search:<artist song> or spotify:<type>:<id> for direct Spotify URLs, avoiding same-tab open.spotify.com navigation from Music Discovery Lab'},
+    dashboard:{status:'dashboard-candidate-active-under-controlled-test',candidateSummary:{candidate:candidate.candidate,version:candidate.version,status:candidate.status,active:candidate.active,inputs:candidate.inputs},legacySummary:{snapshot:legacy.snapshot,version:legacy.version,status:legacy.status,active:legacy.active,inputs:legacy.inputs},equivalence:dashboardAudit,guardedRenderPrepared:true,guardedRenderFlagValue:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,visualValidationRequired:false,closureStatus:'dashboard-closed-if-user-visual-validation-passed'},
+    readOnlyBatch,
+    retos:{status:'challenges-candidate-active-under-controlled-test',candidateSummary:{candidate:challengesCandidate.candidate,version:challengesCandidate.version,status:challengesCandidate.status,active:challengesCandidate.active,inputs:challengesCandidate.inputs},legacySummary:{snapshot:challengesLegacy.snapshot,version:challengesLegacy.version,status:challengesLegacy.status,active:challengesLegacy.active,inputs:challengesLegacy.inputs},equivalence:challengesAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_CHALLENGES_ACTIONS_CANDIDATE,visualValidationRequired:false,closureStatus:'retos-closed-if-user-visual-validation-passed'},
+    semana:{status:'active-week-candidate-active-under-guarded-render-test',candidateSummary:{candidate:activeWeekCandidate.candidate,version:activeWeekCandidate.version,status:activeWeekCandidate.status,active:activeWeekCandidate.active,inputs:activeWeekCandidate.inputs},legacySummary:{snapshot:activeWeekLegacy.snapshot,version:activeWeekLegacy.version,status:activeWeekLegacy.status,active:activeWeekLegacy.active,inputs:activeWeekLegacy.inputs},equivalence:activeWeekAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,visualValidationRequired:false},
+    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,nextActivationTarget:'semana',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
+    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true},
+    nextStep:APPLICATION_LOGIC_CANDIDATE.nextStep
+  };
+}
+function buildApplicationLogicAuditExport(data){return buildApplicationLogicAudit(data);}
+window.__MUSICLAB_BUILD_APPLICATION_LOGIC_AUDIT=buildApplicationLogicAudit;
+window.__MUSICLAB_BUILD_APPLICATION_LOGIC_AUDIT_EXPORT=buildApplicationLogicAuditExport;
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -35884,23 +36129,48 @@ function hasArtistUserEval(a,user){
 function replayLabel(v){
   return {si:'Sí',tal_vez:'Tal vez',no:'No'}[v]||'';
 }
+function buildSpotifySearchQuery(artistName,songTitle){
+  return [artistName,songTitle].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
+}
 function buildSpotifySearchUrl(artistName,songTitle){
-  const query=[artistName,songTitle].filter(Boolean).join(' ').trim();
+  const query=buildSpotifySearchQuery(artistName,songTitle);
   return `https://open.spotify.com/search/${encodeURIComponent(query||'')}`;
+}
+function buildSpotifyAppSearchUri(artistName,songTitle){
+  const query=buildSpotifySearchQuery(artistName,songTitle);
+  return query?`spotify:search:${encodeURIComponent(query)}`:'';
+}
+function convertSpotifyWebUrlToAppUri(url){
+  const raw=(url||'').trim();
+  if(!raw)return '';
+  if(/^spotify:/i.test(raw))return raw;
+  try{
+    const u=new URL(raw);
+    if(u.hostname.replace(/^www\./,'')==='open.spotify.com'){
+      const parts=u.pathname.split('/').filter(Boolean);
+      const type=parts[0];
+      const id=parts[1];
+      if(type&&id)return `spotify:${type}:${id}`;
+    }
+  }catch(e){}
+  return raw;
 }
 function getSpotifyUrl(artistName,song){
   const direct=(song&&song.spotifyUrl||'').trim();
-  if(direct)return direct;
-  return buildSpotifySearchUrl(artistName,(song&&song.title)||'');
+  const nativeDirect=convertSpotifyWebUrlToAppUri(direct);
+  if(nativeDirect)return nativeDirect;
+  return buildSpotifyAppSearchUri(artistName,(song&&song.title)||'');
 }
 function openSpotifyForSong(artistName,song,event){
   if(event){event.preventDefault();event.stopPropagation();}
   const url=getSpotifyUrl(artistName,song);
   if(!url)return;
-  /* Same-tab navigation avoids the annoying about:blank tab on iOS/Chrome.
-     Spotify universal links normally hand off to the Spotify app when installed. */
-  window.location.assign(url);
+  /* Prefer the native Spotify URI so the play button opens the Spotify app and
+     searches artist + song without leaving Music Discovery Lab in the same tab. */
+  try{ window.location.href=url; }
+  catch(e){ window.open(buildSpotifySearchUrl(artistName,(song&&song.title)||''),'_blank','noopener'); }
 }
+
 
 function isHeardBy(item,userKey){
   if(item&&item.listenedBy&&typeof item.listenedBy==='object'&&Object.prototype.hasOwnProperty.call(item.listenedBy,userKey)) return !!item.listenedBy[userKey];
@@ -43779,7 +44049,7 @@ function validateCatalogChangeLogIntegrity(data){
   return res;
 }
 function validateArchitectureAuditPresence(report){
-  const requiredBlocks=['runtimeAccessArchitecture','runtimeAccessIntegrity','catalogArchitecture','catalogStaticEquivalence','catalogEditArchitecture','catalogOverridesIntegrity','catalogChangeLogIntegrity','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence'];
+  const requiredBlocks=['runtimeAccessArchitecture','runtimeAccessIntegrity','catalogArchitecture','catalogStaticEquivalence','catalogEditArchitecture','catalogOverridesIntegrity','catalogChangeLogIntegrity','userStateArchitecture','userStateCandidateIntegrity','learningArchitecture','learningStaticEquivalence','applicationLogic'];
   const missingBlocks=requiredBlocks.filter(k=>!(report&&report[k]&&typeof report[k]==='object'));
   return {
     ok:missingBlocks.length===0,
@@ -43815,7 +44085,8 @@ function generateSystemAuditReport(data){
       catalog:CATALOG_ARCHITECTURE_VERSION,
       userState:USER_STATE_ARCHITECTURE_VERSION,
       runtimeAccess:RUNTIME_ACCESS_ARCHITECTURE_VERSION,
-      catalogEdit:CATALOG_EDIT_ARCHITECTURE_VERSION
+      catalogEdit:CATALOG_EDIT_ARCHITECTURE_VERSION,
+      applicationLogic:APPLICATION_LOGIC_AUDIT_VERSION
     },
     summary:{
       activeCatalogSource:USE_STATIC_MUSIC_CATALOG?'MUSIC_CATALOG + catalogOverrides/customCatalogItems':'data.genres',
@@ -43833,7 +44104,9 @@ function generateSystemAuditReport(data){
       auditScope:'base-catalog-errors-separated-from-editable-drafts',
       weekCount:auditSafeArray(data&&data.weeks).length,
       challengeCount:auditSafeArray(data&&data.challenges).length,
-      xpEventCount:auditSafeArray(data&&data.xpEvents).length
+      xpEventCount:auditSafeArray(data&&data.xpEvents).length,
+      applicationLogicStatus:'APPLICATION_LOGIC_AUDIT_R4_2',
+      dashboardCandidateReady:!!(buildApplicationLogicAudit(data).readiness&&buildApplicationLogicAudit(data).readiness.dashboardReadyForTrueTest)
     },
     catalog:validateCatalogShape(activeDataForReport),
     duplicateGenres:validateDuplicateGenres(activeDataForReport),
@@ -43858,7 +44131,8 @@ function generateSystemAuditReport(data){
     weeks:validateWeekReferences(activeDataForReport),
     challenges:validateChallengeReferences(activeDataForReport),
     xp:validateXpConsistency(data),
-    upgradeRisk:validateUpgradeInjectionRisk(data)
+    upgradeRisk:validateUpgradeInjectionRisk(data),
+    applicationLogic:buildApplicationLogicAudit(data)
   };
   report.architectureAuditPresence=validateArchitectureAuditPresence(report);
   report.summary.totalErrors=Object.values(report).filter(v=>v&&typeof v==='object'&&Array.isArray(v.errors)).reduce((sum,v)=>sum+v.errors.length,0);
@@ -45102,7 +45376,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   </div>;
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportCandidateApplicationLogicShell,onExportDashboardComparableSnapshot,onExportDashboardEquivalenceAudit}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportApplicationLogicAudit}){
   const [form,setForm]=useState({...settings});
   const [auditSummary,setAuditSummary]=useState(null);
   useEffect(()=>setForm({...settings}),[settings]);
@@ -45159,26 +45433,11 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
           <button className="btn" onClick={onExportUserStateCandidate}>⬇ User state candidato</button>
         </div>
         <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
-          <div className="learning-box-title">R2 Canary · lógica de aplicación</div>
+          <div className="learning-box-title">Application Logic Candidate / Audit</div>
           <p className="muted" style={{fontSize:12,marginBottom:10}}>
-            Export mínimo para validar que podemos añadir una sección aislada de lógica de aplicación sin impacto en runtime, auditoría principal, catálogo, progreso, Firebase ni localStorage.
+            Auditoría única y consolidada de lógica de aplicación. Incluye mapa de secciones, mapa de componentes, Dashboard candidate activo y el batch read-only estructurado por Perfil, Rankings e Historial. Un único audit consolida candidate, legacy snapshot, equivalencia y readiness por sección.
           </p>
-          <button className="btn" onClick={onExportAppLogicCanary}>⬇ Exportar App Logic Canary</button>
-        </div>
-        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
-          <div className="learning-box-title">R2.4 · Candidate Application Logic Shell</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>Contenedor formal de Candidate Application Logic con flags en false. No cambia render, navegación, catálogo, XP, Firebase ni localStorage.</p>
-          <button className="btn" onClick={onExportCandidateApplicationLogicShell}>⬇ Exportar Candidate Application Logic Shell R2.4/R3.3</button>
-        </div>
-        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
-          <div className="learning-box-title">R3.2 · Dashboard Comparable Snapshot</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>Snapshots compactos de Dashboard: candidate inactivo vs legacy runtime actual. No exporta semanas completas con artistas/canciones.</p>
-          <button className="btn" onClick={onExportDashboardComparableSnapshot}>⬇ Exportar Dashboard Comparable Snapshot R3.2</button>
-        </div>
-        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
-          <div className="learning-box-title">R3.3 · Dashboard Equivalence Audit</div>
-          <p className="muted" style={{fontSize:12,marginBottom:10}}>Auditoría formal campo a campo de Dashboard candidate vs legacy. Decide si el módulo está listo para preparar un render flag protegido, todavía en false.</p>
-          <button className="btn btn-primary" onClick={onExportDashboardEquivalenceAudit}>⬇ Exportar Dashboard Equivalence Audit R3.3</button>
+          <button className="btn btn-primary" onClick={onExportApplicationLogicAudit}>⬇ Exportar Application Logic Audit</button>
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
@@ -45665,18 +45924,9 @@ function App(){
   }
 
 
-  function exportCandidateApplicationLogicShell(){
-    auditDownloadJson('musiclab_candidate_application_logic_shell_r3_3.json',buildCandidateApplicationLogicShellExport(data));
+  function exportApplicationLogicAudit(){
+    auditDownloadJson('musiclab_application_logic_audit_r6_1.json',buildApplicationLogicAuditExport(data));
   }
-
-  function exportDashboardComparableSnapshot(){
-    auditDownloadJson('musiclab_dashboard_comparable_snapshot_r3_2.json',buildDashboardComparableSnapshotExport(data));
-  }
-
-  function exportDashboardEquivalenceAudit(){
-    auditDownloadJson('musiclab_dashboard_equivalence_audit_r3_3.json',buildDashboardEquivalenceAuditExport(data));
-  }
-
 
   function importData(e){
     const file=e.target.files[0];if(!file)return;
@@ -45746,14 +45996,14 @@ function App(){
       </nav>
 
       <div>
-        {tab==='dashboard'&&<DashboardTab weeks={weeks} completedWeeks={completedWeeks} activeWeek={activeWeek} u1={u1} u2={u2} genreRankings={genreRankings} artistRankings={artistRankings} genres={genres} completedGenreIds={completedGenreIds} challenges={challenges} xpEvents={xpEvents} onGenerate={randomGenre} onGoSemana={()=>setTab('semana')} onManualSelect={()=>{setManualGenreSelect(true);setTab('semana');}}/>}
-        {tab==='semana'&&<SemanaTab activeWeek={activeWeek} u1={u1} u2={u2} currentUserKey={currentUserKey} genres={genres} weeks={weeks} completedGenreIds={completedGenreIds} onGenerate={randomGenre} onManualSelect={()=>setManualGenreSelect(true)} manualGenreSelect={manualGenreSelect} setManualGenreSelect={setManualGenreSelect} onGenreSelect={generateWeek} onUpdateArtist={updateArtist} onToggleArtistHeard={toggleArtistHeard} onToggleSong={toggleSong} onCloseWeek={()=>setWeekCloseMode(true)} weekCloseMode={weekCloseMode} setWeekCloseMode={setWeekCloseMode} weekRating={weekRating} setWeekRating={setWeekRating} onConfirmClose={closeWeek} expandedArtist={expandedArtist} setExpandedArtist={setExpandedArtist} onClearRating={(wId,aId)=>setConfirm({type:'rating',wId,aId})} onSaveLearningQuiz={updateLearningQuiz} onToast={showXpToast}/>}
-        {tab==='rankings'&&<RankingsTab genreRankings={genreRankings} artistRankings={artistRankings} completedWeeks={completedWeeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2}/>}
-        {tab==='historial'&&<HistorialTab weeks={weeks} onDelete={id=>setConfirm({type:'week',id})} onView={w=>setViewWeek(w)} u1={u1} u2={u2}/>}
+        {tab==='dashboard'&&<DashboardTab {...(USE_DASHBOARD_VIEW_MODEL_CANDIDATE?getDashboardRenderPropsCandidate(data,{onGenerate:randomGenre,onGoSemana:()=>setTab('semana'),onManualSelect:()=>{setManualGenreSelect(true);setTab('semana');}}):{weeks,completedWeeks,activeWeek,u1,u2,genreRankings,artistRankings,genres,completedGenreIds,challenges,xpEvents,onGenerate:randomGenre,onGoSemana:()=>setTab('semana'),onManualSelect:()=>{setManualGenreSelect(true);setTab('semana');}})} />}
+        {tab==='semana'&&<SemanaTab {...(USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE?getActiveWeekRenderPropsCandidate(data,{currentUserKey,onGenerate:randomGenre,onManualSelect:()=>setManualGenreSelect(true),manualGenreSelect,setManualGenreSelect,onGenreSelect:generateWeek,onUpdateArtist:updateArtist,onToggleArtistHeard:toggleArtistHeard,onToggleSong:toggleSong,onCloseWeek:()=>setWeekCloseMode(true),weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose:closeWeek,expandedArtist,setExpandedArtist,onClearRating:(wId,aId)=>setConfirm({type:'rating',wId,aId}),onSaveLearningQuiz:updateLearningQuiz,onToast:showXpToast}):{activeWeek,u1,u2,currentUserKey,genres,weeks,completedGenreIds,onGenerate:randomGenre,onManualSelect:()=>setManualGenreSelect(true),manualGenreSelect,setManualGenreSelect,onGenreSelect:generateWeek,onUpdateArtist:updateArtist,onToggleArtistHeard:toggleArtistHeard,onToggleSong:toggleSong,onCloseWeek:()=>setWeekCloseMode(true),weekCloseMode,setWeekCloseMode,weekRating,setWeekRating,onConfirmClose:closeWeek,expandedArtist,setExpandedArtist,onClearRating:(wId,aId)=>setConfirm({type:'rating',wId,aId}),onSaveLearningQuiz:updateLearningQuiz,onToast:showXpToast})}/>}
+        {tab==='rankings'&&<RankingsTab {...(USE_RANKINGS_VIEW_MODEL_CANDIDATE?getRankingsRenderPropsCandidate(data):{genreRankings,artistRankings,completedWeeks,challenges,genres,xpEvents,u1,u2})}/>}
+        {tab==='historial'&&<HistorialTab {...(USE_HISTORY_VIEW_MODEL_CANDIDATE?getHistoryRenderPropsCandidate(data,{onDelete:id=>setConfirm({type:'week',id}),onView:w=>setViewWeek(w)}):{weeks,onDelete:id=>setConfirm({type:'week',id}),onView:w=>setViewWeek(w),u1,u2})}/>}
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
-        {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
-        {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportCandidateApplicationLogicShell={exportCandidateApplicationLogicShell} onExportDashboardComparableSnapshot={exportDashboardComparableSnapshot} onExportDashboardEquivalenceAudit={exportDashboardEquivalenceAudit}/>}
+        {tab==='retos'&&<RetosTab {...(USE_CHALLENGES_VIEW_MODEL_CANDIDATE?getChallengesRenderPropsCandidate(data,{currentUserKey,onCreateChallenge:createChallenge,onUpdateChallenge:updateChallenge,onDeleteChallenge:deleteChallenge,onGenerateGenreChallenge:(genreId)=>{generateWeek(genreId);setTab('semana');},onToast:showXpToast}):{challenges,genres,u1,u2,currentUserKey,onCreateChallenge:createChallenge,onUpdateChallenge:updateChallenge,onDeleteChallenge:deleteChallenge,onGenerateGenreChallenge:(genreId)=>{generateWeek(genreId);setTab('semana');},onToast:showXpToast})}/>}
+        {tab==='perfil'&&<ProfileTab {...(USE_PROFILE_VIEW_MODEL_CANDIDATE?{...getProfileRenderPropsCandidate(data),currentUserKey}:{weeks,challenges,genres,xpEvents,u1,u2,currentUserKey})}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportApplicationLogicAudit={exportApplicationLogicAudit}/>}
       </div>
 
       {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
