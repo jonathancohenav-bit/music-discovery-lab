@@ -361,7 +361,7 @@ window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
    ============================================================ */
 const ACTIVE_RUNTIME_WIRING_AUDIT_VERSION='active-runtime-wiring-audit-v0-1-app-jsx-wiring-scan';
 const ACTIVE_RUNTIME_PRODUCT_MUTATION_NAMES=['generateWeek','randomGenre','updateArtist','toggleArtistHeard','toggleSong','updateLearningQuiz','createChallenge','updateChallenge','deleteChallenge','closeWeek','deleteWeek','clearArtistRatingNow','resetLibrary','resetLibraryNow','resetAll','wipeAllNow','forceLibraryUpgrade'];
-const ACTIVE_RUNTIME_DIAGNOSTIC_EXPORT_NAMES=['auditDownloadJson','generateAudit','exportAuditReport','exportEffectiveCatalog','exportLearningSnapshot','exportStaticCatalogCandidate','exportUserStateCandidate','exportAppLogicCanary','exportAppLogicMap','exportAppComponentMap','generateSystemAuditReport'];
+const ACTIVE_RUNTIME_DIAGNOSTIC_EXPORT_NAMES=['auditDownloadJson','generateAudit','exportAuditReport','exportEffectiveCatalog','exportLearningSnapshot','exportStaticCatalogCandidate','exportUserStateCandidate','exportAppLogicCanary','exportAppLogicMap','exportAppComponentMap','generateSystemAuditReport','exportCandidateApplicationLogicShell'];
 const ACTIVE_RUNTIME_PERSISTENCE_NAMES=['loadData','saveData','importData','exportData','signIn','signOutNow','wipeAllNow','resetAll','resetLibrary','resetLibraryNow','forceLibraryUpgrade','prepareEditableCatalogData','upgradeLibraryData','updateCatalogInData','resetCatalogCustomizationsInData'];
 function getActiveRuntimeScriptSourceForWiringAudit(){const scripts=Array.from(document.querySelectorAll('script[type="text/babel"]'));const main=scripts.find(sc=>(sc.textContent||'').includes('function App('))||scripts[0];return main?(main.textContent||''):'';}
 function extractBalancedBlockForActiveWiringAudit(source,openBraceIndex){if(openBraceIndex<0||source[openBraceIndex]!=='{')return '';let depth=0,inString=null,escaped=false;for(let i=openBraceIndex;i<source.length;i++){const ch=source[i];if(inString){if(escaped){escaped=false;continue;}if(ch==='\\'){escaped=true;continue;}if(ch===inString)inString=null;continue;}if(ch==='"'||ch==="'"||ch==='`'){inString=ch;continue;}if(ch==='{')depth++;if(ch==='}'){depth--;if(depth===0)return source.slice(openBraceIndex+1,i);}}return '';}
@@ -375,6 +375,113 @@ function categorizeDirectFunctionForActiveWiring(name){if(!name)return null;if(A
 function classifyPropForActiveWiring(propName,expression){const expr=String(expression||'').trim();const direct=/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(expr)?expr:null;const directCategory=categorizeDirectFunctionForActiveWiring(direct);const calls=extractCallsForActiveWiring(expr);const setterCalls=calls.filter(c=>/^set[A-Z]/.test(c));const isHandler=/^on[A-Z]/.test(propName)||/^set[A-Z]/.test(propName);const inline=expr.includes('=>')||expr.startsWith('function');let runtimeStatus='active-data-prop';if(isHandler||inline||directCategory){if(directCategory==='productMutationFunction')runtimeStatus='active-product-runtime';else if(directCategory==='diagnosticExportFunction')runtimeStatus='active-diagnostic-export-runtime';else if(directCategory==='persistenceOrBackupFunction')runtimeStatus='active-persistence-or-backup-runtime';else if(expr.includes('setTab('))runtimeStatus='active-navigation-runtime';else if(expr.includes('update(')||expr.includes('setData(')||expr.includes('setConfirm('))runtimeStatus='active-inline-mutation-runtime';else if(setterCalls.length||directCategory==='localUiStateSetter')runtimeStatus='active-local-ui-state-runtime';else runtimeStatus='active-inline-or-support-runtime';}return {propName,expression:expr,isHandlerLike:!!isHandler,directFunctionName:directCategory&&directCategory!=='localUiStateSetter'?direct:null,directCategory,inlineHandler:inline,calledFunctions:calls,setterCalls,runtimeStatus};}
 function buildActiveRuntimeWiringAudit(){const source=getActiveRuntimeScriptSourceForWiringAudit();const app=extractFunctionBodyForActiveWiringAudit(source,'App');const appBody=app.body||'';const components=APP_COMPONENT_MAP.components.map(c=>{const tagBlocks=findComponentTagsInAppForActiveWiring(appBody,c.componentName);const props=tagBlocks.flatMap(parseJsxPropsForActiveWiring);const propWiring=props.map(p=>classifyPropForActiveWiring(p.propName,p.expression));const activeCondition="tab==='"+c.sectionId+"'&&<"+c.componentName;const activeRender=appBody.includes(activeCondition)||appBody.includes("tab === '"+c.sectionId+"' && <"+c.componentName)||appBody.includes("tab==='"+c.sectionId+"' && <"+c.componentName);return {sectionId:c.sectionId,componentName:c.componentName,activeRender,activeRenderCondition:activeRender?"tab==='"+c.sectionId+"' && <"+c.componentName+">":null,jsxUsageCountInApp:tagBlocks.length,dataProps:propWiring.filter(p=>p.runtimeStatus==='active-data-prop').map(p=>({propName:p.propName,expression:p.expression})),handlerProps:propWiring.filter(p=>p.runtimeStatus!=='active-data-prop'),activeProductHandlers:propWiring.filter(p=>p.runtimeStatus==='active-product-runtime'),activeNavigationHandlers:propWiring.filter(p=>p.runtimeStatus==='active-navigation-runtime'),activeInlineMutationHandlers:propWiring.filter(p=>p.runtimeStatus==='active-inline-mutation-runtime'),activePersistenceHandlers:propWiring.filter(p=>p.runtimeStatus==='active-persistence-or-backup-runtime'),activeDiagnosticExportHandlers:propWiring.filter(p=>p.runtimeStatus==='active-diagnostic-export-runtime'),dashboardActiveWeekEntryNote:c.sectionId==='dashboard'?{meaning:'Dashboard is wired for the active-week entry flow. If no active week exists it can create a random week or open Semana with manual genre selection; if an active week exists it can navigate to Semana activa.',evidence:{onGenerate:propWiring.find(p=>p.propName==='onGenerate')||null,onManualSelect:propWiring.find(p=>p.propName==='onManualSelect')||null,onGoSemana:propWiring.find(p=>p.propName==='onGoSemana')||null,activeWeekProp:propWiring.find(p=>p.propName==='activeWeek')||null}}:null,confidence:activeRender&&tagBlocks.length?'high-static-jsx-wiring':'medium-or-missing'};});const wiredFunctions=new Set();components.forEach(c=>c.handlerProps.forEach(h=>{if(h.directFunctionName)wiredFunctions.add(h.directFunctionName);h.calledFunctions.forEach(fn=>wiredFunctions.add(fn));}));const productNames=ACTIVE_RUNTIME_PRODUCT_MUTATION_NAMES.slice().sort();const diagnosticNames=ACTIVE_RUNTIME_DIAGNOSTIC_EXPORT_NAMES.slice().sort();const persistenceNames=ACTIVE_RUNTIME_PERSISTENCE_NAMES.slice().sort();return {audit:'ACTIVE_RUNTIME_WIRING_AUDIT_V0_1',version:ACTIVE_RUNTIME_WIRING_AUDIT_VERSION,generatedAt:new Date().toISOString(),baseAppVersion:APP_ARCHITECTURE_VERSION,runtimeImpact:'none',source:'app-jsx-active-wiring-static-scan',runtimeFlags:extractRuntimeFlagsForActiveWiring(source),appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP,components,functionRuntimeStatus:{activeProductRuntimeFunctions:productNames.filter(n=>wiredFunctions.has(n)).map(n=>({functionName:n,status:'active-product-runtime'})),productMutationsNotDirectlyWired:productNames.filter(n=>!wiredFunctions.has(n)).map(n=>({functionName:n,status:'declared-product-mutation-not-directly-wired-from-App-scan'})),activeDiagnosticExportRuntimeFunctions:diagnosticNames.filter(n=>wiredFunctions.has(n)).map(n=>({functionName:n,status:'active-diagnostic-export-runtime'})),activePersistenceOrBackupRuntimeFunctions:persistenceNames.filter(n=>wiredFunctions.has(n)).map(n=>({functionName:n,status:'active-persistence-or-backup-runtime'}))},dashboardFlowValidation:{expected:'Dashboard should expose create-random-week, manual-genre-selection and go-to-active-week flows depending on whether activeWeek exists.',foundOnGenerate:!!components.find(c=>c.sectionId==='dashboard')?.handlerProps.find(h=>h.propName==='onGenerate'),foundOnManualSelect:!!components.find(c=>c.sectionId==='dashboard')?.handlerProps.find(h=>h.propName==='onManualSelect'),foundOnGoSemana:!!components.find(c=>c.sectionId==='dashboard')?.handlerProps.find(h=>h.propName==='onGoSemana'),note:'This validates wiring from App. The visual conditional behavior inside DashboardTab will be compared later during the Dashboard ViewModel candidate audit.'},limitations:['Static JSX wiring scan, not a full AST parser.','Identifies handlers wired from App and common inline handler calls, but does not execute user flows.','Distinguishes active wiring better than previous descriptive maps, but semantic equivalence still requires candidate vs legacy output comparison.'],nextStep:{phase:'R2.4 Candidate Application Logic Shell',firstCandidate:'getDashboardViewModelCandidate(data)',firstComparison:'compareDashboardViewModel(data)',activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',activationDefault:false}};}
 window.__MUSICLAB_BUILD_ACTIVE_RUNTIME_WIRING_AUDIT=buildActiveRuntimeWiringAudit;
+
+/* ============================================================
+   CANDIDATE APPLICATION LOGIC SHELL - R2.4
+
+   Purpose:
+   - Creates the formal inactive Candidate Application Logic container.
+   - Introduces global and granular activation flags, all false by default.
+   - Adds the first dashboard candidate placeholders without changing runtime render.
+   - Does not control navigation, Dashboard, catalog, learning, quizzes, XP,
+     Firebase, localStorage, user state or persistence.
+   ============================================================ */
+const USE_APPLICATION_LOGIC_CANDIDATE=false;
+const USE_DASHBOARD_VIEW_MODEL_CANDIDATE=false;
+const CANDIDATE_APPLICATION_LOGIC={
+  shell:'CANDIDATE_APPLICATION_LOGIC_SHELL_V0_1',
+  version:'candidate-application-logic-shell-v0-1-dashboard-entrypoint-inactive',
+  generatedFrom:'R2.4',
+  status:'candidate-inactive',
+  runtimeImpact:'none',
+  activation:{
+    globalFlag:'USE_APPLICATION_LOGIC_CANDIDATE',
+    globalFlagValue:USE_APPLICATION_LOGIC_CANDIDATE,
+    firstGranularFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',
+    firstGranularFlagValue:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,
+    defaultMode:'legacy-runtime-active-candidate-inactive',
+    activationRequiresAudit:true
+  },
+  firstTarget:{
+    sectionId:'dashboard',
+    componentName:'DashboardTab',
+    candidateViewModel:'getDashboardViewModelCandidate(data)',
+    comparison:'compareDashboardViewModel(data)',
+    reason:'Dashboard is the first candidate because R2.3D confirms it is actively wired, mostly read-oriented, and receives its runtime inputs through props from App.'
+  },
+  previousEvidence:{
+    activeRuntimeWiringAudit:'ACTIVE_RUNTIME_WIRING_AUDIT_V0_1',
+    appLogicMap:'APP_LOGIC_MAP_V0_1',
+    componentMap:'APP_COMPONENT_MAP_V0_1'
+  },
+  nonGoals:[
+    'does-not-render-dashboard-from-candidate',
+    'does-not-change-navigation',
+    'does-not-change-product-actions',
+    'does-not-change-persistence',
+    'does-not-change-catalog-learning-tests-or-user-state'
+  ],
+  nextStep:{
+    phase:'R3.1 Dashboard ViewModel Candidate',
+    objective:'Implement getDashboardViewModelCandidate(data) using the active runtime inputs confirmed by R2.3D, still without rendering from it.',
+    then:'R3.2 Dashboard legacy snapshot and R3.3 dashboard equivalence audit before any activation.'
+  }
+};
+window.__MUSICLAB_CANDIDATE_APPLICATION_LOGIC_SHELL_V0_1=CANDIDATE_APPLICATION_LOGIC;
+
+function getDashboardViewModelCandidate(data){
+  return {
+    candidate:'DASHBOARD_VIEW_MODEL_CANDIDATE_SHELL_V0_1',
+    sectionId:'dashboard',
+    status:'candidate-shell-not-implemented',
+    active:false,
+    runtimeImpact:'none',
+    activationFlag:'USE_DASHBOARD_VIEW_MODEL_CANDIDATE',
+    activationFlagValue:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,
+    expectedLegacyInputsFromR23D:['weeks','completedWeeks','activeWeek','u1','u2','genreRankings','artistRankings','genres','completedGenreIds','challenges','xpEvents'],
+    expectedHandlersFromR23D:['onGenerate -> randomGenre','onGoSemana -> setTab(semana)','onManualSelect -> setManualGenreSelect(true)+setTab(semana)'],
+    note:'Placeholder only. It intentionally does not calculate or replace Dashboard data yet.'
+  };
+}
+
+function compareDashboardViewModel(data){
+  return {
+    comparison:'DASHBOARD_VIEW_MODEL_COMPARISON_SHELL_V0_1',
+    sectionId:'dashboard',
+    status:'comparison-not-implemented',
+    candidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,
+    runtimeImpact:'none',
+    legacyRuntimeStillActive:true,
+    candidate:getDashboardViewModelCandidate(data),
+    expectedNextPhase:'R3.1 implements the candidate view model; R3.2/R3.3 compare candidate output against the legacy Dashboard props/derived metrics before any flag activation.'
+  };
+}
+
+function buildCandidateApplicationLogicShellExport(data){
+  return {
+    shell:'CANDIDATE_APPLICATION_LOGIC_SHELL_V0_1',
+    generatedAt:new Date().toISOString(),
+    baseAppVersion:APP_ARCHITECTURE_VERSION,
+    runtimeImpact:'none',
+    flags:{
+      USE_APPLICATION_LOGIC_CANDIDATE,
+      USE_DASHBOARD_VIEW_MODEL_CANDIDATE
+    },
+    candidateApplicationLogic:CANDIDATE_APPLICATION_LOGIC,
+    dashboardCandidateShell:getDashboardViewModelCandidate(data),
+    dashboardComparisonShell:compareDashboardViewModel(data),
+    activeRuntimeWiringAuditAvailable:typeof buildActiveRuntimeWiringAudit==='function',
+    activeRuntimeWiringSummary:typeof buildActiveRuntimeWiringAudit==='function'?{
+      audit:'ACTIVE_RUNTIME_WIRING_AUDIT_V0_1',
+      dashboardFlowValidation:buildActiveRuntimeWiringAudit().dashboardFlowValidation,
+      dashboardHandlers:(buildActiveRuntimeWiringAudit().components.find(c=>c.sectionId==='dashboard')||{}).handlerProps||[],
+      dashboardDataProps:(buildActiveRuntimeWiringAudit().components.find(c=>c.sectionId==='dashboard')||{}).dataProps||[]
+    }:null,
+    nextStep:CANDIDATE_APPLICATION_LOGIC.nextStep
+  };
+}
+window.__MUSICLAB_BUILD_CANDIDATE_APPLICATION_LOGIC_SHELL_EXPORT=buildCandidateApplicationLogicShellExport;
+
 
 /* ============================================================
    LEARNING / QUIZ ARCHITECTURE STATUS
@@ -45086,7 +45193,7 @@ function RetosTab({challenges,genres,u1,u2,currentUserKey,onCreateChallenge,onUp
   </div>;
 }
 
-function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportActiveRuntimeWiringAudit}){
+function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLibrary,onForceLibraryUpgrade,onGenerateAudit,onExportAudit,onExportEffectiveCatalog,onExportLearningSnapshot,onExportStaticCatalogCandidate,onExportUserStateCandidate,onExportAppLogicCanary,onExportActiveRuntimeWiringAudit,onExportCandidateApplicationLogicShell}){
   const [form,setForm]=useState({...settings});
   const [auditSummary,setAuditSummary]=useState(null);
   useEffect(()=>setForm({...settings}),[settings]);
@@ -45153,6 +45260,11 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
           <div className="learning-box-title">R2.3D · Active Runtime Wiring Audit</div>
           <p className="muted" style={{fontSize:12,marginBottom:10}}>Escaneo del wiring activo desde App: identifica qué componentes se renderizan, qué props son datos, qué handlers están conectados, qué funciones de producto/diagnóstico/persistencia están realmente cableadas y valida el flujo de Dashboard para crear semana aleatoria, elegir género manualmente o ir a la semana activa.</p>
           <button className="btn" onClick={onExportActiveRuntimeWiringAudit}>⬇ Exportar Active Runtime Wiring Audit R2.3D</button>
+        </div>
+        <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
+          <div className="learning-box-title">R2.4 · Candidate Application Logic Shell</div>
+          <p className="muted" style={{fontSize:12,marginBottom:10}}>Crea el contenedor formal de Candidate Application Logic, con flags en false y shell inicial de Dashboard. No activa lógica candidata, no cambia render, navegación, catálogo, XP, Firebase ni localStorage.</p>
+          <button className="btn" onClick={onExportCandidateApplicationLogicShell}>⬇ Exportar Candidate Application Logic Shell R2.4</button>
         </div>
         {auditSummary&&<div className="learning-box" style={{fontSize:12}}>
           <div className="learning-box-title">Resumen último informe</div>
@@ -45643,6 +45755,10 @@ function App(){
     auditDownloadJson('musiclab_active_runtime_wiring_audit_r2_3d.json',buildActiveRuntimeWiringAudit());
   }
 
+  function exportCandidateApplicationLogicShell(){
+    auditDownloadJson('musiclab_candidate_application_logic_shell_r2_4.json',buildCandidateApplicationLogicShellExport(data));
+  }
+
   function importData(e){
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
@@ -45718,7 +45834,7 @@ function App(){
         {tab==='biblioteca'&&<BibliotecaTab genres={genres} filteredGenres={filteredGenres} genreSearch={genreSearch} setGenreSearch={setGenreSearch} genreFilter={genreFilter} setGenreFilter={setGenreFilter} families={families} completedGenreIds={completedGenreIds} challenges={challenges} onGoChallenges={()=>setTab('retos')} onEditGenre={g=>setEditingGenre({...g})} onDeleteGenre={id=>setConfirm({type:'genre',id})} onAddGenre={()=>setNewGenreForm({name:'',parentFamily:'',description:'',originContext:'',moodTags:'',suggestedSituations:'',artists:[]})} onEditArtist={(g,a)=>setEditingArtist({genreId:g.id,artist:{...a}}) } onDeleteArtist={(gId,aId)=>setConfirm({type:'artist',gId,aId})} onAddArtist={g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})}/>}
         {tab==='retos'&&<RetosTab challenges={challenges} genres={genres} u1={u1} u2={u2} currentUserKey={currentUserKey} onCreateChallenge={createChallenge} onUpdateChallenge={updateChallenge} onDeleteChallenge={deleteChallenge} onGenerateGenreChallenge={(genreId)=>{generateWeek(genreId);setTab('semana');}} onToast={showXpToast}/>}
         {tab==='perfil'&&<ProfileTab weeks={weeks} challenges={challenges} genres={genres} xpEvents={xpEvents} u1={u1} u2={u2} currentUserKey={currentUserKey}/>}
-        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportActiveRuntimeWiringAudit={exportActiveRuntimeWiringAudit}/>}
+        {tab==='ajustes'&&<AjustesTab settings={settings} onSaveSettings={s=>update(prev=>({...prev,settings:s}))} onExport={exportData} onImport={importData} onReset={resetAll} onResetLibrary={resetLibrary} onForceLibraryUpgrade={forceLibraryUpgrade} onGenerateAudit={generateAudit} onExportAudit={exportAuditReport} onExportEffectiveCatalog={exportEffectiveCatalog} onExportLearningSnapshot={exportLearningSnapshot} onExportStaticCatalogCandidate={exportStaticCatalogCandidate} onExportUserStateCandidate={exportUserStateCandidate} onExportAppLogicCanary={exportAppLogicCanary} onExportActiveRuntimeWiringAudit={exportActiveRuntimeWiringAudit} onExportCandidateApplicationLogicShell={exportCandidateApplicationLogicShell}/>}
       </div>
 
       {xpToast&&<div key={xpToast.id} style={{position:'fixed',bottom:18,left:'50%',transform:'translateX(-50%)',background:'rgba(29,185,84,.96)',color:'#000',padding:'9px 15px',borderRadius:999,fontSize:12,fontWeight:900,zIndex:2147483647,boxShadow:'0 10px 30px rgba(0,0,0,.48)',textAlign:'center',pointerEvents:'none',border:'1px solid rgba(255,255,255,.28)',animation:'levelToastPop .22s ease-out'}}>+{xpToast.amount} XP · {xpToast.label}</div>}
