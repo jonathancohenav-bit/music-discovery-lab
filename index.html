@@ -313,7 +313,7 @@ const USE_USER_STATE_CANDIDATE=true;
 const APP_LOGIC_MAP={
   map:'APP_LOGIC_MAP_V0_1',
   version:'app-logic-map-v0-1-sections-only',
-  generatedFrom:'R6.2-active-week-candidate-active-test',
+  generatedFrom:'R7.2A-library-logic-extraction-audit-inactive',
   runtimeImpact:'none',
   description:'Mapa descriptivo mínimo de secciones de la aplicación. No controla navegación ni render.',
   sections:[
@@ -332,7 +332,7 @@ window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP;
 const APP_COMPONENT_MAP={
   map:'APP_COMPONENT_MAP_V0_1',
   version:'app-component-map-v0-1-tabs-only',
-  generatedFrom:'R6.2-active-week-candidate-active-test',
+  generatedFrom:'R7.2A-library-logic-extraction-audit-inactive',
   runtimeImpact:'none',
   description:'Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación ni render.',
   components:[
@@ -349,7 +349,7 @@ const APP_COMPONENT_MAP={
 window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
 
 /* ============================================================
-   APPLICATION LOGIC CANDIDATE / AUDIT - R7.1
+   APPLICATION LOGIC CANDIDATE / AUDIT - R7.2A
 
    Efficient plan:
    - One global Application Logic Candidate.
@@ -361,8 +361,11 @@ window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
      behind granular flags after R5.1 equivalence validation.
    - R6.2 activated Semana activa candidate view model and action handlers
      behind granular flags for guarded runtime validation.
-   - R7.1 adds Biblioteca view model candidate, legacy snapshot,
+   - R7.1 added Biblioteca view model candidate, legacy snapshot,
      equivalence audit and render props, still inactive.
+   - R7.2A extracts Biblioteca application-logic responsibilities
+     into a passive candidate/audit layer.
+   - No JSX, runtime render, handlers or actions are changed.
    - Biblioteca actions and Ajustes remain legacy.
    ============================================================ */
 const USE_APPLICATION_LOGIC_CANDIDATE=false;
@@ -376,16 +379,16 @@ const USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE=true;
 const USE_ACTIVE_WEEK_ACTIONS_CANDIDATE=true;
 const USE_LIBRARY_VIEW_MODEL_CANDIDATE=false;
 const USE_LIBRARY_ACTIONS_CANDIDATE=false;
-const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-library-ready-inactive';
-const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r7-1-library-candidate-inactive';
+const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-library-logic-extracted-inactive';
+const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r7-2a-library-logic-extraction-audit-inactive';
 const DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION='dashboard-view-model-candidate-v0-2-compact-comparable-snapshot';
 const DASHBOARD_EQUIVALENCE_AUDIT_VERSION='dashboard-equivalence-audit-r3-3-field-level-activation-readiness';
 
 const APPLICATION_LOGIC_CANDIDATE={
   candidate:'APPLICATION_LOGIC_CANDIDATE_V1',
   version:APPLICATION_LOGIC_CANDIDATE_VERSION,
-  generatedFrom:'R7.1',
-  status:'candidate-partial-dashboard-readonly-challenges-active-active-week-active-library-ready-inactive',
+  generatedFrom:'R7.2A',
+  status:'candidate-partial-dashboard-readonly-challenges-active-active-week-active-library-logic-extracted-inactive',
   runtimeImpact:'guarded-by-flags',
   flags:{global:USE_APPLICATION_LOGIC_CANDIDATE,dashboard:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,perfil:USE_PROFILE_VIEW_MODEL_CANDIDATE,rankings:USE_RANKINGS_VIEW_MODEL_CANDIDATE,historial:USE_HISTORY_VIEW_MODEL_CANDIDATE,retos:USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE,semana:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,biblioteca:USE_LIBRARY_VIEW_MODEL_CANDIDATE,ajustes:false},
   sections:{
@@ -395,10 +398,10 @@ const APPLICATION_LOGIC_CANDIDATE={
     historial:{sectionId:'historial',componentName:'HistorialTab',status:'candidate-active-under-guarded-render-test',selector:'getHistoryViewModelCandidate(data)',legacySnapshot:'getHistoryLegacySnapshot(data)',equivalenceAudit:'buildHistoryEquivalenceAudit(data)',renderProps:'getHistoryRenderPropsCandidate(data, handlers)',activationFlag:'USE_HISTORY_VIEW_MODEL_CANDIDATE',activationReady:true},
     retos:{sectionId:'retos',componentName:'RetosTab',status:'candidate-active-under-guarded-render-test',selector:'getChallengesViewModelCandidate(data)',legacySnapshot:'getChallengesLegacySnapshot(data)',equivalenceAudit:'buildChallengesEquivalenceAudit(data)',renderProps:'getChallengesRenderPropsCandidate(data, handlers)',actionHandlers:'getChallengesActionHandlersCandidate(handlers)',activationFlag:'USE_CHALLENGES_VIEW_MODEL_CANDIDATE + USE_CHALLENGES_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['createChallenge','updateChallenge','deleteChallenge','generateGenreChallenge']},
     semana:{sectionId:'semana',componentName:'SemanaTab',status:'candidate-active-under-guarded-render-test',selector:'getActiveWeekViewModelCandidate(data)',legacySnapshot:'getActiveWeekLegacySnapshot(data)',equivalenceAudit:'buildActiveWeekEquivalenceAudit(data)',renderProps:'getActiveWeekRenderPropsCandidate(data, handlers)',actionHandlers:'getActiveWeekActionHandlersCandidate(handlers)',activationFlag:'USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE + USE_ACTIVE_WEEK_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['generateWeek','randomGenre','toggleArtistHeard','toggleSong','updateArtist','updateLearningQuiz','closeWeek']},
-    biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'candidate-ready-inactive-view-model-prepared',selector:'getLibraryViewModelCandidate(data)',legacySnapshot:'getLibraryLegacySnapshot(data)',equivalenceAudit:'buildLibraryEquivalenceAudit(data)',renderProps:'getLibraryRenderPropsCandidate(data, handlers)',activationFlag:'USE_LIBRARY_VIEW_MODEL_CANDIDATE',activationReady:true,plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary']},
+    biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'candidate-ready-inactive-application-logic-extracted',selector:'getLibraryViewModelCandidate(data)',legacySnapshot:'getLibraryLegacySnapshot(data)',equivalenceAudit:'buildLibraryEquivalenceAudit(data)',applicationLogicAudit:'buildLibraryApplicationLogicExtractionAudit(data)',renderProps:'getLibraryRenderPropsCandidate(data, handlers)',activationFlag:'USE_LIBRARY_VIEW_MODEL_CANDIDATE',activationReady:true,plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary']},
     ajustes:{sectionId:'ajustes',componentName:'AjustesTab',status:'mapped-not-implemented',plannedSelector:'getSettingsViewModelCandidate(data)',plannedActions:['exportData','importData','generateSystemAuditReport','resetAll']}
   },
-  nextStep:{phase:'R7.1 Biblioteca Candidate Logic',objective:'Biblioteca view model candidate, legacy snapshot, equivalence audit and render props are implemented inactive. Validate audit equivalence before preparing actions.',then:'R7.2 prepares Biblioteca action handlers candidate, still inactive.'}
+  nextStep:{phase:'R7.2A Biblioteca Application Logic Extraction',objective:'Biblioteca application logic is mapped and audited passively. Runtime render and actions remain legacy and untouched.',then:'R7.2B can prepare action metadata or wrappers only after this build loads successfully.'}
 };
 window.__MUSICLAB_APPLICATION_LOGIC_CANDIDATE_V1=APPLICATION_LOGIC_CANDIDATE;
 
@@ -591,8 +594,9 @@ function getActiveWeekRenderPropsCandidate(data,handlers={}){const inputs=buildR
 window.__MUSICLAB_GET_ACTIVE_WEEK_RENDER_PROPS_CANDIDATE=getActiveWeekRenderPropsCandidate;
 
 /* ============================================================
-   LIBRARY / BIBLIOTECA APPLICATION LOGIC CANDIDATE - R7.1
-   View model candidate only. Actions remain legacy and inactive.
+   LIBRARY / BIBLIOTECA APPLICATION LOGIC CANDIDATE - R7.2A
+   View model candidate plus passive application-logic extraction audit.
+   Actions, render and handlers remain legacy and inactive.
    ============================================================ */
 function normalizeLibraryText(value){return String(value||'').trim().toLowerCase();}
 function buildLibraryRuntimeInputs(data,ui={}){
@@ -684,14 +688,14 @@ function buildLibraryCompactSnapshot(data,source,ui={}){
     }
   };
 }
-function getLibraryViewModelCandidate(data,ui={}){return {candidate:'LIBRARY_VIEW_MODEL_CANDIDATE_V0_1',version:'library-view-model-candidate-v0-1-read-only-catalog-screen',...buildLibraryCompactSnapshot(data,'candidate',ui),legacyRuntimeStillActive:!USE_LIBRARY_VIEW_MODEL_CANDIDATE,notes:['Biblioteca candidate is implemented and inactive.','R7.1 covers read/view model equivalence only.','Catalog edit actions remain legacy until R7.2/R7.4.']};}
+function getLibraryViewModelCandidate(data,ui={}){return {candidate:'LIBRARY_VIEW_MODEL_CANDIDATE_V0_1',version:'library-view-model-candidate-v0-1-read-only-catalog-screen',...buildLibraryCompactSnapshot(data,'candidate',ui),legacyRuntimeStillActive:!USE_LIBRARY_VIEW_MODEL_CANDIDATE,notes:['Biblioteca candidate is implemented and inactive.','R7.2A covers read/view model equivalence plus passive app-logic extraction.','Catalog edit actions remain legacy. No R7.2A runtime action wrappers are installed.']};}
 function getLibraryLegacySnapshot(data,ui={}){return {snapshot:'LIBRARY_LEGACY_SNAPSHOT_V0_1',version:'library-legacy-snapshot-v0-1-current-runtime-props-and-derived-catalog-view',...buildLibraryCompactSnapshot(data,'legacy',ui),evidence:'Mirrors BibliotecaTab current runtime props: genres, filteredGenres, families, completedGenreIds, challenges and search/filter state.'};}
 function buildLibraryEquivalenceAudit(data,ui={}){
   const candidate=getLibraryViewModelCandidate(data,ui);
   const legacy=getLibraryLegacySnapshot(data,ui);
   const fieldLevel=buildGenericReadOnlyEquivalence('biblioteca',candidate,legacy,['inputs','viewModel']);
   const equivalent=fieldLevel.diffCount===0;
-  return {comparison:'LIBRARY_EQUIVALENCE_AUDIT_R7_1',sectionId:'biblioteca',status:equivalent?(USE_LIBRARY_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_LIBRARY_VIEW_MODEL_CANDIDATE?'library-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_LIBRARY_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsStillLegacy:true,actionsReady:false}};
+  return {comparison:'LIBRARY_EQUIVALENCE_AUDIT_R7_2A',sectionId:'biblioteca',status:equivalent?(USE_LIBRARY_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_LIBRARY_VIEW_MODEL_CANDIDATE?'library-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_LIBRARY_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsStillLegacy:true,actionsReady:false,applicationLogicExtracted:true}};
 }
 function getLibraryRenderPropsCandidate(data,handlers={},ui={}){
   const inputs=buildLibraryRuntimeInputs(data,ui);
@@ -716,6 +720,116 @@ function getLibraryRenderPropsCandidate(data,handlers={},ui={}){
 }
 window.__MUSICLAB_GET_LIBRARY_RENDER_PROPS_CANDIDATE=getLibraryRenderPropsCandidate;
 
+
+/* ============================================================
+   BIBLIOTECA APPLICATION LOGIC EXTRACTION AUDIT - R7.2A
+   Passive only. This does not install action wrappers, does not
+   touch BibliotecaTab JSX, and does not change runtime handlers.
+   ============================================================ */
+function getLibraryApplicationLogicCandidate(data,ui={}){
+  const inputs=buildLibraryRuntimeInputs(data,ui);
+  return {
+    candidate:'LIBRARY_APPLICATION_LOGIC_CANDIDATE_R7_2A',
+    version:'library-application-logic-candidate-r7-2a-passive-extraction',
+    sectionId:'biblioteca',
+    active:false,
+    runtimeImpact:'none',
+    scope:'passive-read-and-responsibility-map-only',
+    stateInputs:{
+      dataSources:['getRuntimeGenres(data)','getRuntimeUserState(data)','catalogOverrides','customCatalogItems','catalogChangeLog'],
+      uiInputs:['genreSearch','genreFilter','expandedGenre','libraryLearningTab'],
+      readonlyInputs:['completedGenreIds','challenges']
+    },
+    readLogic:{
+      genreCount:inputs.genres.length,
+      filteredGenreCount:inputs.filteredGenres.length,
+      familiesCount:inputs.families.length,
+      completedGenreIdsCount:inputs.completedGenreIds.length,
+      challengeCount:inputs.challenges.length,
+      filters:{genreSearch:inputs.genreSearch,genreFilter:inputs.genreFilter},
+      derivedLists:['families','filteredGenres','familyCounts','learningSummary','quizSummary','artistSongCounts']
+    },
+    mutationLogicPlanned:{
+      status:'mapped-only-not-wrapped',
+      runtimeHandlersStillLegacy:true,
+      plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary'],
+      sideEffectSurfaces:['catalogOverrides','customCatalogItems','catalogChangeLog','Firebase persistence through existing save path']
+    },
+    renderContract:{
+      component:'BibliotecaTab',
+      renderStillLegacy:true,
+      candidateRenderPropsAvailable:typeof getLibraryRenderPropsCandidate==='function',
+      candidateRenderPropsActive:false
+    }
+  };
+}
+function getLibraryApplicationLogicLegacySnapshot(data,ui={}){
+  const inputs=buildLibraryRuntimeInputs(data,ui);
+  return {
+    snapshot:'LIBRARY_APPLICATION_LOGIC_LEGACY_SNAPSHOT_R7_2A',
+    version:'library-application-logic-legacy-snapshot-r7-2a-current-runtime-contract',
+    sectionId:'biblioteca',
+    active:true,
+    runtimeImpact:'current-legacy-runtime',
+    scope:'current-biblioteca-tab-read-and-responsibility-map',
+    stateInputs:{
+      dataSources:['getRuntimeGenres(data)','getRuntimeUserState(data)','catalogOverrides','customCatalogItems','catalogChangeLog'],
+      uiInputs:['genreSearch','genreFilter','expandedGenre','libraryLearningTab'],
+      readonlyInputs:['completedGenreIds','challenges']
+    },
+    readLogic:{
+      genreCount:inputs.genres.length,
+      filteredGenreCount:inputs.filteredGenres.length,
+      familiesCount:inputs.families.length,
+      completedGenreIdsCount:inputs.completedGenreIds.length,
+      challengeCount:inputs.challenges.length,
+      filters:{genreSearch:inputs.genreSearch,genreFilter:inputs.genreFilter},
+      derivedLists:['families','filteredGenres','familyCounts','learningSummary','quizSummary','artistSongCounts']
+    },
+    mutationLogicPlanned:{
+      status:'legacy-runtime-handlers',
+      runtimeHandlersStillLegacy:true,
+      plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary'],
+      sideEffectSurfaces:['catalogOverrides','customCatalogItems','catalogChangeLog','Firebase persistence through existing save path']
+    },
+    renderContract:{
+      component:'BibliotecaTab',
+      renderStillLegacy:true,
+      candidateRenderPropsAvailable:typeof getLibraryRenderPropsCandidate==='function',
+      candidateRenderPropsActive:false
+    }
+  };
+}
+function buildLibraryApplicationLogicExtractionAudit(data,ui={}){
+  const candidate=getLibraryApplicationLogicCandidate(data,ui);
+  const legacy=getLibraryApplicationLogicLegacySnapshot(data,ui);
+  const fieldLevel=buildGenericReadOnlyEquivalence('biblioteca-application-logic',candidate,legacy,['stateInputs','readLogic','mutationLogicPlanned','renderContract']);
+  const equivalent=fieldLevel.diffCount===0;
+  return {
+    comparison:'LIBRARY_APPLICATION_LOGIC_EXTRACTION_AUDIT_R7_2A',
+    sectionId:'biblioteca',
+    status:equivalent?'passive-application-logic-extraction-equivalent':'passive-application-logic-extraction-needs-review',
+    candidateActive:false,
+    runtimeImpact:'none',
+    fieldLevel,
+    activationStatus:{
+      candidateEquivalent:equivalent,
+      readyForRenderActivation:false,
+      readyForActionWrappers:false,
+      reason:equivalent?'Biblioteca app-logic responsibilities are passively mapped and match the legacy responsibility snapshot. No runtime path changed.':'Passive extraction mismatch. Do not activate or add wrappers.'
+    },
+    safetyRules:{
+      touchedJSX:false,
+      touchedBibliotecaTab:false,
+      installedActionWrappers:false,
+      activatedViewModel:false,
+      activatedActions:false
+    }
+  };
+}
+window.__MUSICLAB_GET_LIBRARY_APPLICATION_LOGIC_CANDIDATE=getLibraryApplicationLogicCandidate;
+window.__MUSICLAB_BUILD_LIBRARY_APPLICATION_LOGIC_EXTRACTION_AUDIT=buildLibraryApplicationLogicExtractionAudit;
+
 function buildApplicationLogicAudit(data){
   const dashboardAudit=buildDashboardEquivalenceAudit(data);
   const candidate=getDashboardViewModelCandidate(data);
@@ -730,6 +844,7 @@ function buildApplicationLogicAudit(data){
   const libraryAudit=buildLibraryEquivalenceAudit(data);
   const libraryCandidate=getLibraryViewModelCandidate(data);
   const libraryLegacy=getLibraryLegacySnapshot(data);
+  const libraryExtractionAudit=buildLibraryApplicationLogicExtractionAudit(data);
   const sections=Object.keys(APPLICATION_LOGIC_CANDIDATE.sections).map(id=>{
     const section=APPLICATION_LOGIC_CANDIDATE.sections[id];
     const batchSection=readOnlyBatch.structuredSections[id];
@@ -750,11 +865,11 @@ function buildApplicationLogicAudit(data){
     };
   });
   return {
-    audit:'APPLICATION_LOGIC_AUDIT_R7_1',
+    audit:'APPLICATION_LOGIC_AUDIT_R7_2A',
     version:APPLICATION_LOGIC_AUDIT_VERSION,
     generatedAt:new Date().toISOString(),
     baseAppVersion:APP_ARCHITECTURE_VERSION,
-    runtimeImpact:'dashboard-readonly-challenges-and-active-week-candidate-active-library-candidate-inactive',
+    runtimeImpact:'dashboard-readonly-challenges-and-active-week-candidate-active-library-logic-extracted-inactive',
     flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE,USE_PROFILE_VIEW_MODEL_CANDIDATE,USE_RANKINGS_VIEW_MODEL_CANDIDATE,USE_HISTORY_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_ACTIONS_CANDIDATE,USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,USE_LIBRARY_VIEW_MODEL_CANDIDATE,USE_LIBRARY_ACTIONS_CANDIDATE},
     candidate:{...APPLICATION_LOGIC_CANDIDATE,sections},
     maps:{appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP},
@@ -763,9 +878,9 @@ function buildApplicationLogicAudit(data){
     readOnlyBatch,
     retos:{status:'challenges-candidate-active-under-controlled-test',candidateSummary:{candidate:challengesCandidate.candidate,version:challengesCandidate.version,status:challengesCandidate.status,active:challengesCandidate.active,inputs:challengesCandidate.inputs},legacySummary:{snapshot:challengesLegacy.snapshot,version:challengesLegacy.version,status:challengesLegacy.status,active:challengesLegacy.active,inputs:challengesLegacy.inputs},equivalence:challengesAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_CHALLENGES_ACTIONS_CANDIDATE,visualValidationRequired:false,closureStatus:'retos-closed-if-user-visual-validation-passed'},
     semana:{status:'active-week-candidate-active-under-guarded-render-test',candidateSummary:{candidate:activeWeekCandidate.candidate,version:activeWeekCandidate.version,status:activeWeekCandidate.status,active:activeWeekCandidate.active,inputs:activeWeekCandidate.inputs},legacySummary:{snapshot:activeWeekLegacy.snapshot,version:activeWeekLegacy.version,status:activeWeekLegacy.status,active:activeWeekLegacy.active,inputs:activeWeekLegacy.inputs},equivalence:activeWeekAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,visualValidationRequired:false},
-    biblioteca:{status:'library-candidate-ready-inactive-view-model-only',candidateSummary:{candidate:libraryCandidate.candidate,version:libraryCandidate.version,status:libraryCandidate.status,active:libraryCandidate.active,inputs:libraryCandidate.inputs},legacySummary:{snapshot:libraryLegacy.snapshot,version:libraryLegacy.version,status:libraryLegacy.status,active:libraryLegacy.active,inputs:libraryLegacy.inputs},equivalence:libraryAudit,guardedRenderPrepared:true,guardedActionsPrepared:false,viewModelFlagValue:USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_LIBRARY_ACTIONS_CANDIDATE,visualValidationRequired:false},
-    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,libraryCandidateEquivalent:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.candidateEquivalent),libraryReadyForTrueTest:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForTrueTest),libraryReadyForClosure:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForClosure),libraryViewModelActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,libraryActionsActive:USE_LIBRARY_ACTIONS_CANDIDATE,nextActivationTarget:'biblioteca',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
-    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true,libraryDetailsGroupedBySection:true},
+    biblioteca:{status:'library-candidate-ready-inactive-application-logic-extracted',candidateSummary:{candidate:libraryCandidate.candidate,version:libraryCandidate.version,status:libraryCandidate.status,active:libraryCandidate.active,inputs:libraryCandidate.inputs},legacySummary:{snapshot:libraryLegacy.snapshot,version:libraryLegacy.version,status:libraryLegacy.status,active:libraryLegacy.active,inputs:libraryLegacy.inputs},equivalence:libraryAudit,applicationLogicExtraction:libraryExtractionAudit,guardedRenderPrepared:true,guardedActionsPrepared:false,applicationLogicExtracted:true,viewModelFlagValue:USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_LIBRARY_ACTIONS_CANDIDATE,visualValidationRequired:false},
+    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,libraryCandidateEquivalent:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.candidateEquivalent),libraryApplicationLogicExtractionEquivalent:!!(libraryExtractionAudit.activationStatus&&libraryExtractionAudit.activationStatus.candidateEquivalent),libraryReadyForTrueTest:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForTrueTest),libraryReadyForClosure:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForClosure),libraryViewModelActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,libraryActionsActive:USE_LIBRARY_ACTIONS_CANDIDATE,nextActivationTarget:'biblioteca',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
+    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true,libraryDetailsGroupedBySection:true,libraryApplicationLogicExtraction:true},
     nextStep:APPLICATION_LOGIC_CANDIDATE.nextStep
   };
 }
@@ -45571,7 +45686,7 @@ function AjustesTab({settings,onSaveSettings,onExport,onImport,onReset,onResetLi
         <div className="learning-box" style={{fontSize:12,marginBottom:12}}>
           <div className="learning-box-title">Application Logic Candidate / Audit</div>
           <p className="muted" style={{fontSize:12,marginBottom:10}}>
-            Auditoría única y consolidada de lógica de aplicación. Incluye mapa de secciones, mapa de componentes, Dashboard, Perfil, Rankings, Historial, Retos y Semana activos, más Biblioteca candidate R7.1 preparado e inactivo. Un único audit consolida candidate, legacy snapshot, equivalencia y readiness por sección.
+            Auditoría única y consolidada de lógica de aplicación. Incluye mapa de secciones, mapa de componentes, Dashboard, Perfil, Rankings, Historial, Retos y Semana activos, más Biblioteca candidate R7.2A con lógica de aplicación extraída/auditada pasivamente e inactiva. Un único audit consolida candidate, legacy snapshot, equivalencia y readiness por sección.
           </p>
           <button className="btn btn-primary" onClick={onExportApplicationLogicAudit}>⬇ Exportar Application Logic Audit</button>
         </div>
