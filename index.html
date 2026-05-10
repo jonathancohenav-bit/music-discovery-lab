@@ -313,7 +313,7 @@ const USE_USER_STATE_CANDIDATE=true;
 const APP_LOGIC_MAP={
   map:'APP_LOGIC_MAP_V0_1',
   version:'app-logic-map-v0-1-sections-only',
-  generatedFrom:'R7.3B-library-view-model-active-actions-legacy',
+  generatedFrom:'R7.4-library-view-model-and-actions-active',
   runtimeImpact:'none',
   description:'Mapa descriptivo mínimo de secciones de la aplicación. No controla navegación ni render.',
   sections:[
@@ -332,7 +332,7 @@ window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP;
 const APP_COMPONENT_MAP={
   map:'APP_COMPONENT_MAP_V0_1',
   version:'app-component-map-v0-1-tabs-only',
-  generatedFrom:'R7.3B-library-view-model-active-actions-legacy',
+  generatedFrom:'R7.4-library-view-model-and-actions-active',
   runtimeImpact:'none',
   description:'Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación ni render.',
   components:[
@@ -349,7 +349,7 @@ const APP_COMPONENT_MAP={
 window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
 
 /* ============================================================
-   APPLICATION LOGIC CANDIDATE / AUDIT - R7.3B
+   APPLICATION LOGIC CANDIDATE / AUDIT - R7.4
 
    Efficient plan:
    - One global Application Logic Candidate.
@@ -370,8 +370,8 @@ window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
    - R7.2C added inert Biblioteca action wrapper functions and
      a candidate action handler factory, still not wired to runtime.
    - R7.3-DIAG validated Biblioteca candidate render props in shadow mode.
-   - R7.3B activates Biblioteca view model/render props with a minimal guarded switch.
-   - Biblioteca actions remain legacy; no CRUD handler replacement yet.
+   - R7.3B activated Biblioteca view model/render props with a minimal guarded switch.
+   - R7.4 activates Biblioteca action handlers through candidate wrappers that delegate to the existing stable legacy handlers.
    - Ajustes remains legacy.
    ============================================================ */
 const USE_APPLICATION_LOGIC_CANDIDATE=false;
@@ -384,17 +384,17 @@ const USE_CHALLENGES_ACTIONS_CANDIDATE=true;
 const USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE=true;
 const USE_ACTIVE_WEEK_ACTIONS_CANDIDATE=true;
 const USE_LIBRARY_VIEW_MODEL_CANDIDATE=true;
-const USE_LIBRARY_ACTIONS_CANDIDATE=false;
-const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-library-view-model-active-actions-legacy';
-const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r7-3b-library-view-model-active-actions-legacy';
+const USE_LIBRARY_ACTIONS_CANDIDATE=true;
+const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-library-view-model-and-actions-active';
+const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r7-4-library-view-model-and-actions-active';
 const DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION='dashboard-view-model-candidate-v0-2-compact-comparable-snapshot';
 const DASHBOARD_EQUIVALENCE_AUDIT_VERSION='dashboard-equivalence-audit-r3-3-field-level-activation-readiness';
 
 const APPLICATION_LOGIC_CANDIDATE={
   candidate:'APPLICATION_LOGIC_CANDIDATE_V1',
   version:APPLICATION_LOGIC_CANDIDATE_VERSION,
-  generatedFrom:'R7.3B',
-  status:'candidate-partial-dashboard-readonly-challenges-active-active-week-active-library-view-model-active-actions-legacy',
+  generatedFrom:'R7.4',
+  status:'candidate-partial-dashboard-readonly-challenges-active-active-week-active-library-view-model-and-actions-active',
   runtimeImpact:'guarded-by-flags',
   flags:{global:USE_APPLICATION_LOGIC_CANDIDATE,dashboard:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,perfil:USE_PROFILE_VIEW_MODEL_CANDIDATE,rankings:USE_RANKINGS_VIEW_MODEL_CANDIDATE,historial:USE_HISTORY_VIEW_MODEL_CANDIDATE,retos:USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE,semana:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,biblioteca:USE_LIBRARY_VIEW_MODEL_CANDIDATE,ajustes:false},
   sections:{
@@ -404,10 +404,10 @@ const APPLICATION_LOGIC_CANDIDATE={
     historial:{sectionId:'historial',componentName:'HistorialTab',status:'candidate-active-under-guarded-render-test',selector:'getHistoryViewModelCandidate(data)',legacySnapshot:'getHistoryLegacySnapshot(data)',equivalenceAudit:'buildHistoryEquivalenceAudit(data)',renderProps:'getHistoryRenderPropsCandidate(data, handlers)',activationFlag:'USE_HISTORY_VIEW_MODEL_CANDIDATE',activationReady:true},
     retos:{sectionId:'retos',componentName:'RetosTab',status:'candidate-active-under-guarded-render-test',selector:'getChallengesViewModelCandidate(data)',legacySnapshot:'getChallengesLegacySnapshot(data)',equivalenceAudit:'buildChallengesEquivalenceAudit(data)',renderProps:'getChallengesRenderPropsCandidate(data, handlers)',actionHandlers:'getChallengesActionHandlersCandidate(handlers)',activationFlag:'USE_CHALLENGES_VIEW_MODEL_CANDIDATE + USE_CHALLENGES_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['createChallenge','updateChallenge','deleteChallenge','generateGenreChallenge']},
     semana:{sectionId:'semana',componentName:'SemanaTab',status:'candidate-active-under-guarded-render-test',selector:'getActiveWeekViewModelCandidate(data)',legacySnapshot:'getActiveWeekLegacySnapshot(data)',equivalenceAudit:'buildActiveWeekEquivalenceAudit(data)',renderProps:'getActiveWeekRenderPropsCandidate(data, handlers)',actionHandlers:'getActiveWeekActionHandlersCandidate(handlers)',activationFlag:'USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE + USE_ACTIVE_WEEK_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['generateWeek','randomGenre','toggleArtistHeard','toggleSong','updateArtist','updateLearningQuiz','closeWeek']},
-    biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'candidate-active-view-model-actions-legacy-under-guarded-render-test',selector:'getLibraryViewModelCandidate(data)',legacySnapshot:'getLibraryLegacySnapshot(data)',equivalenceAudit:'buildLibraryEquivalenceAudit(data)',applicationLogicAudit:'buildLibraryApplicationLogicExtractionAudit(data)',actionMetadata:'getLibraryActionMetadataCandidate()',actionHandlers:'getLibraryActionHandlersCandidate(handlers)',renderProps:'getLibraryRenderPropsCandidate(data, handlers)',renderPropsDiagnostic:'buildLibraryRenderPropsDiagnosticAudit(data)',activationFlag:'USE_LIBRARY_VIEW_MODEL_CANDIDATE',activationReady:true,plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary']},
+    biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'candidate-active-view-model-and-actions-under-guarded-test',selector:'getLibraryViewModelCandidate(data)',legacySnapshot:'getLibraryLegacySnapshot(data)',equivalenceAudit:'buildLibraryEquivalenceAudit(data)',applicationLogicAudit:'buildLibraryApplicationLogicExtractionAudit(data)',actionMetadata:'getLibraryActionMetadataCandidate()',actionHandlers:'getLibraryActionHandlersCandidate(handlers)',renderProps:'getLibraryRenderPropsCandidate(data, handlers)',renderPropsDiagnostic:'buildLibraryRenderPropsDiagnosticAudit(data)',activationFlag:'USE_LIBRARY_VIEW_MODEL_CANDIDATE',activationReady:true,plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary']},
     ajustes:{sectionId:'ajustes',componentName:'AjustesTab',status:'mapped-not-implemented',plannedSelector:'getSettingsViewModelCandidate(data)',plannedActions:['exportData','importData','generateSystemAuditReport','resetAll']}
   },
-  nextStep:{phase:'R7.3B Biblioteca View Model Active',objective:'Activate Biblioteca candidate render props using the already validated render-props diagnostic. Actions remain legacy.',then:'If the app loads and Biblioteca visual/read-only validation passes, proceed to Biblioteca action activation test or close view-model migration.'}
+  nextStep:{phase:'R7.4 Biblioteca Actions Candidate Active',objective:'Activate Biblioteca candidate action handlers through wrappers that delegate to existing stable legacy handlers.',then:'If the app loads and Biblioteca create/edit/delete validation passes, Biblioteca application-logic migration can be considered ready for closure before Ajustes.'}
 };
 window.__MUSICLAB_APPLICATION_LOGIC_CANDIDATE_V1=APPLICATION_LOGIC_CANDIDATE;
 
@@ -701,7 +701,7 @@ function buildLibraryEquivalenceAudit(data,ui={}){
   const legacy=getLibraryLegacySnapshot(data,ui);
   const fieldLevel=buildGenericReadOnlyEquivalence('biblioteca',candidate,legacy,['inputs','viewModel']);
   const equivalent=fieldLevel.diffCount===0;
-  return {comparison:'LIBRARY_EQUIVALENCE_AUDIT_R7_2A',sectionId:'biblioteca',status:equivalent?(USE_LIBRARY_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_LIBRARY_VIEW_MODEL_CANDIDATE?'library-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_LIBRARY_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsStillLegacy:true,actionsReady:false,applicationLogicExtracted:true}};
+  return {comparison:'LIBRARY_EQUIVALENCE_AUDIT_R7_2A',sectionId:'biblioteca',status:equivalent?(USE_LIBRARY_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',candidateActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,runtimeImpact:USE_LIBRARY_VIEW_MODEL_CANDIDATE?'library-render-uses-candidate':'none',fieldLevel,activationStatus:{candidateEquivalent:equivalent,readyForTrueTest:equivalent&&!USE_LIBRARY_VIEW_MODEL_CANDIDATE,readyForClosure:equivalent&&USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsStillLegacy:!USE_LIBRARY_ACTIONS_CANDIDATE,actionsReady:USE_LIBRARY_ACTIONS_CANDIDATE,applicationLogicExtracted:true}};
 }
 function getLibraryRenderPropsCandidate(data,handlers={},ui={}){
   const inputs=buildLibraryRuntimeInputs(data,ui);
@@ -876,10 +876,10 @@ function getLibraryActionMetadataCandidate(){
 window.__MUSICLAB_GET_LIBRARY_ACTION_METADATA_CANDIDATE=getLibraryActionMetadataCandidate;
 
 /* ============================================================
-   BIBLIOTECA ACTION WRAPPERS CANDIDATE - R7.2C
-   Inert only. These functions are not wired to BibliotecaTab and
-   do not change runtime behavior while USE_LIBRARY_ACTIONS_CANDIDATE
-   remains false. They only define the future action contract.
+   BIBLIOTECA ACTION WRAPPERS CANDIDATE - R7.4
+   Active when USE_LIBRARY_ACTIONS_CANDIDATE is true. The wrappers
+   delegate to the existing stable legacy handlers, so runtime behavior
+   remains equivalent while the action boundary moves into candidate logic.
    ============================================================ */
 function invokeLibraryLegacyHandlerCandidate(handlers,name,args){
   if(!handlers||typeof handlers[name]!=='function'){
@@ -900,8 +900,8 @@ function importLibraryCandidate(handlers,...args){return invokeLibraryLegacyHand
 function resetLibraryCandidate(handlers,...args){return invokeLibraryLegacyHandlerCandidate(handlers,'resetLibrary',args);}
 function getLibraryActionHandlersCandidate(handlers={}){
   return {
-    candidate:'LIBRARY_ACTION_HANDLERS_CANDIDATE_R7_2C',
-    version:'library-action-handlers-candidate-r7-2c-inert-wrappers',
+    candidate:'LIBRARY_ACTION_HANDLERS_CANDIDATE_R7_4',
+    version:'library-action-handlers-candidate-r7-4-active-delegating-wrappers',
     active:USE_LIBRARY_ACTIONS_CANDIDATE,
     runtimeImpact:USE_LIBRARY_ACTIONS_CANDIDATE?'library-actions-use-candidate-wrappers':'none',
     createGenre:(...args)=>createGenreCandidate(handlers,...args),
@@ -924,25 +924,26 @@ function buildLibraryActionWrappersAudit(){
   const results=wrapperNames.map(name=>({name,exists:typeof handlers[name]==='function',active:!!USE_LIBRARY_ACTIONS_CANDIDATE,runtimeWired:false}));
   const missing=results.filter(r=>!r.exists);
   return {
-    comparison:'LIBRARY_ACTION_WRAPPERS_AUDIT_R7_2C',
+    comparison:'LIBRARY_ACTION_WRAPPERS_AUDIT_R7_4',
     sectionId:'biblioteca',
-    status:missing.length?'wrappers-missing-or-needs-review':'inactive-action-wrappers-prepared',
+    status:missing.length?'wrappers-missing-or-needs-review':(USE_LIBRARY_ACTIONS_CANDIDATE?'active-action-wrappers-delegating-to-legacy':'inactive-action-wrappers-prepared'),
     candidateActive:USE_LIBRARY_ACTIONS_CANDIDATE,
-    runtimeImpact:'none',
+    runtimeImpact:USE_LIBRARY_ACTIONS_CANDIDATE?'library-actions-route-through-candidate-wrappers':'none',
     metadataActionCount:metadata&&metadata.actions?metadata.actions.length:0,
     wrapperCount:results.length,
     missingCount:missing.length,
     results,
     activationStatus:{
       actionWrappersPrepared:missing.length===0,
-      readyForActionActivation:false,
-      reason:'Wrappers are defined but intentionally not wired to BibliotecaTab. Activate only after view model runtime is validated.'
+      readyForActionActivation:missing.length===0,
+      readyForClosure:missing.length===0&&USE_LIBRARY_VIEW_MODEL_CANDIDATE&&USE_LIBRARY_ACTIONS_CANDIDATE,
+      reason:USE_LIBRARY_ACTIONS_CANDIDATE?'Wrappers are active and delegate to stable legacy handlers. Validate create/edit/delete flows in Biblioteca.':'Wrappers are defined but not active yet.'
     },
     safetyRules:{
       touchedJSX:false,
       touchedBibliotecaTab:false,
-      changedRuntimeHandlers:false,
-      activatedActions:false,
+      changedRuntimeHandlers:USE_LIBRARY_ACTIONS_CANDIDATE,
+      activatedActions:USE_LIBRARY_ACTIONS_CANDIDATE,
       delegatesOnly:true
     }
   };
@@ -1078,11 +1079,11 @@ function buildApplicationLogicAudit(data){
     };
   });
   return {
-    audit:'APPLICATION_LOGIC_AUDIT_R7_3_DIAG',
+    audit:'APPLICATION_LOGIC_AUDIT_R7_4',
     version:APPLICATION_LOGIC_AUDIT_VERSION,
     generatedAt:new Date().toISOString(),
     baseAppVersion:APP_ARCHITECTURE_VERSION,
-    runtimeImpact:'dashboard-readonly-challenges-and-active-week-candidate-active-library-render-props-diagnostic-inactive',
+    runtimeImpact:'dashboard-readonly-challenges-active-week-and-library-candidates-active',
     flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE,USE_PROFILE_VIEW_MODEL_CANDIDATE,USE_RANKINGS_VIEW_MODEL_CANDIDATE,USE_HISTORY_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_ACTIONS_CANDIDATE,USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,USE_LIBRARY_VIEW_MODEL_CANDIDATE,USE_LIBRARY_ACTIONS_CANDIDATE},
     candidate:{...APPLICATION_LOGIC_CANDIDATE,sections},
     maps:{appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP},
@@ -46389,7 +46390,7 @@ function App(){
 
 
   function exportApplicationLogicAudit(){
-    auditDownloadJson('musiclab_application_logic_audit_r6_1.json',buildApplicationLogicAuditExport(data));
+    auditDownloadJson('musiclab_application_logic_audit_r7_4.json',buildApplicationLogicAuditExport(data));
   }
 
   function importData(e){
@@ -46437,9 +46438,32 @@ function App(){
     onDeleteArtist:(gId,aId)=>setConfirm({type:'artist',gId,aId}),
     onAddArtist:g=>setNewArtistForm({genreId:g.id,artist:{name:'',role:'core',shortDescription:'',suggestedSongs:[{title:'',note:'',spotifyUrl:''},{title:'',note:'',spotifyUrl:''}]}})
   };
-  const libraryRenderProps=USE_LIBRARY_VIEW_MODEL_CANDIDATE
-    ? getLibraryRenderPropsCandidate(effectiveData,libraryLegacyRenderProps,{genreSearch,genreFilter})
+  const libraryLegacyActionHandlers={
+    createGenre:libraryLegacyRenderProps.onAddGenre,
+    editGenre:libraryLegacyRenderProps.onEditGenre,
+    deleteGenre:libraryLegacyRenderProps.onDeleteGenre,
+    createArtist:libraryLegacyRenderProps.onAddArtist,
+    editArtist:libraryLegacyRenderProps.onEditArtist,
+    deleteArtist:libraryLegacyRenderProps.onDeleteArtist,
+    resetLibrary
+  };
+  const libraryCandidateActionHandlers=USE_LIBRARY_ACTIONS_CANDIDATE
+    ? getLibraryActionHandlersCandidate(libraryLegacyActionHandlers)
+    : null;
+  const libraryRuntimeHandlers=USE_LIBRARY_ACTIONS_CANDIDATE
+    ? {
+        ...libraryLegacyRenderProps,
+        onAddGenre:libraryCandidateActionHandlers.createGenre,
+        onEditGenre:libraryCandidateActionHandlers.editGenre,
+        onDeleteGenre:libraryCandidateActionHandlers.deleteGenre,
+        onAddArtist:libraryCandidateActionHandlers.createArtist,
+        onEditArtist:libraryCandidateActionHandlers.editArtist,
+        onDeleteArtist:libraryCandidateActionHandlers.deleteArtist
+      }
     : libraryLegacyRenderProps;
+  const libraryRenderProps=USE_LIBRARY_VIEW_MODEL_CANDIDATE
+    ? getLibraryRenderPropsCandidate(effectiveData,libraryRuntimeHandlers,{genreSearch,genreFilter})
+    : libraryRuntimeHandlers;
 
   return(
     <div className="app">
