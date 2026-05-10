@@ -313,7 +313,7 @@ const USE_USER_STATE_CANDIDATE=true;
 const APP_LOGIC_MAP={
   map:'APP_LOGIC_MAP_V0_1',
   version:'app-logic-map-v0-1-sections-only',
-  generatedFrom:'R8.4-settings-non-destructive-actions-active',
+  generatedFrom:'R8.5-settings-sensitive-actions-classification-closure-audit',
   runtimeImpact:'none',
   description:'Mapa descriptivo mínimo de secciones de la aplicación. No controla navegación ni render.',
   sections:[
@@ -332,7 +332,7 @@ window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP;
 const APP_COMPONENT_MAP={
   map:'APP_COMPONENT_MAP_V0_1',
   version:'app-component-map-v0-1-tabs-only',
-  generatedFrom:'R8.4-settings-non-destructive-actions-active',
+  generatedFrom:'R8.5-settings-sensitive-actions-classification-closure-audit',
   runtimeImpact:'none',
   description:'Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación ni render.',
   components:[
@@ -349,7 +349,7 @@ const APP_COMPONENT_MAP={
 window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
 
 /* ============================================================
-   APPLICATION LOGIC CANDIDATE / AUDIT - R8.4
+   APPLICATION LOGIC CANDIDATE / AUDIT - R8.5
 
    Efficient plan:
    - One global Application Logic Candidate.
@@ -376,6 +376,7 @@ window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
    - R8.2 added Ajustes action metadata/wrappers and candidate action handler factory, inactive and not wired to runtime.
    - R8.3 activated Ajustes view model/render props under a guarded flag while keeping actions legacy.
    - R8.4 activates only non-destructive Ajustes action wrappers for exports and read-only diagnostics.
+   - R8.5 classifies remaining sensitive/mutating Ajustes actions as legacy-by-design and closes R8 without activating destructive flows.
    - Ajustes destructive or mutating actions remain legacy and are not wrapped at runtime.
    ============================================================ */
 const USE_APPLICATION_LOGIC_CANDIDATE=false;
@@ -391,16 +392,16 @@ const USE_LIBRARY_VIEW_MODEL_CANDIDATE=true;
 const USE_LIBRARY_ACTIONS_CANDIDATE=true;
 const USE_SETTINGS_VIEW_MODEL_CANDIDATE=true;
 const USE_SETTINGS_ACTIONS_CANDIDATE=true;
-const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-library-active-settings-non-destructive-actions-active';
-const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r8-4-settings-non-destructive-actions-active';
+const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-dashboard-readonly-challenges-active-active-week-active-library-active-settings-r8-closure-sensitive-actions-classified';
+const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r8-5-settings-sensitive-actions-classification-closure-audit';
 const DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION='dashboard-view-model-candidate-v0-2-compact-comparable-snapshot';
 const DASHBOARD_EQUIVALENCE_AUDIT_VERSION='dashboard-equivalence-audit-r3-3-field-level-activation-readiness';
 
 const APPLICATION_LOGIC_CANDIDATE={
   candidate:'APPLICATION_LOGIC_CANDIDATE_V1',
   version:APPLICATION_LOGIC_CANDIDATE_VERSION,
-  generatedFrom:'R8.4',
-  status:'candidate-partial-dashboard-readonly-challenges-active-active-week-active-library-active-settings-non-destructive-actions-active',
+  generatedFrom:'R8.5',
+  status:'candidate-dashboard-readonly-challenges-active-active-week-active-library-active-settings-r8-closed-sensitive-actions-classified',
   runtimeImpact:'guarded-by-flags',
   flags:{global:USE_APPLICATION_LOGIC_CANDIDATE,dashboard:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,perfil:USE_PROFILE_VIEW_MODEL_CANDIDATE,rankings:USE_RANKINGS_VIEW_MODEL_CANDIDATE,historial:USE_HISTORY_VIEW_MODEL_CANDIDATE,retos:USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE,semana:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,biblioteca:USE_LIBRARY_VIEW_MODEL_CANDIDATE,ajustes:USE_SETTINGS_VIEW_MODEL_CANDIDATE},
   sections:{
@@ -411,9 +412,9 @@ const APPLICATION_LOGIC_CANDIDATE={
     retos:{sectionId:'retos',componentName:'RetosTab',status:'candidate-active-under-guarded-render-test',selector:'getChallengesViewModelCandidate(data)',legacySnapshot:'getChallengesLegacySnapshot(data)',equivalenceAudit:'buildChallengesEquivalenceAudit(data)',renderProps:'getChallengesRenderPropsCandidate(data, handlers)',actionHandlers:'getChallengesActionHandlersCandidate(handlers)',activationFlag:'USE_CHALLENGES_VIEW_MODEL_CANDIDATE + USE_CHALLENGES_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['createChallenge','updateChallenge','deleteChallenge','generateGenreChallenge']},
     semana:{sectionId:'semana',componentName:'SemanaTab',status:'candidate-active-under-guarded-render-test',selector:'getActiveWeekViewModelCandidate(data)',legacySnapshot:'getActiveWeekLegacySnapshot(data)',equivalenceAudit:'buildActiveWeekEquivalenceAudit(data)',renderProps:'getActiveWeekRenderPropsCandidate(data, handlers)',actionHandlers:'getActiveWeekActionHandlersCandidate(handlers)',activationFlag:'USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE + USE_ACTIVE_WEEK_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['generateWeek','randomGenre','toggleArtistHeard','toggleSong','updateArtist','updateLearningQuiz','closeWeek']},
     biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'candidate-active-view-model-and-actions-under-guarded-test',selector:'getLibraryViewModelCandidate(data)',legacySnapshot:'getLibraryLegacySnapshot(data)',equivalenceAudit:'buildLibraryEquivalenceAudit(data)',applicationLogicAudit:'buildLibraryApplicationLogicExtractionAudit(data)',actionMetadata:'getLibraryActionMetadataCandidate()',actionHandlers:'getLibraryActionHandlersCandidate(handlers)',renderProps:'getLibraryRenderPropsCandidate(data, handlers)',renderPropsDiagnostic:'buildLibraryRenderPropsDiagnosticAudit(data)',activationFlag:'USE_LIBRARY_VIEW_MODEL_CANDIDATE',activationReady:true,plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary']},
-    ajustes:{sectionId:'ajustes',componentName:'AjustesTab',status:'candidate-active-view-model-non-destructive-actions-active-destructive-actions-legacy',selector:'getSettingsViewModelCandidate(data)',legacySnapshot:'getSettingsLegacySnapshot(data)',equivalenceAudit:'buildSettingsEquivalenceAudit(data)',renderProps:'getSettingsRenderPropsCandidate(data, handlers)',actionMetadata:'getSettingsActionMetadataCandidate()',actionHandlers:'getSettingsActionHandlersCandidate(handlers)',activationFlag:'USE_SETTINGS_VIEW_MODEL_CANDIDATE + USE_SETTINGS_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['saveSettings','exportData','importData','resetLibrary','forceLibraryUpgrade','generateSystemAuditReport','exportAuditReport','exportEffectiveCatalog','exportLearningSnapshot','exportStaticCatalogCandidate','exportUserStateCandidate','exportApplicationLogicAudit','resetAll']}
+    ajustes:{sectionId:'ajustes',componentName:'AjustesTab',status:'candidate-active-view-model-non-destructive-actions-active-sensitive-actions-classified-legacy-by-design',selector:'getSettingsViewModelCandidate(data)',legacySnapshot:'getSettingsLegacySnapshot(data)',equivalenceAudit:'buildSettingsEquivalenceAudit(data)',renderProps:'getSettingsRenderPropsCandidate(data, handlers)',actionMetadata:'getSettingsActionMetadataCandidate()',actionHandlers:'getSettingsActionHandlersCandidate(handlers)',activationFlag:'USE_SETTINGS_VIEW_MODEL_CANDIDATE + USE_SETTINGS_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['saveSettings','exportData','importData','resetLibrary','forceLibraryUpgrade','generateSystemAuditReport','exportAuditReport','exportEffectiveCatalog','exportLearningSnapshot','exportStaticCatalogCandidate','exportUserStateCandidate','exportApplicationLogicAudit','resetAll']}
   },
-  nextStep:{phase:'R8.4 Ajustes Non-Destructive Actions Active',objective:'Activate only non-destructive Ajustes action wrappers for exports and read-only diagnostics while keeping import, reset library, force library upgrade, save settings and reset all on stable legacy handlers.',then:'If Settings loads visually unchanged and Application Logic Audit remains diffCount 0, proceed to a final guarded validation for remaining sensitive settings actions or close R8 before cleanup audit.'}
+  nextStep:{phase:'R9 Cleanup Audit',objective:'Classify legacy code by keep/shared-helper/temporary-fallback/remove-candidate without deleting anything yet.',then:'Do not delete legacy code until cleanup audit proves no runtime references, candidate equivalence, and user validation for each section.'}
 };
 window.__MUSICLAB_APPLICATION_LOGIC_CANDIDATE_V1=APPLICATION_LOGIC_CANDIDATE;
 
@@ -1145,7 +1146,7 @@ function buildSettingsCompactSnapshot(data,source){
   };
 }
 function getSettingsViewModelCandidate(data){
-  return {candidate:'SETTINGS_VIEW_MODEL_CANDIDATE_V0_1',version:'settings-view-model-candidate-v0-4-non-destructive-actions-active',...buildSettingsCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_SETTINGS_VIEW_MODEL_CANDIDATE};
+  return {candidate:'SETTINGS_VIEW_MODEL_CANDIDATE_V0_1',version:'settings-view-model-candidate-v0-5-r8-closure-sensitive-actions-classified',...buildSettingsCompactSnapshot(data,'candidate'),legacyRuntimeStillActive:!USE_SETTINGS_VIEW_MODEL_CANDIDATE};
 }
 function getSettingsLegacySnapshot(data){
   return {snapshot:'SETTINGS_LEGACY_SNAPSHOT_V0_1',version:'settings-legacy-snapshot-v0-1-current-ajustes-ui-and-actions',...buildSettingsCompactSnapshot(data,'legacy')};
@@ -1156,7 +1157,7 @@ function buildSettingsEquivalenceAudit(data){
   const fieldLevel=buildGenericReadOnlyEquivalence('ajustes',candidate,legacy,['inputs','viewModel','actionMetadata']);
   const equivalent=fieldLevel.diffCount===0;
   return {
-    comparison:'SETTINGS_EQUIVALENCE_AUDIT_R8_4',
+    comparison:'SETTINGS_EQUIVALENCE_AUDIT_R8_5',
     sectionId:'ajustes',
     status:equivalent?(USE_SETTINGS_VIEW_MODEL_CANDIDATE?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review',
     candidateActive:USE_SETTINGS_VIEW_MODEL_CANDIDATE,
@@ -1173,7 +1174,7 @@ function buildSettingsEquivalenceAudit(data){
       destructiveActionsNotTouched:true,
       noSettingsRuntimeChange:!USE_SETTINGS_VIEW_MODEL_CANDIDATE&&!USE_SETTINGS_ACTIONS_CANDIDATE
     },
-    limitations:['Compares the intended Settings/Ajustes view model and action inventory, not destructive flows.','R8.4 activates only non-destructive settings action wrappers for exports and read-only diagnostics.','Import, force library upgrade, reset library, save settings and reset all remain legacy and must not be tested as candidate actions yet.']
+    limitations:['Compares the intended Settings/Ajustes view model and action inventory, not destructive flows.','R8.5 closes Settings/Ajustes application-logic migration with sensitive actions classified as legacy-by-design.','Import, force library upgrade, reset library, save settings and reset all remain on stable legacy handlers by design until a separate explicit destructive-flow validation is requested.']
   };
 }
 function getSettingsRenderPropsCandidate(data,handlers={}){
@@ -1264,6 +1265,58 @@ window.__MUSICLAB_GET_SETTINGS_ACTION_HANDLERS_CANDIDATE=getSettingsActionHandle
 window.__MUSICLAB_GET_SETTINGS_NON_DESTRUCTIVE_ACTION_HANDLERS_CANDIDATE=getSettingsNonDestructiveActionHandlersCandidate;
 window.__MUSICLAB_BUILD_SETTINGS_ACTION_WRAPPERS_AUDIT=buildSettingsActionWrappersAudit;
 
+/* ============================================================
+   SETTINGS / AJUSTES SENSITIVE ACTIONS CLASSIFICATION - R8.5
+
+   Closure audit only. No runtime activation of destructive flows.
+   The goal is to make the remaining legacy-by-design boundary explicit
+   before moving to R9 Cleanup Audit.
+   ============================================================ */
+function buildSettingsSensitiveActionsClassificationAudit(){
+  const metadata=getSettingsActionMetadataCandidate();
+  const readOnlyActive=SETTINGS_READ_ONLY_ACTION_IDS.map(id=>({
+    id,
+    classification:'non-destructive-read-only-export-or-diagnostic',
+    runtimeRoute:USE_SETTINGS_ACTIONS_CANDIDATE?'candidate-wrapper-delegating-to-legacy-handler':'legacy-handler',
+    candidateActive:!!USE_SETTINGS_ACTIONS_CANDIDATE,
+    safeForR8Closure:true
+  }));
+  const sensitiveLegacy=SETTINGS_MUTATING_OR_DESTRUCTIVE_ACTION_IDS.map(id=>{
+    const meta=(metadata.actions||[]).find(a=>a.id===id)||{};
+    const category=id==='saveSettings'?'mutating-preferences':(id==='importData'?'import-and-state-replacement':(id==='forceLibraryUpgrade'?'catalog-migration-or-upgrade':(id==='resetLibrary'?'catalog-reset':'full-data-reset')));
+    return {
+      id,
+      handler:meta.handler||null,
+      classification:category,
+      runtimeRoute:'legacy-handler-by-design',
+      candidateActive:false,
+      destructive:!!meta.destructive||id==='resetAll'||id==='resetLibrary'||id==='forceLibraryUpgrade'||id==='importData',
+      requiresExplicitUserValidationBeforeCandidateActivation:true,
+      excludedFromR8RuntimeActivation:true
+    };
+  });
+  return {
+    audit:'SETTINGS_SENSITIVE_ACTIONS_CLASSIFICATION_R8_5',
+    version:'settings-sensitive-actions-classification-r8-5-closure-audit',
+    status:'r8-settings-closed-sensitive-actions-classified-legacy-by-design',
+    runtimeImpact:'none-beyond-r8-4-non-destructive-wrappers',
+    nonDestructiveActionsActive:readOnlyActive,
+    sensitiveOrMutatingActionsLegacyByDesign:sensitiveLegacy,
+    closureGate:{
+      settingsViewModelActive:USE_SETTINGS_VIEW_MODEL_CANDIDATE,
+      settingsActionsFlagActive:USE_SETTINGS_ACTIONS_CANDIDATE,
+      nonDestructiveActionsActive:!!USE_SETTINGS_ACTIONS_CANDIDATE,
+      sensitiveActionsStillLegacy:true,
+      destructiveActionsTouched:false,
+      importResetRestoreNotActivated:true,
+      readyForR9CleanupAudit:true
+    },
+    explicitNonGoals:['No importData activation','No resetLibrary activation','No forceLibraryUpgrade activation','No resetAll activation','No cleanup/deletion in R8.5'],
+    nextStep:'R9 Cleanup Audit, classification only, no deletion.'
+  };
+}
+window.__MUSICLAB_BUILD_SETTINGS_SENSITIVE_ACTIONS_CLASSIFICATION_AUDIT=buildSettingsSensitiveActionsClassificationAudit;
+
 function buildApplicationLogicAudit(data){
   const dashboardAudit=buildDashboardEquivalenceAudit(data);
   const candidate=getDashboardViewModelCandidate(data);
@@ -1287,6 +1340,7 @@ function buildApplicationLogicAudit(data){
   const settingsLegacy=getSettingsLegacySnapshot(data);
   const settingsActionMetadata=getSettingsActionMetadataCandidate();
   const settingsActionWrappersAudit=buildSettingsActionWrappersAudit();
+  const settingsSensitiveActionsClassification=buildSettingsSensitiveActionsClassificationAudit();
   const sections=Object.keys(APPLICATION_LOGIC_CANDIDATE.sections).map(id=>{
     const section=APPLICATION_LOGIC_CANDIDATE.sections[id];
     const batchSection=readOnlyBatch.structuredSections[id];
@@ -1308,11 +1362,11 @@ function buildApplicationLogicAudit(data){
     };
   });
   return {
-    audit:'APPLICATION_LOGIC_AUDIT_R8_4',
+    audit:'APPLICATION_LOGIC_AUDIT_R8_5',
     version:APPLICATION_LOGIC_AUDIT_VERSION,
     generatedAt:new Date().toISOString(),
     baseAppVersion:APP_ARCHITECTURE_VERSION,
-    runtimeImpact:'dashboard-readonly-challenges-active-week-library-and-settings-candidates-active-settings-non-destructive-actions-active',
+    runtimeImpact:'dashboard-readonly-challenges-active-week-library-and-settings-candidates-active-r8-closed-sensitive-settings-actions-classified-legacy-by-design',
     flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE,USE_PROFILE_VIEW_MODEL_CANDIDATE,USE_RANKINGS_VIEW_MODEL_CANDIDATE,USE_HISTORY_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_ACTIONS_CANDIDATE,USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,USE_LIBRARY_VIEW_MODEL_CANDIDATE,USE_LIBRARY_ACTIONS_CANDIDATE,USE_SETTINGS_VIEW_MODEL_CANDIDATE,USE_SETTINGS_ACTIONS_CANDIDATE},
     candidate:{...APPLICATION_LOGIC_CANDIDATE,sections},
     maps:{appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP},
@@ -1322,9 +1376,9 @@ function buildApplicationLogicAudit(data){
     retos:{status:'challenges-candidate-active-under-controlled-test',candidateSummary:{candidate:challengesCandidate.candidate,version:challengesCandidate.version,status:challengesCandidate.status,active:challengesCandidate.active,inputs:challengesCandidate.inputs},legacySummary:{snapshot:challengesLegacy.snapshot,version:challengesLegacy.version,status:challengesLegacy.status,active:challengesLegacy.active,inputs:challengesLegacy.inputs},equivalence:challengesAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_CHALLENGES_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE,closureStatus:'retos-closed-if-user-visual-validation-passed'},
     semana:{status:'active-week-candidate-active-under-guarded-render-test',candidateSummary:{candidate:activeWeekCandidate.candidate,version:activeWeekCandidate.version,status:activeWeekCandidate.status,active:activeWeekCandidate.active,inputs:activeWeekCandidate.inputs},legacySummary:{snapshot:activeWeekLegacy.snapshot,version:activeWeekLegacy.version,status:activeWeekLegacy.status,active:activeWeekLegacy.active,inputs:activeWeekLegacy.inputs},equivalence:activeWeekAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE},
     biblioteca:{status:'library-candidate-active-view-model-and-actions-under-guarded-render-test',candidateSummary:{candidate:libraryCandidate.candidate,version:libraryCandidate.version,status:libraryCandidate.status,active:libraryCandidate.active,inputs:libraryCandidate.inputs},legacySummary:{snapshot:libraryLegacy.snapshot,version:libraryLegacy.version,status:libraryLegacy.status,active:libraryLegacy.active,inputs:libraryLegacy.inputs},equivalence:libraryAudit,applicationLogicExtraction:libraryExtractionAudit,actionMetadata:libraryActionMetadata,actionWrappers:libraryActionWrappersAudit,renderPropsDiagnostic:libraryRenderPropsDiagnostic,guardedRenderPrepared:true,guardedActionsPrepared:true,actionMetadataPrepared:true,actionWrappersPrepared:true,renderPropsDiagnosticPrepared:true,applicationLogicExtracted:true,viewModelFlagValue:USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_LIBRARY_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE},
-    ajustes:{status:'settings-candidate-active-view-model-non-destructive-actions-active-destructive-actions-legacy',candidateSummary:{candidate:settingsCandidate.candidate,version:settingsCandidate.version,status:settingsCandidate.status,active:settingsCandidate.active,inputs:settingsCandidate.inputs},legacySummary:{snapshot:settingsLegacy.snapshot,version:settingsLegacy.version,status:settingsLegacy.status,active:settingsLegacy.active,inputs:settingsLegacy.inputs},equivalence:settingsAudit,actionMetadata:settingsActionMetadata,guardedRenderPrepared:true,guardedActionsPrepared:true,actionWrappers:settingsActionWrappersAudit,viewModelFlagValue:USE_SETTINGS_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_SETTINGS_ACTIONS_CANDIDATE,visualValidationRequired:USE_SETTINGS_VIEW_MODEL_CANDIDATE,destructiveActionsTouched:false},
-    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,libraryCandidateEquivalent:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.candidateEquivalent),libraryApplicationLogicExtractionEquivalent:!!(libraryExtractionAudit.activationStatus&&libraryExtractionAudit.activationStatus.candidateEquivalent),libraryActionMetadataPrepared:!!(libraryActionMetadata&&libraryActionMetadata.actions&&libraryActionMetadata.actions.length),libraryActionWrappersPrepared:typeof getLibraryActionHandlersCandidate==='function',libraryRenderPropsDiagnosticPassed:!!(libraryRenderPropsDiagnostic&&libraryRenderPropsDiagnostic.activationGate&&libraryRenderPropsDiagnostic.activationGate.mayActivateViewModelNext),libraryReadyForTrueTest:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForTrueTest),libraryReadyForClosure:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForClosure),libraryViewModelActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,libraryActionsActive:USE_LIBRARY_ACTIONS_CANDIDATE,settingsCandidateEquivalent:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.candidateEquivalent),settingsReadyForTrueTest:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForTrueTest),settingsReadyForClosure:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForClosure),settingsViewModelActive:USE_SETTINGS_VIEW_MODEL_CANDIDATE,settingsActionsActive:USE_SETTINGS_ACTIONS_CANDIDATE,nextActivationTarget:'ajustes',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
-    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true,libraryDetailsGroupedBySection:true,libraryApplicationLogicExtraction:true,libraryActionMetadata:true,libraryActionWrappers:true,libraryRenderPropsDiagnostic:true,settingsViewModelCandidate:true,settingsActionMetadata:true,settingsActionWrappers:true,settingsViewModelActive:true,settingsActionsLegacy:false,settingsNonDestructiveActionsActive:true,settingsDestructiveActionsLegacy:true},
+    ajustes:{status:'settings-candidate-active-view-model-non-destructive-actions-active-sensitive-actions-classified-legacy-by-design',candidateSummary:{candidate:settingsCandidate.candidate,version:settingsCandidate.version,status:settingsCandidate.status,active:settingsCandidate.active,inputs:settingsCandidate.inputs},legacySummary:{snapshot:settingsLegacy.snapshot,version:settingsLegacy.version,status:settingsLegacy.status,active:settingsLegacy.active,inputs:settingsLegacy.inputs},equivalence:settingsAudit,actionMetadata:settingsActionMetadata,actionWrappers:settingsActionWrappersAudit,sensitiveActionsClassification:settingsSensitiveActionsClassification,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_SETTINGS_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_SETTINGS_ACTIONS_CANDIDATE,visualValidationRequired:USE_SETTINGS_VIEW_MODEL_CANDIDATE,destructiveActionsTouched:false,sensitiveActionsLegacyByDesign:true,r8ClosureReady:true},
+    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,libraryCandidateEquivalent:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.candidateEquivalent),libraryApplicationLogicExtractionEquivalent:!!(libraryExtractionAudit.activationStatus&&libraryExtractionAudit.activationStatus.candidateEquivalent),libraryActionMetadataPrepared:!!(libraryActionMetadata&&libraryActionMetadata.actions&&libraryActionMetadata.actions.length),libraryActionWrappersPrepared:typeof getLibraryActionHandlersCandidate==='function',libraryRenderPropsDiagnosticPassed:!!(libraryRenderPropsDiagnostic&&libraryRenderPropsDiagnostic.activationGate&&libraryRenderPropsDiagnostic.activationGate.mayActivateViewModelNext),libraryReadyForTrueTest:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForTrueTest),libraryReadyForClosure:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForClosure),libraryViewModelActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,libraryActionsActive:USE_LIBRARY_ACTIONS_CANDIDATE,settingsCandidateEquivalent:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.candidateEquivalent),settingsReadyForTrueTest:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForTrueTest),settingsReadyForClosure:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForClosure),settingsViewModelActive:USE_SETTINGS_VIEW_MODEL_CANDIDATE,settingsActionsActive:USE_SETTINGS_ACTIONS_CANDIDATE,settingsSensitiveActionsClassified:true,settingsSensitiveActionsLegacyByDesign:true,settingsReadyForR9CleanupAudit:true,nextActivationTarget:'R9-cleanup-audit',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
+    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true,libraryDetailsGroupedBySection:true,libraryApplicationLogicExtraction:true,libraryActionMetadata:true,libraryActionWrappers:true,libraryRenderPropsDiagnostic:true,settingsViewModelCandidate:true,settingsActionMetadata:true,settingsActionWrappers:true,settingsViewModelActive:true,settingsActionsLegacy:false,settingsNonDestructiveActionsActive:true,settingsDestructiveActionsLegacy:true,settingsSensitiveActionsClassification:true,r8SettingsClosed:true},
     nextStep:APPLICATION_LOGIC_CANDIDATE.nextStep
   };
 }
