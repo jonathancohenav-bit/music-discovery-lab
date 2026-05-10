@@ -313,7 +313,7 @@ const USE_USER_STATE_CANDIDATE=true;
 const APP_LOGIC_MAP={
   map:'APP_LOGIC_MAP_V0_1',
   version:'app-logic-map-v0-1-sections-only',
-  generatedFrom:'R9.3-safe-cleanup-pass-1',
+  generatedFrom:'R9.4-application-logic-legacy-cleanup',
   runtimeImpact:'none',
   description:'Mapa descriptivo mínimo de secciones de la aplicación. No controla navegación ni render.',
   sections:[
@@ -327,12 +327,12 @@ const APP_LOGIC_MAP={
     {id:'ajustes',label:'Ajustes',role:'settings-diagnostics',activeRuntimeSource:'existing-tab-condition'}
   ]
 };
-window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP;
+/* R9.4 cleanup: removed obsolete debug exposure: window.__MUSICLAB_APP_LOGIC_MAP_V0_1=APP_LOGIC_MAP; */
 
 const APP_COMPONENT_MAP={
   map:'APP_COMPONENT_MAP_V0_1',
   version:'app-component-map-v0-1-tabs-only',
-  generatedFrom:'R9.3-safe-cleanup-pass-1',
+  generatedFrom:'R9.4-application-logic-legacy-cleanup',
   runtimeImpact:'none',
   description:'Mapa descriptivo que relaciona cada sección principal con su componente React actual. No controla navegación ni render.',
   components:[
@@ -346,10 +346,10 @@ const APP_COMPONENT_MAP={
     {sectionId:'ajustes',componentName:'AjustesTab',componentType:'tab',activeRuntimeSource:'existing-jsx-conditional-render'}
   ]
 };
-window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
+/* R9.4 cleanup: removed obsolete debug exposure: window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP; */
 
 /* ============================================================
-   APPLICATION LOGIC CANDIDATE / AUDIT - R9.3
+   APPLICATION LOGIC CANDIDATE / AUDIT - R9.4
 
    Efficient plan:
    - One global Application Logic Candidate.
@@ -379,8 +379,9 @@ window.__MUSICLAB_APP_COMPONENT_MAP_V0_1=APP_COMPONENT_MAP;
    - R8.5 classifies remaining sensitive/mutating Ajustes actions as legacy-by-design and closes R8 without activating destructive flows.
    - R9.1 added a global cleanup audit that classified legacy/candidate/helper/audit blocks without deleting code.
    - R9.2 expanded that classification into a complete cleanup plan by block, including application-logic legacy and data legacy, without deleting code.
-   - R9.3 removes only one clearly dead historical debug export function: exportAppLogicCanary.
-     No runtime legacy, data legacy, shared helpers, sensitive settings actions or visible UI are touched.
+   - R9.3 removed only one clearly dead historical debug export function: exportAppLogicCanary.
+   - R9.4 removes duplicated top-level legacy snapshot summaries from the Application Logic Audit payload and removes obsolete debug-only window exposures.
+     Legacy snapshot builders remain internally available only for equivalence audits; no runtime, data, helpers, Firebase, persistence or sensitive settings actions are touched.
    - Ajustes destructive or mutating actions remain legacy and are not wrapped at runtime.
    ============================================================ */
 const USE_APPLICATION_LOGIC_CANDIDATE=false;
@@ -396,17 +397,17 @@ const USE_LIBRARY_VIEW_MODEL_CANDIDATE=true;
 const USE_LIBRARY_ACTIONS_CANDIDATE=true;
 const USE_SETTINGS_VIEW_MODEL_CANDIDATE=true;
 const USE_SETTINGS_ACTIONS_CANDIDATE=true;
-const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-r9-3-safe-cleanup-pass-1';
-const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r9-3-safe-cleanup-pass-1';
-const CLEANUP_AUDIT_VERSION='cleanup-audit-r9-3-safe-cleanup-pass-1';
+const APPLICATION_LOGIC_CANDIDATE_VERSION='application-logic-candidate-v1-r9-4-application-logic-legacy-cleanup';
+const APPLICATION_LOGIC_AUDIT_VERSION='application-logic-audit-r9-4-application-logic-legacy-cleanup';
+const CLEANUP_AUDIT_VERSION='cleanup-audit-r9-4-application-logic-legacy-cleanup';
 const DASHBOARD_VIEW_MODEL_CANDIDATE_VERSION='dashboard-view-model-candidate-v0-2-compact-comparable-snapshot';
 const DASHBOARD_EQUIVALENCE_AUDIT_VERSION='dashboard-equivalence-audit-r3-3-field-level-activation-readiness';
 
 const APPLICATION_LOGIC_CANDIDATE={
   candidate:'APPLICATION_LOGIC_CANDIDATE_V1',
   version:APPLICATION_LOGIC_CANDIDATE_VERSION,
-  generatedFrom:'R9.3',
-  status:'candidate-active-all-primary-sections-r9-3-safe-cleanup-pass-1',
+  generatedFrom:'R9.4',
+  status:'candidate-active-all-primary-sections-r9-4-application-logic-legacy-cleanup',
   runtimeImpact:'guarded-by-flags',
   flags:{global:USE_APPLICATION_LOGIC_CANDIDATE,dashboard:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,perfil:USE_PROFILE_VIEW_MODEL_CANDIDATE,rankings:USE_RANKINGS_VIEW_MODEL_CANDIDATE,historial:USE_HISTORY_VIEW_MODEL_CANDIDATE,retos:USE_CHALLENGES_VIEW_MODEL_CANDIDATE&&USE_CHALLENGES_ACTIONS_CANDIDATE,semana:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE&&USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,biblioteca:USE_LIBRARY_VIEW_MODEL_CANDIDATE,ajustes:USE_SETTINGS_VIEW_MODEL_CANDIDATE},
   sections:{
@@ -419,9 +420,9 @@ const APPLICATION_LOGIC_CANDIDATE={
     biblioteca:{sectionId:'biblioteca',componentName:'BibliotecaTab',status:'candidate-active-view-model-and-actions-under-guarded-test',selector:'getLibraryViewModelCandidate(data)',legacySnapshot:'getLibraryLegacySnapshot(data)',equivalenceAudit:'buildLibraryEquivalenceAudit(data)',applicationLogicAudit:'buildLibraryApplicationLogicExtractionAudit(data)',actionMetadata:'getLibraryActionMetadataCandidate()',actionHandlers:'getLibraryActionHandlersCandidate(handlers)',renderProps:'getLibraryRenderPropsCandidate(data, handlers)',renderPropsDiagnostic:'buildLibraryRenderPropsDiagnosticAudit(data)',activationFlag:'USE_LIBRARY_VIEW_MODEL_CANDIDATE',activationReady:true,plannedActions:['createGenre','editGenre','deleteGenre','createArtist','editArtist','deleteArtist','createSong','editSong','deleteSong','importLibrary','resetLibrary']},
     ajustes:{sectionId:'ajustes',componentName:'AjustesTab',status:'candidate-active-view-model-non-destructive-actions-active-sensitive-actions-classified-legacy-by-design',selector:'getSettingsViewModelCandidate(data)',legacySnapshot:'getSettingsLegacySnapshot(data)',equivalenceAudit:'buildSettingsEquivalenceAudit(data)',renderProps:'getSettingsRenderPropsCandidate(data, handlers)',actionMetadata:'getSettingsActionMetadataCandidate()',actionHandlers:'getSettingsActionHandlersCandidate(handlers)',activationFlag:'USE_SETTINGS_VIEW_MODEL_CANDIDATE + USE_SETTINGS_ACTIONS_CANDIDATE',activationReady:true,plannedActions:['saveSettings','exportData','importData','resetLibrary','forceLibraryUpgrade','generateSystemAuditReport','exportAuditReport','exportEffectiveCatalog','exportLearningSnapshot','exportStaticCatalogCandidate','exportUserStateCandidate','exportApplicationLogicAudit','resetAll']}
   },
-  nextStep:{phase:'R9.4 Application Logic Legacy Cleanup',objective:'Remove application-logic legacy only after reference checks. Do not touch data legacy, shared helpers or sensitive settings actions.',then:'If R9.4 loads and exports cleanly, continue with R9.5A learning/tests legacy cleanup and R9.5B catalog legacy cleanup.'}
+  nextStep:{phase:'R9.5A Learning and Tests Legacy Cleanup',objective:'Remove legacy Aprende/tests only after reference checks. Do not touch catalog legacy, shared helpers, persistence or sensitive settings actions.',then:'If R9.5A loads and exports cleanly, continue with R9.5B catalog legacy cleanup.'}
 };
-window.__MUSICLAB_APPLICATION_LOGIC_CANDIDATE_V1=APPLICATION_LOGIC_CANDIDATE;
+/* R9.4 cleanup: removed obsolete debug exposure: window.__MUSICLAB_APPLICATION_LOGIC_CANDIDATE_V1=APPLICATION_LOGIC_CANDIDATE; */
 
 function buildDashboardViewModelRuntimeInputs(data){const base=data||{};const fallback={settings:{user1:'Jonathan',user2:'Lucy'},genres:[],weeks:[],activeWeekId:null,completedGenreIds:[],challenges:[],xpEvents:[]};const safeData={...fallback,...base,settings:{...fallback.settings,...(base.settings||{})}};const runtimeGenres=typeof getRuntimeGenres==='function'?getRuntimeGenres(safeData):(safeData.genres||[]);const runtimeUserState=typeof getRuntimeUserState==='function'?getRuntimeUserState(safeData):safeData;const effectiveData={...safeData,...runtimeUserState,genres:runtimeGenres};const settings=effectiveData.settings||fallback.settings;const genres=Array.isArray(effectiveData.genres)?effectiveData.genres:[];const weeks=Array.isArray(effectiveData.weeks)?effectiveData.weeks:[];const activeWeekId=effectiveData.activeWeekId||null;const completedGenreIds=Array.isArray(effectiveData.completedGenreIds)?effectiveData.completedGenreIds:[];const challenges=Array.isArray(effectiveData.challenges)?effectiveData.challenges:[];const xpEvents=Array.isArray(effectiveData.xpEvents)?effectiveData.xpEvents:[];const u1=settings.user1||'Jonathan';const u2=settings.user2||'Lucy';const activeWeek=weeks.find(w=>w&&w.id===activeWeekId)||null;const completedWeeks=weeks.filter(w=>w&&w.status==='completed');return {settings,u1,u2,genres,weeks,activeWeekId,activeWeek,completedWeeks,completedGenreIds,challenges,xpEvents,effectiveData};}
 function compactDashboardNumber(value,digits=2){return typeof value==='number'&&isFinite(value)?Number(value.toFixed(digits)):value;}
@@ -442,7 +443,7 @@ function getDashboardAuditSeverity(path){if(/^inputs\./.test(path)||/^metrics\.(
 function buildDashboardFieldLevelEquivalence(candidate,legacy){const fields=['inputs','dashboardPropsSummary','metrics','rankings','latestWeeks','dashboardEntryFlow'];const results=[];fields.forEach(field=>{const cFlat=flattenDashboardAuditObject(stableDashboardComparableValue(candidate[field]),field);const lFlat=flattenDashboardAuditObject(stableDashboardComparableValue(legacy[field]),field);const paths=Array.from(new Set([...Object.keys(cFlat),...Object.keys(lFlat)])).sort();paths.forEach(path=>{const inCandidate=Object.prototype.hasOwnProperty.call(cFlat,path);const inLegacy=Object.prototype.hasOwnProperty.call(lFlat,path);const candidateValue=inCandidate?cFlat[path]:undefined;const legacyValue=inLegacy?lFlat[path]:undefined;const matched=inCandidate&&inLegacy&&JSON.stringify(candidateValue)===JSON.stringify(legacyValue);results.push({path,field,severity:getDashboardAuditSeverity(path),status:matched?'match':(!inCandidate?'missing-in-candidate':(!inLegacy?'missing-in-legacy':'diff')),matched,candidateValue,legacyValue});});});const diffs=results.filter(r=>!r.matched);const bySeverity=diffs.reduce((acc,r)=>{acc[r.severity]=(acc[r.severity]||0)+1;return acc;},{});const matchedCount=results.filter(r=>r.matched).length;return {fieldCount:fields.length,comparedPaths:results.length,matchedCount,diffCount:diffs.length,criticalDiffCount:bySeverity.critical||0,highDiffCount:bySeverity.high||0,mediumDiffCount:bySeverity.medium||0,lowDiffCount:bySeverity.low||0,allMatched:diffs.length===0,fields,results,diffs};}
 function buildDashboardEquivalenceAudit(data){const candidate=getDashboardViewModelCandidate(data);const legacy=getDashboardLegacySnapshot(data);const compact=compareDashboardCompactObjects(candidate,legacy);const fieldLevel=buildDashboardFieldLevelEquivalence(candidate,legacy);const equivalent=fieldLevel.criticalDiffCount===0&&fieldLevel.highDiffCount===0&&fieldLevel.diffCount===0;const candidateActive=!!USE_DASHBOARD_VIEW_MODEL_CANDIDATE;const status=equivalent?(candidateActive?'candidate-active-equivalent-visual-validation-required':'equivalent-ready-for-guarded-render-test'):'not-equivalent-or-needs-review';return {comparison:'DASHBOARD_EQUIVALENCE_AUDIT_R3_5',version:DASHBOARD_EQUIVALENCE_AUDIT_VERSION,sectionId:'dashboard',status,candidateActive,runtimeImpact:candidateActive?'dashboard-render-uses-candidate-only':'none',legacyRuntimeStillActive:!candidateActive,compactComparison:compact,fieldLevel,acceptanceCriteria:{requiresNoCriticalDiffs:true,requiresNoHighDiffs:true,requiresNoDiffsForActivationTest:true,criticalDiffCount:fieldLevel.criticalDiffCount,highDiffCount:fieldLevel.highDiffCount,totalDiffCount:fieldLevel.diffCount,passed:equivalent},activationStatus:{dashboardCandidateActive:candidateActive,dashboardCandidateEquivalent:equivalent,readyForDashboardTrueTest:equivalent&&!candidateActive,readyForDashboardClosure:equivalent&&candidateActive,visualValidationRequired:candidateActive,reason:equivalent?(candidateActive?'Dashboard candidate is active and data-equivalent to legacy for the compact audit scope. Perform visual validation; if the UI matches, Dashboard can be closed.':'Candidate and legacy Dashboard snapshots match field-by-field. The guarded render flag can be tested in true.'): 'Differences detected. Revert or review before closure.'},limitations:['Compares data snapshots, not pixel-perfect rendered JSX.','R3.5 requires manual visual validation of Dashboard in browser.','Only Dashboard render is activated; Semana, Biblioteca, Perfil, Rankings, Historial, Retos and Ajustes remain legacy.']};}
 function getDashboardRenderPropsCandidate(data,handlers={}){const inputs=buildDashboardViewModelRuntimeInputs(data);return {weeks:inputs.weeks,completedWeeks:inputs.completedWeeks,activeWeek:inputs.activeWeek,u1:inputs.u1,u2:inputs.u2,genreRankings:buildDashboardGenreRankingsCandidate(inputs.completedWeeks),artistRankings:buildDashboardArtistRankingsCandidate(inputs.completedWeeks),genres:inputs.genres,completedGenreIds:inputs.completedGenreIds,challenges:inputs.challenges,xpEvents:inputs.xpEvents,onGenerate:handlers.onGenerate,onGoSemana:handlers.onGoSemana,onManualSelect:handlers.onManualSelect};}
-window.__MUSICLAB_GET_DASHBOARD_RENDER_PROPS_CANDIDATE=getDashboardRenderPropsCandidate;
+/* R9.4 cleanup: removed obsolete debug exposure: window.__MUSICLAB_GET_DASHBOARD_RENDER_PROPS_CANDIDATE=getDashboardRenderPropsCandidate; */
 
 /* ============================================================
    READ-ONLY APPLICATION LOGIC CANDIDATES - R4
@@ -1050,7 +1051,7 @@ function buildLibraryRenderPropsDiagnosticAudit(data,ui={}){
     }
   };
 }
-window.__MUSICLAB_BUILD_LIBRARY_RENDER_PROPS_DIAGNOSTIC_AUDIT=buildLibraryRenderPropsDiagnosticAudit;
+/* R9.4 cleanup: removed obsolete debug exposure: window.__MUSICLAB_BUILD_LIBRARY_RENDER_PROPS_DIAGNOSTIC_AUDIT=buildLibraryRenderPropsDiagnosticAudit; */
 
 
 
@@ -1337,7 +1338,7 @@ function cleanupSymbolPresence(symbolName){
   catch(e){return false;}
 }
 function cleanupFunctionAvailable(fn){return typeof fn==='function';}
-function buildCleanupAuditGlobalR9_3(data, context={}){
+function buildCleanupAuditGlobalR9_4(data, context={}){
   const sectionRows=[
     {sectionId:'dashboard',candidateFlag:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,actionsFlag:null,component:'DashboardTab',candidate:'getDashboardViewModelCandidate',legacySnapshot:'getDashboardLegacySnapshot',equivalenceAudit:'buildDashboardEquivalenceAudit'},
     {sectionId:'perfil',candidateFlag:USE_PROFILE_VIEW_MODEL_CANDIDATE,actionsFlag:null,component:'ProfileTab',candidate:'getProfileViewModelCandidate',legacySnapshot:'getProfileLegacySnapshot',equivalenceAudit:'buildProfileEquivalenceAudit'},
@@ -1426,17 +1427,20 @@ function buildCleanupAuditGlobalR9_3(data, context={}){
     r9_2CleanupPlanGenerated:true,
     readyForR9_3SafeCleanupPass1:false,
     r9_3SafeCleanupPass1Executed:true,
-    readyForR9_4ApplicationLogicCleanup:true
+    readyForR9_4ApplicationLogicCleanup:false,
+    r9_4ApplicationLogicLegacyCleanupExecuted:true,
+    readyForR9_5ALearningTestsLegacyCleanup:true
   };
   return {
-    audit:'CLEANUP_AUDIT_R9_3',
+    audit:'CLEANUP_AUDIT_R9_4',
     version:CLEANUP_AUDIT_VERSION,
     generatedAt:new Date().toISOString(),
-    status:'safe-cleanup-pass-1-complete-limited-deletion',
-    runtimeImpact:'none-runtime-unchanged-dead-debug-export-removed',
+    status:'application-logic-legacy-cleanup-complete-limited-deletion',
+    runtimeImpact:'none-runtime-unchanged-application-logic-audit-payload-cleaned',
     deletionPerformed:true,
     runtimeChanged:false,
-    scope:'Execute first safe cleanup pass by removing only clearly dead historical debug/audit artifacts. No runtime legacy, data legacy, shared helpers or sensitive settings actions are touched.',
+    applicationLogicLegacyPayloadCleaned:true,
+    scope:'Execute application-logic legacy cleanup pass by removing duplicate top-level legacy snapshot summaries from the audit payload and obsolete debug-only window exposures. Legacy snapshot builders remain available internally for equivalence audits. No runtime paths, data legacy, shared helpers, persistence or sensitive settings actions are touched.',
     activeCandidateSections,
     activeDataLayers,
     sharedHelpers,
@@ -1445,41 +1449,40 @@ function buildCleanupAuditGlobalR9_3(data, context={}){
     sensitiveSettingsActions,
     absentHistoricalTemporaryUi,
     r9_3RemovedArtifacts,
+    r9_4RemovedArtifacts:[
+      {id:'topLevelLegacySummaryPayloads',type:'application-logic-audit-payload',classification:'removed-duplicate-legacy-summary-export',removedIn:'R9.4',runtimeImpact:'none',reason:'Legacy snapshots are still computed inside equivalence audits, but duplicated top-level legacySummary exports are no longer emitted.'},
+      {id:'debugWindowExposures',type:'debug-global-window-bindings',classification:'removed-obsolete-debug-surface',removedIn:'R9.4',runtimeImpact:'none',reason:'Internal code references constants/functions directly; debug-only window exposures were not required for runtime.'}
+    ],
     r9_3ProtectedScopes,
     applicationLogicLegacyCleanupPlan,
     dataLegacyCleanupPlan,
     cleanupPlanByBlock,
     cleanupGates,
-    recommendedNextStep:{phase:'R9.4 Application Logic Legacy Cleanup',objective:'Remove application-logic legacy only after reference checks. Still do not remove data legacy, shared helpers or sensitive settings actions.',doNotDo:['Do not remove MUSIC_CATALOG, LEARNING_CONTENT, QUIZZES or USER_STATE_CANDIDATE','Do not remove shared helpers','Do not touch import/reset/restore/save settings flows','Do not remove learning/tests/catalog legacy yet','Do not reintroduce R2/R3 UI buttons']}
+    recommendedNextStep:{phase:'R9.5A Learning and Tests Legacy Cleanup',objective:'Remove legacy Aprende/tests only after reference checks. Still do not remove catalog legacy, shared helpers, persistence or sensitive settings actions.',doNotDo:['Do not remove MUSIC_CATALOG, LEARNING_CONTENT, QUIZZES or USER_STATE_CANDIDATE','Do not remove shared helpers','Do not touch import/reset/restore/save settings flows','Do not remove catalog legacy yet before R9.5B','Do not reintroduce R2/R3 UI buttons']}
   };
 }
-window.__MUSICLAB_BUILD_CLEANUP_AUDIT_R9_3=buildCleanupAuditGlobalR9_3;
+/* R9.4 cleanup: removed obsolete window.__MUSICLAB_BUILD_CLEANUP_AUDIT_R9_3 debug exposure. */
 
 function buildApplicationLogicAudit(data){
   const dashboardAudit=buildDashboardEquivalenceAudit(data);
   const candidate=getDashboardViewModelCandidate(data);
-  const legacy=getDashboardLegacySnapshot(data);
   const readOnlyBatch=buildReadOnlyBatchAudit(data);
   const challengesAudit=buildChallengesEquivalenceAudit(data);
   const challengesCandidate=getChallengesViewModelCandidate(data);
-  const challengesLegacy=getChallengesLegacySnapshot(data);
   const activeWeekAudit=buildActiveWeekEquivalenceAudit(data);
   const activeWeekCandidate=getActiveWeekViewModelCandidate(data);
-  const activeWeekLegacy=getActiveWeekLegacySnapshot(data);
   const libraryAudit=buildLibraryEquivalenceAudit(data);
   const libraryCandidate=getLibraryViewModelCandidate(data);
-  const libraryLegacy=getLibraryLegacySnapshot(data);
   const libraryExtractionAudit=buildLibraryApplicationLogicExtractionAudit(data);
   const libraryActionMetadata=getLibraryActionMetadataCandidate();
   const libraryActionWrappersAudit=buildLibraryActionWrappersAudit();
   const libraryRenderPropsDiagnostic=buildLibraryRenderPropsDiagnosticAudit(data);
   const settingsAudit=buildSettingsEquivalenceAudit(data);
   const settingsCandidate=getSettingsViewModelCandidate(data);
-  const settingsLegacy=getSettingsLegacySnapshot(data);
   const settingsActionMetadata=getSettingsActionMetadataCandidate();
   const settingsActionWrappersAudit=buildSettingsActionWrappersAudit();
   const settingsSensitiveActionsClassification=buildSettingsSensitiveActionsClassificationAudit();
-  const cleanupAudit=buildCleanupAuditGlobalR9_3(data);
+  const cleanupAudit=buildCleanupAuditGlobalR9_4(data);
   const sections=Object.keys(APPLICATION_LOGIC_CANDIDATE.sections).map(id=>{
     const section=APPLICATION_LOGIC_CANDIDATE.sections[id];
     const batchSection=readOnlyBatch.structuredSections[id];
@@ -1501,24 +1504,24 @@ function buildApplicationLogicAudit(data){
     };
   });
   return {
-    audit:'APPLICATION_LOGIC_AUDIT_R9_3',
+    audit:'APPLICATION_LOGIC_AUDIT_R9_4',
     version:APPLICATION_LOGIC_AUDIT_VERSION,
     generatedAt:new Date().toISOString(),
     baseAppVersion:APP_ARCHITECTURE_VERSION,
-    runtimeImpact:'dashboard-readonly-challenges-active-week-library-and-settings-candidates-active-safe-cleanup-pass-1-dead-debug-export-removed',
+    runtimeImpact:'dashboard-readonly-challenges-active-week-library-and-settings-candidates-active-application-logic-legacy-cleanup',
     flags:{USE_APPLICATION_LOGIC_CANDIDATE,USE_DASHBOARD_VIEW_MODEL_CANDIDATE,USE_PROFILE_VIEW_MODEL_CANDIDATE,USE_RANKINGS_VIEW_MODEL_CANDIDATE,USE_HISTORY_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_VIEW_MODEL_CANDIDATE,USE_CHALLENGES_ACTIONS_CANDIDATE,USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,USE_LIBRARY_VIEW_MODEL_CANDIDATE,USE_LIBRARY_ACTIONS_CANDIDATE,USE_SETTINGS_VIEW_MODEL_CANDIDATE,USE_SETTINGS_ACTIONS_CANDIDATE},
     candidate:{...APPLICATION_LOGIC_CANDIDATE,sections},
     maps:{appLogicMap:APP_LOGIC_MAP,componentMap:APP_COMPONENT_MAP},
     spotify:{fix:'SPOTIFY_NATIVE_SEARCH_FIX_R5_1',status:'implemented',expectedBehavior:'play buttons call spotify:search:<artist song> or spotify:<type>:<id> for direct Spotify URLs, avoiding same-tab open.spotify.com navigation from Music Discovery Lab'},
-    dashboard:{status:'dashboard-candidate-active-under-controlled-test',candidateSummary:{candidate:candidate.candidate,version:candidate.version,status:candidate.status,active:candidate.active,inputs:candidate.inputs},legacySummary:{snapshot:legacy.snapshot,version:legacy.version,status:legacy.status,active:legacy.active,inputs:legacy.inputs},equivalence:dashboardAudit,guardedRenderPrepared:true,guardedRenderFlagValue:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE,closureStatus:'dashboard-closed-if-user-visual-validation-passed'},
+    dashboard:{status:'dashboard-candidate-active-under-controlled-test',candidateSummary:{candidate:candidate.candidate,version:candidate.version,status:candidate.status,active:candidate.active,inputs:candidate.inputs},legacySnapshotStatus:{retainedInternallyForEquivalence:true,exportedFullLegacySummary:false,cleanup:'r9-4-top-level-legacy-summary-removed'},equivalence:dashboardAudit,guardedRenderPrepared:true,guardedRenderFlagValue:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE,closureStatus:'dashboard-closed-if-user-visual-validation-passed'},
     readOnlyBatch,
-    retos:{status:'challenges-candidate-active-under-controlled-test',candidateSummary:{candidate:challengesCandidate.candidate,version:challengesCandidate.version,status:challengesCandidate.status,active:challengesCandidate.active,inputs:challengesCandidate.inputs},legacySummary:{snapshot:challengesLegacy.snapshot,version:challengesLegacy.version,status:challengesLegacy.status,active:challengesLegacy.active,inputs:challengesLegacy.inputs},equivalence:challengesAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_CHALLENGES_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE,closureStatus:'retos-closed-if-user-visual-validation-passed'},
-    semana:{status:'active-week-candidate-active-under-guarded-render-test',candidateSummary:{candidate:activeWeekCandidate.candidate,version:activeWeekCandidate.version,status:activeWeekCandidate.status,active:activeWeekCandidate.active,inputs:activeWeekCandidate.inputs},legacySummary:{snapshot:activeWeekLegacy.snapshot,version:activeWeekLegacy.version,status:activeWeekLegacy.status,active:activeWeekLegacy.active,inputs:activeWeekLegacy.inputs},equivalence:activeWeekAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE},
-    biblioteca:{status:'library-candidate-active-view-model-and-actions-under-guarded-render-test',candidateSummary:{candidate:libraryCandidate.candidate,version:libraryCandidate.version,status:libraryCandidate.status,active:libraryCandidate.active,inputs:libraryCandidate.inputs},legacySummary:{snapshot:libraryLegacy.snapshot,version:libraryLegacy.version,status:libraryLegacy.status,active:libraryLegacy.active,inputs:libraryLegacy.inputs},equivalence:libraryAudit,applicationLogicExtraction:libraryExtractionAudit,actionMetadata:libraryActionMetadata,actionWrappers:libraryActionWrappersAudit,renderPropsDiagnostic:libraryRenderPropsDiagnostic,guardedRenderPrepared:true,guardedActionsPrepared:true,actionMetadataPrepared:true,actionWrappersPrepared:true,renderPropsDiagnosticPrepared:true,applicationLogicExtracted:true,viewModelFlagValue:USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_LIBRARY_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE},
-    ajustes:{status:'settings-candidate-active-view-model-non-destructive-actions-active-sensitive-actions-classified-legacy-by-design',candidateSummary:{candidate:settingsCandidate.candidate,version:settingsCandidate.version,status:settingsCandidate.status,active:settingsCandidate.active,inputs:settingsCandidate.inputs},legacySummary:{snapshot:settingsLegacy.snapshot,version:settingsLegacy.version,status:settingsLegacy.status,active:settingsLegacy.active,inputs:settingsLegacy.inputs},equivalence:settingsAudit,actionMetadata:settingsActionMetadata,actionWrappers:settingsActionWrappersAudit,sensitiveActionsClassification:settingsSensitiveActionsClassification,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_SETTINGS_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_SETTINGS_ACTIONS_CANDIDATE,visualValidationRequired:USE_SETTINGS_VIEW_MODEL_CANDIDATE,destructiveActionsTouched:false,sensitiveActionsLegacyByDesign:true,r8ClosureReady:true},
+    retos:{status:'challenges-candidate-active-under-controlled-test',candidateSummary:{candidate:challengesCandidate.candidate,version:challengesCandidate.version,status:challengesCandidate.status,active:challengesCandidate.active,inputs:challengesCandidate.inputs},legacySnapshotStatus:{retainedInternallyForEquivalence:true,exportedFullLegacySummary:false,cleanup:'r9-4-top-level-legacy-summary-removed'},equivalence:challengesAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_CHALLENGES_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE,closureStatus:'retos-closed-if-user-visual-validation-passed'},
+    semana:{status:'active-week-candidate-active-under-guarded-render-test',candidateSummary:{candidate:activeWeekCandidate.candidate,version:activeWeekCandidate.version,status:activeWeekCandidate.status,active:activeWeekCandidate.active,inputs:activeWeekCandidate.inputs},legacySnapshotStatus:{retainedInternallyForEquivalence:true,exportedFullLegacySummary:false,cleanup:'r9-4-top-level-legacy-summary-removed'},equivalence:activeWeekAudit,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE},
+    biblioteca:{status:'library-candidate-active-view-model-and-actions-under-guarded-render-test',candidateSummary:{candidate:libraryCandidate.candidate,version:libraryCandidate.version,status:libraryCandidate.status,active:libraryCandidate.active,inputs:libraryCandidate.inputs},legacySnapshotStatus:{retainedInternallyForEquivalence:true,exportedFullLegacySummary:false,cleanup:'r9-4-top-level-legacy-summary-removed'},equivalence:libraryAudit,applicationLogicExtraction:libraryExtractionAudit,actionMetadata:libraryActionMetadata,actionWrappers:libraryActionWrappersAudit,renderPropsDiagnostic:libraryRenderPropsDiagnostic,guardedRenderPrepared:true,guardedActionsPrepared:true,actionMetadataPrepared:true,actionWrappersPrepared:true,renderPropsDiagnosticPrepared:true,applicationLogicExtracted:true,viewModelFlagValue:USE_LIBRARY_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_LIBRARY_ACTIONS_CANDIDATE,visualValidationRequired:USE_LIBRARY_VIEW_MODEL_CANDIDATE},
+    ajustes:{status:'settings-candidate-active-view-model-non-destructive-actions-active-sensitive-actions-classified-legacy-by-design',candidateSummary:{candidate:settingsCandidate.candidate,version:settingsCandidate.version,status:settingsCandidate.status,active:settingsCandidate.active,inputs:settingsCandidate.inputs},legacySnapshotStatus:{retainedInternallyForEquivalence:true,exportedFullLegacySummary:false,cleanup:'r9-4-top-level-legacy-summary-removed'},equivalence:settingsAudit,actionMetadata:settingsActionMetadata,actionWrappers:settingsActionWrappersAudit,sensitiveActionsClassification:settingsSensitiveActionsClassification,guardedRenderPrepared:true,guardedActionsPrepared:true,viewModelFlagValue:USE_SETTINGS_VIEW_MODEL_CANDIDATE,actionsFlagValue:USE_SETTINGS_ACTIONS_CANDIDATE,visualValidationRequired:USE_SETTINGS_VIEW_MODEL_CANDIDATE,destructiveActionsTouched:false,sensitiveActionsLegacyByDesign:true,r8ClosureReady:true},
     cleanupAudit,
-    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,libraryCandidateEquivalent:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.candidateEquivalent),libraryApplicationLogicExtractionEquivalent:!!(libraryExtractionAudit.activationStatus&&libraryExtractionAudit.activationStatus.candidateEquivalent),libraryActionMetadataPrepared:!!(libraryActionMetadata&&libraryActionMetadata.actions&&libraryActionMetadata.actions.length),libraryActionWrappersPrepared:typeof getLibraryActionHandlersCandidate==='function',libraryRenderPropsDiagnosticPassed:!!(libraryRenderPropsDiagnostic&&libraryRenderPropsDiagnostic.activationGate&&libraryRenderPropsDiagnostic.activationGate.mayActivateViewModelNext),libraryReadyForTrueTest:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForTrueTest),libraryReadyForClosure:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForClosure),libraryViewModelActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,libraryActionsActive:USE_LIBRARY_ACTIONS_CANDIDATE,settingsCandidateEquivalent:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.candidateEquivalent),settingsReadyForTrueTest:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForTrueTest),settingsReadyForClosure:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForClosure),settingsViewModelActive:USE_SETTINGS_VIEW_MODEL_CANDIDATE,settingsActionsActive:USE_SETTINGS_ACTIONS_CANDIDATE,settingsSensitiveActionsClassified:true,settingsSensitiveActionsLegacyByDesign:true,settingsReadyForR9CleanupAudit:true,cleanupAuditGenerated:true,cleanupAuditDeletionPerformed:true,cleanupAuditReadyForR9_2:false,cleanupPlanByBlockGenerated:true,cleanupPlanReadyForR9_3:false,cleanupSafePass1Complete:true,cleanupReadyForR9_4:true,nextActivationTarget:'R9-4-application-logic-legacy-cleanup',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
-    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true,libraryDetailsGroupedBySection:true,libraryApplicationLogicExtraction:true,libraryActionMetadata:true,libraryActionWrappers:true,libraryRenderPropsDiagnostic:true,settingsViewModelCandidate:true,settingsActionMetadata:true,settingsActionWrappers:true,settingsViewModelActive:true,settingsActionsLegacy:false,settingsNonDestructiveActionsActive:true,settingsDestructiveActionsLegacy:true,settingsSensitiveActionsClassification:true,r8SettingsClosed:true,cleanupAuditGlobal:true,cleanupPlanByBlock:true,noDeletionInR9_2:false,r9_3LimitedDeletion:true,removedDeadDebugExports:true},
+    readiness:{dashboardCandidateActive:USE_DASHBOARD_VIEW_MODEL_CANDIDATE,dashboardCandidateEquivalent:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.dashboardCandidateEquivalent),dashboardReadyForClosure:!!(dashboardAudit.activationStatus&&dashboardAudit.activationStatus.readyForDashboardClosure),readOnlyBatchAllEquivalent:readOnlyBatch.allEquivalent,readOnlyBatchReadyForClosure:readOnlyBatch.allReadyForClosure,challengesCandidateEquivalent:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.candidateEquivalent),challengesReadyForClosure:!!(challengesAudit.activationStatus&&challengesAudit.activationStatus.readyForClosure),challengesViewModelActive:USE_CHALLENGES_VIEW_MODEL_CANDIDATE,challengesActionsActive:USE_CHALLENGES_ACTIONS_CANDIDATE,activeWeekCandidateEquivalent:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.candidateEquivalent),activeWeekReadyForTrueTest:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForTrueTest),activeWeekReadyForClosure:!!(activeWeekAudit.activationStatus&&activeWeekAudit.activationStatus.readyForClosure),activeWeekViewModelActive:USE_ACTIVE_WEEK_VIEW_MODEL_CANDIDATE,activeWeekActionsActive:USE_ACTIVE_WEEK_ACTIONS_CANDIDATE,libraryCandidateEquivalent:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.candidateEquivalent),libraryApplicationLogicExtractionEquivalent:!!(libraryExtractionAudit.activationStatus&&libraryExtractionAudit.activationStatus.candidateEquivalent),libraryActionMetadataPrepared:!!(libraryActionMetadata&&libraryActionMetadata.actions&&libraryActionMetadata.actions.length),libraryActionWrappersPrepared:typeof getLibraryActionHandlersCandidate==='function',libraryRenderPropsDiagnosticPassed:!!(libraryRenderPropsDiagnostic&&libraryRenderPropsDiagnostic.activationGate&&libraryRenderPropsDiagnostic.activationGate.mayActivateViewModelNext),libraryReadyForTrueTest:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForTrueTest),libraryReadyForClosure:!!(libraryAudit.activationStatus&&libraryAudit.activationStatus.readyForClosure),libraryViewModelActive:USE_LIBRARY_VIEW_MODEL_CANDIDATE,libraryActionsActive:USE_LIBRARY_ACTIONS_CANDIDATE,settingsCandidateEquivalent:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.candidateEquivalent),settingsReadyForTrueTest:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForTrueTest),settingsReadyForClosure:!!(settingsAudit.activationStatus&&settingsAudit.activationStatus.readyForClosure),settingsViewModelActive:USE_SETTINGS_VIEW_MODEL_CANDIDATE,settingsActionsActive:USE_SETTINGS_ACTIONS_CANDIDATE,settingsSensitiveActionsClassified:true,settingsSensitiveActionsLegacyByDesign:true,settingsReadyForR9CleanupAudit:true,cleanupAuditGenerated:true,cleanupAuditDeletionPerformed:true,cleanupAuditReadyForR9_2:false,cleanupPlanByBlockGenerated:true,cleanupPlanReadyForR9_3:false,cleanupSafePass1Complete:true,cleanupReadyForR9_4:false,cleanupR9_4ApplicationLogicLegacyCleanupComplete:true,cleanupReadyForR9_5A:true,nextActivationTarget:'R9-5A-learning-tests-legacy-cleanup',maxIterationsPerFutureBlock:2,noExtraPhaseButtons:true,fullReportIntegration:true},
+    payloadPolicy:{compact:true,singleApplicationLogicAuditButton:true,fullWeeksExported:false,fullArtistsOrSongsExported:false,readOnlyBatchDetailsGroupedBySection:true,challengesDetailsGroupedBySection:true,activeWeekDetailsGroupedBySection:true,libraryDetailsGroupedBySection:true,libraryApplicationLogicExtraction:true,libraryActionMetadata:true,libraryActionWrappers:true,libraryRenderPropsDiagnostic:true,settingsViewModelCandidate:true,settingsActionMetadata:true,settingsActionWrappers:true,settingsViewModelActive:true,settingsActionsLegacy:false,settingsNonDestructiveActionsActive:true,settingsDestructiveActionsLegacy:true,settingsSensitiveActionsClassification:true,r8SettingsClosed:true,cleanupAuditGlobal:true,cleanupPlanByBlock:true,noDeletionInR9_2:false,r9_3LimitedDeletion:true,removedDeadDebugExports:true,r9_4ApplicationLogicLegacyCleanup:true,topLevelLegacySummariesRemoved:true,debugWindowExposuresRemoved:true},
     nextStep:APPLICATION_LOGIC_CANDIDATE.nextStep
   };
 }
@@ -44994,7 +44997,7 @@ function generateSystemAuditReport(data){
       weekCount:auditSafeArray(data&&data.weeks).length,
       challengeCount:auditSafeArray(data&&data.challenges).length,
       xpEventCount:auditSafeArray(data&&data.xpEvents).length,
-      applicationLogicStatus:'APPLICATION_LOGIC_AUDIT_R9_3',
+      applicationLogicStatus:'APPLICATION_LOGIC_AUDIT_R9_4',
       dashboardCandidateReady:!!(buildApplicationLogicAudit(data).readiness&&buildApplicationLogicAudit(data).readiness.dashboardReadyForTrueTest)
     },
     catalog:validateCatalogShape(activeDataForReport),
@@ -46797,7 +46800,7 @@ function App(){
 
 
   function exportApplicationLogicAudit(){
-    auditDownloadJson('musiclab_application_logic_audit_r9_3.json',buildApplicationLogicAuditExport(data));
+    auditDownloadJson('musiclab_application_logic_audit_r9_4.json',buildApplicationLogicAuditExport(data));
   }
 
   function importData(e){
